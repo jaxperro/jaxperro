@@ -3,28 +3,89 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Jaxperro</title>
+  <title>jaxperro</title>
+
+  <!-- Rive web component -->
   <script src="https://unpkg.com/@rive-app/webgl@2.9.1"></script>
+
   <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      width: 100%;
-      background: #0f0f0f;
+    /* Reset + full-bleed canvas */
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body { background: #0f0f0f; }
+
+    /* Fullscreen hero with centered player */
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 0;
     }
+
+    /* Responsive sizing: fill viewport but keep aspect if needed */
     rive-player {
-      display: block;
       width: 100vw;
       height: 100vh;
+      display: block;
     }
+
+    /* Optional: show a tiny loader while the .riv downloads */
+    .loading {
+      position: fixed; inset: 0;
+      display: grid; place-items: center;
+      color: #bfc6d1; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      pointer-events: none; opacity: .6;
+    }
+    .loading.hide { display: none; }
   </style>
 </head>
 <body>
-  <!-- Try one of these: -->
-  <!-- Play the BLINK state machine -->
-  <rive-player src="black_cat.riv" autoplay state-machines="BLINK"></rive-player>
+  <div id="loading" class="loading">loading…</div>
 
-  <!-- Or play a single animation like BLINK EYE -->
-  <!-- <rive-player src="black_cat.riv" autoplay animation="BLINK EYE"></rive-player> -->
+  <section class="hero" aria-label="Hero animation">
+    <!-- Use the state machine -->
+    <rive-player
+      id="hero-rive"
+      src="black_cat.riv"
+      autoplay
+      state-machines="CAT RUN"
+      aria-label="Animated black cat"
+      role="img">
+    </rive-player>
+
+    <!-- If you prefer a single animation, replace the line above with:
+    <rive-player id="hero-rive" src="black_cat.riv" autoplay animation="CAT RUN"></rive-player>
+    -->
+  </section>
+
+  <noscript>
+    <p style="color:#bfc6d1; text-align:center; padding:16px;">
+      This site shows an animation that requires JavaScript.
+    </p>
+  </noscript>
+
+  <script>
+    // Hide loader once the player is ready
+    const player = document.getElementById('hero-rive');
+    const loading = document.getElementById('loading');
+
+    // If the file loads, hide the loader
+    player?.addEventListener('load', () => loading.classList.add('hide'));
+
+    // Respect "reduced motion" user preference
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    function applyMotionPref(e) {
+      if (!player) return;
+      if (e.matches) {
+        player.removeAttribute('autoplay');
+        try { player.pause?.(); } catch (_) {}
+      } else {
+        player.setAttribute('autoplay', '');
+        try { player.play?.(); } catch (_) {}
+      }
+    }
+    prefersReduced.addEventListener('change', applyMotionPref);
+    applyMotionPref(prefersReduced);
+  </script>
 </body>
 </html>
