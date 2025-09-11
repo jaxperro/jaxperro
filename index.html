@@ -4,16 +4,27 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Jaxperro</title>
-  <!-- Official Rive web player -->
   <script src="https://unpkg.com/@rive-app/webgl@2.9.1"></script>
   <style>
-    html, body { height:100%; margin:0; background:#0f0f0f; }
-    rive-player { width:100vw; height:100vh; display:block; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      background: #0f0f0f;
+    }
+    rive-player {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
   </style>
 </head>
 <body>
-  <!-- If you know your animation name, add animation="idle" (example) -->
-  <!-- If your file uses a State Machine, add state-machines="State Machine 1" -->
-  <rive-player src="black_cat.riv" autoplay></rive-player>
+  <!-- Try one of these: -->
+  <!-- Play the BLINK state machine -->
+  <rive-player src="black_cat.riv" autoplay state-machines="BLINK"></rive-player>
+
+  <!-- Or play a single animation like BLINK EYE -->
+  <!-- <rive-player src="black_cat.riv" autoplay animation="BLINK EYE"></rive-player> -->
 </body>
 </html>
