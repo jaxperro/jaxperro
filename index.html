@@ -1,83 +1,36 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>JaxPerro — Hello, World</title>
-  <meta name="description" content="JaxPerro — simple hello world landing page." />
-  <meta property="og:title" content="JaxPerro — Hello, World" />
-  <meta property="og:description" content="A minimalist starter landing page you can deploy on GitHub Pages." />
-  <meta property="og:type" content="website" />
-  <meta property="og:image" content="" />
-  <link rel="icon" href="favicon.ico" />
+  <meta charset="UTF-8">
+  <title>Jaxperro</title>
+  <script src="https://unpkg.com/@rive-app/canvas@2.9.1"></script>
   <style>
-    :root {
-      --bg: #0f1220;
-      --card: #15182a;
-      --text: #e8eaf6;
-      --muted: #aab2d5;
-      --accent: #6ee7ff;
-    }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
+    html, body {
       margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      background: radial-gradient(60% 60% at 70% 20%, #1a1e35 0%, var(--bg) 60%);
-      color: var(--text);
-      display: grid;
-      place-items: center;
-      padding: 24px;
-    }
-    .card {
+      padding: 0;
+      height: 100%;
       width: 100%;
-      max-width: 720px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 24px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
-      padding: 32px clamp(24px, 6vw, 48px);
-      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #0f0f0f; /* optional background */
     }
-    .logo {
-      display: inline-grid;
-      place-items: center;
-      width: 64px; height: 64px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, #1ad1ff, #7cf8ff 60%, #e0faff);
-      color: #0b1020;
-      font-weight: 800; font-size: 28px;
-      margin-bottom: 16px;
-      box-shadow: 0 6px 24px rgba(110,231,255,0.35);
+    canvas {
+      max-width: 100%;
+      max-height: 100%;
     }
-    h1 { font-size: clamp(28px, 4vw, 44px); margin: 8px 0 12px; }
-    p { color: var(--muted); font-size: clamp(16px, 2.2vw, 18px); margin: 0 0 24px; line-height: 1.6; }
-    .cta {
-      display: inline-flex; align-items: center; gap: 10px;
-      padding: 14px 18px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, var(--accent), #b4f0ff);
-      color: #02131a; font-weight: 700; text-decoration: none;
-      border: none; cursor: pointer;
-      transition: transform .08s ease;
-    }
-    .cta:hover { transform: translateY(-1px); }
-    .subtle { font-size: 14px; color: #9aa3c5; margin-top: 16px; }
-    footer { margin-top: 28px; font-size: 12px; color: #8d96be; }
-    code { background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 6px; }
   </style>
 </head>
 <body>
-  <main class="card" role="main" aria-label="Hello world landing">
-    <div class="logo" aria-hidden="true">J</div>
-    <h1>Hello, World 👋</h1>
-    <p>Welcome to <strong>JaxPerro</strong>. Testing Hello World.</p>
-    <a class="cta" href="#" aria-label="Primary CTA">Get Updates</a>
-    <div class="subtle">or run <code>git push</code> to ship new changes.</div>
-    <footer>© <span id="y"></span> JaxPerro. All rights reserved.</footer>
-  </main>
+  <canvas id="riveCanvas"></canvas>
+
   <script>
-    document.getElementById('y').textContent = new Date().getFullYear();
+    new rive.Rive({
+      src: "black_cat.riv", // path to your file in repo
+      canvas: document.getElementById("riveCanvas"),
+      autoplay: true,
+      stateMachines: "State Machine 1" // optional, if your file has a state machine
+    });
   </script>
 </body>
 </html>
