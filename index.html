@@ -1,36 +1,19 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Jaxperro</title>
-  <script src="https://unpkg.com/@rive-app/canvas@2.9.1"></script>
+  <!-- Official Rive web player -->
+  <script src="https://unpkg.com/@rive-app/webgl@2.9.1"></script>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #0f0f0f; /* optional background */
-    }
-    canvas {
-      max-width: 100%;
-      max-height: 100%;
-    }
+    html, body { height:100%; margin:0; background:#0f0f0f; }
+    rive-player { width:100vw; height:100vh; display:block; }
   </style>
 </head>
 <body>
-  <canvas id="riveCanvas"></canvas>
-
-  <script>
-    new rive.Rive({
-      src: "black_cat.riv", // path to your file in repo
-      canvas: document.getElementById("riveCanvas"),
-      autoplay: true,
-      stateMachines: "State Machine 1" // optional, if your file has a state machine
-    });
-  </script>
+  <!-- If you know your animation name, add animation="idle" (example) -->
+  <!-- If your file uses a State Machine, add state-machines="State Machine 1" -->
+  <rive-player src="black_cat.riv" autoplay></rive-player>
 </body>
 </html>
