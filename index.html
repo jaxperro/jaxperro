@@ -1,91 +1,50 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>jaxperro</title>
+<html>
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
+<body style="margin:0;height:400vh;background:#000">
+<canvas id="c"></canvas>
+<script type="module">
+import * as THREE from "https://unpkg.com/three@0.161.0/build/three.module.js";
+import { gsap } from "https://cdn.skypack.dev/gsap@3";
+import ScrollTrigger from "https://cdn.skypack.dev/gsap@3/ScrollTrigger";
+gsap.registerPlugin(ScrollTrigger);
 
-  <!-- Rive web component -->
-  <script src="https://unpkg.com/@rive-app/webgl@2.9.1"></script>
+const canvas = document.getElementById("c");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(innerWidth, innerHeight); window.addEventListener("resize",()=>renderer.setSize(innerWidth,innerHeight));
 
-  <style>
-    /* Reset + full-bleed canvas */
-    * { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; }
-    body { background: #0f0f0f; }
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 100);
+const light = new THREE.DirectionalLight(0xffffff, 1); light.position.set(5,5,5); scene.add(light);
 
-    /* Fullscreen hero with centered player */
-    .hero {
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 0;
-    }
+const geo = new THREE.PlaneGeometry(1, 0.6);
+const mat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+for (let i=0;i<12;i++){ const m=new THREE.Mesh(geo, mat.clone());
+  m.position.set(Math.sin(i*0.5)*2, i*0.7-3, Math.cos(i*0.5)*2); scene.add(m);
+}
 
-    /* Responsive sizing: fill viewport but keep aspect if needed */
-    rive-player {
-      width: 100vw;
-      height: 100vh;
-      display: block;
-    }
+const pts = []; for (let i=0;i<200;i++){ const t=i/199, a=t*Math.PI*3;
+  pts.push(new THREE.Vector3(Math.sin(a)*2, t*8-2, Math.cos(a)*2)); // helix “spine”
+}
+const curve = new THREE.CatmullRomCurve3(pts);
+const pathGeo = new THREE.TubeGeometry(curve, 400, 0.02, 8, false);
+scene.add(new THREE.Mesh(pathGeo, new THREE.MeshBasicMaterial({ color: 0x4444ff, wireframe:true })));
 
-    /* Optional: show a tiny loader while the .riv downloads */
-    .loading {
-      position: fixed; inset: 0;
-      display: grid; place-items: center;
-      color: #bfc6d1; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      pointer-events: none; opacity: .6;
-    }
-    .loading.hide { display: none; }
-  </style>
-</head>
-<body>
-  <div id="loading" class="loading">loading…</div>
+let t = 0;
+gsap.to({}, {
+  scrollTrigger: { trigger: document.body, start: 0, end: "400vh", scrub: true },
+  onUpdate: self => { t = self.progress; }
+});
 
-  <section class="hero" aria-label="Hero animation">
-    <!-- Use the state machine -->
-    <rive-player
-      id="hero-rive"
-      src="black_cat.riv"
-      autoplay
-      state-machines="CAT RUN"
-      aria-label="Animated black cat"
-      role="img">
-    </rive-player>
-
-    <!-- If you prefer a single animation, replace the line above with:
-    <rive-player id="hero-rive" src="black_cat.riv" autoplay animation="CAT RUN"></rive-player>
-    -->
-  </section>
-
-  <noscript>
-    <p style="color:#bfc6d1; text-align:center; padding:16px;">
-      This site shows an animation that requires JavaScript.
-    </p>
-  </noscript>
-
-  <script>
-    // Hide loader once the player is ready
-    const player = document.getElementById('hero-rive');
-    const loading = document.getElementById('loading');
-
-    // If the file loads, hide the loader
-    player?.addEventListener('load', () => loading.classList.add('hide'));
-
-    // Respect "reduced motion" user preference
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-    function applyMotionPref(e) {
-      if (!player) return;
-      if (e.matches) {
-        player.removeAttribute('autoplay');
-        try { player.pause?.(); } catch (_) {}
-      } else {
-        player.setAttribute('autoplay', '');
-        try { player.play?.(); } catch (_) {}
-      }
-    }
-    prefersReduced.addEventListener('change', applyMotionPref);
-    applyMotionPref(prefersReduced);
-  </script>
+function tick(){
+  const p = curve.getPointAt(t), q = curve.getPointAt(Math.min(t+0.002,1));
+  camera.position.copy(p);
+  camera.lookAt(q);
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+tick();
+</script>
 </body>
 </html>
