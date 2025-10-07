@@ -63,11 +63,22 @@ function makeRainbowTexture(renderer){
   return tex;
 }
 
-// cylinder
+// cylinder — make it very tall and tile the rainbow texture
+const rainbowTex = makeRainbowTexture(renderer);
+rainbowTex.wrapS = THREE.RepeatWrapping;
+rainbowTex.wrapT = THREE.RepeatWrapping;
+rainbowTex.repeat.set(2.0, 80.0); // repeats vertically so colors don't stretch
+
+// A very tall cylinder (200 units high)
 const cyl = new THREE.Mesh(
-  new THREE.CylinderGeometry(1.2,1.2,4,96,1,false),
-  new THREE.MeshStandardMaterial({ map: makeRainbowTexture(renderer), metalness:0.1, roughness:0.35 })
+  new THREE.CylinderGeometry(1.2, 1.2, 200, 96, 1, false),
+  new THREE.MeshStandardMaterial({
+    map: rainbowTex,
+    metalness: 0.1,
+    roughness: 0.35
+  })
 );
+
 scene.add(cyl);
 
 // subtle idle spin
