@@ -63,23 +63,40 @@ function makeRainbowTexture(renderer){
   return tex;
 }
 
-// cylinder — make it very tall and tile the rainbow texture
+// --- Rainbow texture reused ---
 const rainbowTex = makeRainbowTexture(renderer);
 rainbowTex.wrapS = THREE.RepeatWrapping;
 rainbowTex.wrapT = THREE.RepeatWrapping;
-rainbowTex.repeat.set(2.0, 80.0); // repeats vertically so colors don't stretch
+rainbowTex.repeat.set(2.0, 1.0);
 
-// A very tall cylinder (200 units high)
-const cyl = new THREE.Mesh(
-  new THREE.CylinderGeometry(1.2, 1.2, 200, 96, 1, false),
-  new THREE.MeshStandardMaterial({
-    map: rainbowTex,
-    metalness: 0.1,
-    roughness: 0.35
-  })
-);
+// --- Puck params ---
+const PUCK_RADIUS = 1.2;
+const PUCK_HEIGHT = 0.35;     // thickness of each puck
+const GAP        = 0.85;      // distance between puck centers (increase for larger gaps)
+const COUNT      = 260;       // number of pucks to draw (make it big so it feels infinite)
+const START_Y    = - (COUNT * GAP) / 2;
 
-scene.add(cyl);
+// Geometry/material (shared by all instances)
+const puckGeo = new THREE.CylinderGeometry(PUCK_RADIUS, PUCK_RADIUS, PUCK_HEIGHT, 64, 1, false);
+const puckMat = new THREE.MeshStandardMaterial({
+  map: rainbowTex,
+  metalness: 0.1,
+  roughness: 0.35
+});
+
+// Instanced mesh
+const pucks = new THREE.InstancedMesh(puckGeo, puckMat, COUNT);
+pucks.instanceMatrix.setUsage(THREE.DynamicDrawUsage); // allow updates if needed
+scene.add(pucks);
+
+// Place pucks along Y
+const m = new THREE.Matrix4();
+for (let i = 0; i < COUNT; i++) {
+  const y = START_Y + i * GAP;
+  m.makeTranslation(0, y, 0);
+  pucks.setMatrixAt(i, m);
+}
+pucks.instanceMatrix.needsUpdate = true;
 
 // subtle idle spin
 const holder = new THREE.Group();
