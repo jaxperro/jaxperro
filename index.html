@@ -73,8 +73,10 @@ rainbowTex.repeat.set(2.0, 1.0);
 const PUCK_RADIUS = 1.2;
 const PUCK_HEIGHT = 0.55;     // thickness of each puck
 const GAP        = 0.85;      // distance between puck centers (increase for larger gaps)
-const COUNT      = 50;       // number of pucks to draw (make it big so it feels infinite)
+const COUNT      = 50;        // number of pucks to draw (make it big so it feels infinite)
 const START_Y    = - (COUNT * GAP) / 2;
+const HELIX_RADIUS = 2.6;     // distance from center axis for the corkscrew path
+const HELIX_TURNS  = 6;       // full rotations from bottom to top
 
 // Geometry/material (shared by all instances)
 const puckGeo = new THREE.CylinderGeometry(PUCK_RADIUS, PUCK_RADIUS, PUCK_HEIGHT, 64, 1, false);
@@ -92,9 +94,21 @@ scene.add(pucks);
 
 // Place pucks along Y
 const m = new THREE.Matrix4();
+const scratchPos = new THREE.Vector3();
+const scratchQuat = new THREE.Quaternion();
+const scratchScale = new THREE.Vector3(1,1,1);
+const upAxis = new THREE.Vector3(0,1,0);
 for (let i = 0; i < COUNT; i++) {
   const y = START_Y + i * GAP;
-  m.makeTranslation(0, y, 0);
+  const progress = i / COUNT;
+  const angle = progress * HELIX_TURNS * Math.PI * 2;
+  scratchPos.set(
+    Math.cos(angle) * HELIX_RADIUS,
+    y,
+    Math.sin(angle) * HELIX_RADIUS
+  );
+  scratchQuat.setFromAxisAngle(upAxis, angle);
+  m.compose(scratchPos, scratchQuat, scratchScale);
   pucks.setMatrixAt(i, m);
 }
 pucks.instanceMatrix.needsUpdate = true;
