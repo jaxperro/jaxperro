@@ -1,192 +1,133 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Spiral Scroll • Rainbow Cylinder</title>
-  <style>
-    html, body { height: 100%; margin: 0; background:#000; color:#9aa; font:14px/1.2 system-ui, sans-serif; }
-    /* Make the page tall so we can scroll */
-    main { height: 550vh; }
-    #overlay {
-      position: fixed; inset: 0; pointer-events: none;
-      display:flex; align-items:flex-start; justify-content:center; padding:16px;
-      background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,0) 35%);
-    }
-    #hint {
-      pointer-events:none; user-select:none; text-align:center; max-width:680px;
-      letter-spacing:.2px
-    }
-    #c { position: fixed; inset: 0; display:block; }
-    a { color:#9ad; text-decoration:none; border-bottom:1px dashed #456; }
-    a:hover { color:#bde; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Spiral Scroll • Rainbow Cylinder</title>
+<style>
+  html,body { height:100%; margin:0; background:#000; color:#cfd7ff; font:14px/1.4 system-ui,sans-serif;}
+  /* Give us scroll room */
+  main{ height:500vh; }
+  #c{ position:fixed; inset:0; display:block; }
+  #overlay{ position:fixed; inset:0; pointer-events:none; display:flex; justify-content:center; padding-top:10px;
+            background:linear-gradient(180deg,rgba(0,0,0,.35),transparent 35%); }
+  h3{ margin:.2rem 0 0; text-align:center; font-weight:700; }
+  p{ margin:.1rem 0 0; opacity:.75; text-align:center; }
+</style>
 </head>
 <body>
-  <canvas id="c" aria-label="WebGL canvas"></canvas>
-  <div id="overlay">
-    <div id="hint">
-      <h3 style="margin:.3rem 0 0; font-weight:600; color:#cfd7ff">Scroll to spiral</h3>
-      <div style="opacity:.75">One rainbow cylinder. Camera spirals around it as you scroll.</div>
-    </div>
+<canvas id="c"></canvas>
+<div id="overlay">
+  <div>
+    <h3>Scroll to spiral</h3>
+    <p>One rainbow cylinder. Camera spirals around it as you scroll.</p>
   </div>
-  <main></main>
+</div>
+<main></main>
 
-  <script type="module">
-    // ——— Imports ———
-    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js";
-    import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/controls/OrbitControls.js";
-    import { gsap } from "https://cdn.skypack.dev/gsap@3";
-    import ScrollTrigger from "https://cdn.skypack.dev/gsap@3/ScrollTrigger";
-    gsap.registerPlugin(ScrollTrigger);
+<script type="module">
+import * as THREE from "https://unpkg.com/three@0.161.0/build/three.module.js";
 
-    // ——— Renderer & Camera ———
-    const canvas = document.getElementById("c");
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    renderer.setSize(innerWidth, innerHeight);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
+const canvas = document.getElementById("c");
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-    const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 200);
-    camera.position.set(0, 0.5, 8);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 200);
+camera.position.set(0, 0.5, 8);
 
-    // Optional dev controls (right-click/drag). Disable on touch to avoid conflicts.
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.enabled = !('ontouchstart' in window); // disable on touch devices
+// lights
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const dir = new THREE.DirectionalLight(0xffffff, 1);
+dir.position.set(3,5,4);
+scene.add(dir);
 
-    // ——— Lights ———
-    scene.add(new THREE.AmbientLight(0xffffff, 0.45));
-    const dir = new THREE.DirectionalLight(0xffffff, 1.0);
-    dir.position.set(3, 5, 4);
-    scene.add(dir);
+// rainbow texture (procedural)
+function makeRainbowTexture(renderer){
+  const w=1024, h=256, can=document.createElement('canvas');
+  can.width=w; can.height=h;
+  const ctx=can.getContext('2d');
+  const g=ctx.createLinearGradient(0,0,w,0);
+  [["#ff004c",0],["#ff7a00",.16],["#ffee00",.33],["#00d45a",.5],["#00b2ff",.66],["#7a3cff",.83],["#ff2bd6",1]]
+    .forEach(([c,t])=>g.addColorStop(t,c));
+  ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+  const tex=new THREE.CanvasTexture(can);
+  tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+  tex.repeat.set(2,1);
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy?.() ?? 1;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
 
-    // ——— Floor (subtle reference) ———
-    const grid = new THREE.GridHelper(40, 40, 0x334455, 0x223344);
-    grid.position.y = -2.01;
-    grid.material.opacity = 0.18;
-    grid.material.transparent = true;
-    scene.add(grid);
+// cylinder
+const cyl = new THREE.Mesh(
+  new THREE.CylinderGeometry(1.2,1.2,4,96,1,false),
+  new THREE.MeshStandardMaterial({ map: makeRainbowTexture(renderer), metalness:0.1, roughness:0.35 })
+);
+scene.add(cyl);
 
-    // ——— Rainbow texture (procedural canvas) ———
-    function makeRainbowTexture() {
-      const w = 1024, h = 256;
-      const can = document.createElement('canvas');
-      can.width = w; can.height = h;
-      const ctx = can.getContext('2d');
+// subtle idle spin
+const holder = new THREE.Group();
+holder.add(cyl);
+scene.add(holder);
 
-      const g = ctx.createLinearGradient(0, 0, w, 0);
-      const stops = [
-        [0.00, '#ff004c'],
-        [0.16, '#ff7a00'],
-        [0.33, '#ffee00'],
-        [0.50, '#00d45a'],
-        [0.66, '#00b2ff'],
-        [0.83, '#7a3cff'],
-        [1.00, '#ff2bd6']
-      ];
-      stops.forEach(([t, c]) => g.addColorStop(t, c));
+// spiral params
+const radius = 8;
+const turns  = 6;
+const yStart = -2;
+const yEnd   =  2;
+const tilt   = 0.12;
 
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
+// track scroll progress 0..1 (no GSAP)
+function pageProgress(){
+  const max = document.documentElement.scrollHeight - innerHeight;
+  return max > 0 ? Math.min(1, Math.max(0, scrollY / max)) : 0;
+}
 
-      const tex = new THREE.CanvasTexture(can);
-      tex.wrapS = THREE.RepeatWrapping;
-      tex.wrapT = THREE.RepeatWrapping;
-      tex.anisotropy = renderer.capabilities.getMaxAnisotropy?.() ?? 1;
-      tex.colorSpace = THREE.SRGBColorSpace;
-      return tex;
-    }
+let tTarget = pageProgress();
+let t = tTarget;
 
-    // ——— Cylinder ———
-    const cylGeo = new THREE.CylinderGeometry(1.2, 1.2, 4, 96, 1, false); // closed caps
-    const rainbowTex = makeRainbowTexture();
-    rainbowTex.repeat.set(2.0, 1.0); // wrap the rainbow around twice
-    const cylMat = new THREE.MeshStandardMaterial({
-      map: rainbowTex,
-      metalness: 0.1,
-      roughness: 0.35
-    });
-    const cylinder = new THREE.Mesh(cylGeo, cylMat);
-    scene.add(cylinder);
+addEventListener('scroll', ()=>{ tTarget = pageProgress(); }, {passive:true});
+addEventListener('resize', ()=>{
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+});
 
-    // Slight idle spin for life when not scrolling
-    const idleSpin = new THREE.Group();
-    idleSpin.add(cylinder);
-    scene.add(idleSpin);
+// render loop
+let last = performance.now();
+function tick(now=performance.now()){
+  const dt = Math.min((now-last)/1000, 0.033); last = now;
 
-    // ——— Spiral path params ———
-    const radius = 8;         // how far the camera is from center
-    const yStart = -2;        // start height
-    const yEnd =  2;          // end height
-    const turns = 6;          // how many revolutions over full scroll
-    const tilt  = 0.12;       // slight bank/tilt as we orbit
+  // ease towards scroll target for smoothness
+  t += (tTarget - t) * Math.min(1, dt*6);
 
-    // Keep scroll progress in 0..1 via GSAP ScrollTrigger
-    let t = 0; // progress 0..1
-    gsap.to({}, {
-      scrollTrigger: {
-        trigger: document.body,
-        start: 0,
-        end: "550vh",
-        scrub: true
-      },
-      onUpdate(self) { t = self.progress; }
-    });
+  holder.rotation.y += 0.1 * dt;
 
-    // ——— Resize ———
-    function onResize() {
-      camera.aspect = innerWidth / innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-      renderer.setSize(innerWidth, innerHeight);
-    }
-    addEventListener('resize', onResize);
+  const angle = t * turns * Math.PI * 2;
+  const y = THREE.MathUtils.lerp(yStart, yEnd, t);
+  const bank = Math.sin(angle) * tilt;
 
-    // ——— Render loop ———
-    let last = performance.now();
-    function tick(now = performance.now()) {
-      const dt = Math.min((now - last) / 1000, 0.033);
-      last = now;
+  camera.position.set(
+    Math.sin(angle) * radius,
+    y + bank,
+    Math.cos(angle) * radius
+  );
+  const ahead = angle + 0.02;
+  camera.lookAt(
+    Math.sin(ahead)*0.5,
+    y,
+    Math.cos(ahead)*0.5
+  );
 
-      // Idle spin (very subtle) when not moving much
-      idleSpin.rotation.y += 0.1 * dt;
-
-      // Spiral camera around the cylinder based on scroll progress t
-      const angle = t * turns * Math.PI * 2.0;
-      const y = THREE.MathUtils.lerp(yStart, yEnd, t);
-
-      // Bank the orbit a touch by offsetting Y with a sin
-      const bank = Math.sin(angle) * tilt;
-
-      camera.position.set(
-        Math.sin(angle) * radius,
-        y + bank,
-        Math.cos(angle) * radius
-      );
-
-      // Look slightly ahead along the path so motion feels forward
-      const ahead = angle + 0.02;
-      const lookAt = new THREE.Vector3(
-        Math.sin(ahead) * 0.5,
-        y,
-        Math.cos(ahead) * 0.5
-      );
-      camera.lookAt(lookAt);
-
-      controls.update(); // harmless if disabled
-      renderer.render(scene, camera);
-      requestAnimationFrame(tick);
-    }
-    tick();
-
-    // ——— WebGL support note ———
-    if (!renderer.capabilities.isWebGL2) {
-      console.warn("WebGL2 not detected — falling back to WebGL1 where possible.");
-    }
-  </script>
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+tick();
+</script>
 </body>
 </html>
