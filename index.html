@@ -87,6 +87,7 @@ const puckMat = new THREE.MeshStandardMaterial({
 // Instanced mesh
 const pucks = new THREE.InstancedMesh(puckGeo, puckMat, COUNT);
 pucks.instanceMatrix.setUsage(THREE.DynamicDrawUsage); // allow updates if needed
+pucks.frustumCulled = false; // instances stretch far beyond the base geometry, so skip bounding-sphere culling
 scene.add(pucks);
 
 // Place pucks along Y
