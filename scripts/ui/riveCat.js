@@ -27,14 +27,22 @@ async function loadRive() {
       "https://unpkg.com/@rive-app/canvas@2.17.4?module"
     );
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       riveInstance = new Rive({
         src: "assets/black_cat.riv",
         canvas: riveCanvas,
+        artboard: "BLACK CAT",
+        stateMachines: ["CAT STATE"],
         autoplay: true,
         onLoad: () => {
           resizeCanvas();
           resolve(riveInstance);
+        },
+        onError: (error) => {
+          console.error("Rive failed to load black_cat.riv", error);
+          loadPromise = null;
+          riveInstance = null;
+          reject(error);
         }
       });
     });
