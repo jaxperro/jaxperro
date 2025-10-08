@@ -2,43 +2,10 @@ import { initScene } from "./three/scene.js";
 import { createPopupManager } from "./ui/popups.js";
 import { initScrollController } from "./ui/scroll.js";
 import { CANVAS_ID, SCROLL_CONFIG } from "./config.js";
-
-async function initRiveAnimation() {
-  const riveCanvas = document.getElementById("rive-animation");
-  if (!riveCanvas) return null;
-
-  const { Rive } = await import(
-    "https://unpkg.com/@rive-app/canvas@2.17.4?module"
-  );
-
-  let riveInstance = null;
-  const controller = {
-    resize() {
-      if (!riveCanvas) return;
-      const dpr = window.devicePixelRatio || 1;
-      const rect = riveCanvas.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-      riveCanvas.width = Math.round(rect.width * dpr);
-      riveCanvas.height = Math.round(rect.height * dpr);
-      riveInstance?.resizeDrawingSurfaceToCanvas();
-    },
-    destroy() {
-      riveInstance?.cleanup();
-      riveInstance = null;
-    }
-  };
-
-  riveInstance = new Rive({
-    src: "assets/black_cat.riv",
-    canvas: riveCanvas,
-    autoplay: true,
-    onLoad: () => {
-      controller.resize();
-    }
-  });
-
-  return controller;
-}
+import {
+  ensureCatAnimation,
+  resizeCatAnimation
+} from "./ui/riveCat.js";
 
 const canvas = document.getElementById(CANVAS_ID);
 if (!canvas) {
@@ -50,12 +17,18 @@ const popupManager = createPopupManager();
 
 let targetProgress = 0;
 let progress = 0;
-let riveController = null;
 
 document.addEventListener("popup:show", (event) => {
   const index = event?.detail?.index;
   if (index === 0) {
-    requestAnimationFrame(() => riveController?.resize());
+    ensureCatAnimation()
+      .then((instance) => {
+        if (!instance) return;
+        requestAnimationFrame(() => resizeCatAnimation());
+      })
+      .catch((error) => {
+        console.error("Failed to start Rive animation", error);
+      });
   }
 });
 
@@ -69,22 +42,13 @@ const scrollController = initScrollController({
 function handleResize() {
   scene.resize(window.innerWidth, window.innerHeight);
   scrollController.refresh();
-  riveController?.resize();
+  resizeCatAnimation();
 }
 
 window.addEventListener("resize", handleResize);
 
 window.scrollTo({ top: 0, behavior: "auto" });
 handleResize();
-
-initRiveAnimation()
-  .then((controller) => {
-    riveController = controller;
-    riveController?.resize();
-  })
-  .catch((error) => {
-    console.error("Failed to initialize Rive animation", error);
-  });
 
 let lastFrame = performance.now();
 function tick(now = performance.now()) {
