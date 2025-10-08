@@ -1,3 +1,6 @@
+const ARTBOARD_NAME = "WCT 01";
+const STATE_MACHINE_NAME = "CAT STATE";
+
 let loadPromise = null;
 let riveInstance = null;
 let riveCanvas = null;
@@ -65,29 +68,12 @@ async function loadRive() {
     const runtime = await loadRuntime();
     const { Rive } = runtime;
 
-    if (typeof Rive?.load === "function") {
-      try {
-        const file = await Rive.load({ src: "assets/black_cat.riv" });
-        const artboardNames = file?.artboardNames ?? [];
-        const defaultArtboard = file?.defaultArtboard?.()?.name;
-        // eslint-disable-next-line no-console
-        console.info("[Rive] Available artboards:", artboardNames);
-        if (defaultArtboard) {
-          // eslint-disable-next-line no-console
-          console.info("[Rive] Default artboard:", defaultArtboard);
-        }
-        file?.delete?.();
-      } catch (error) {
-        console.error("Failed to inspect Rive file", error);
-      }
-    }
-
     return new Promise((resolve, reject) => {
       riveInstance = new Rive({
         src: "assets/black_cat.riv",
         canvas: riveCanvas,
-        artboard: "BLACK CAT",
-        stateMachines: ["CAT STATE"],
+        artboard: ARTBOARD_NAME,
+        stateMachines: [STATE_MACHINE_NAME],
         autoplay: true,
         onLoad: () => {
           resizeCanvas();
