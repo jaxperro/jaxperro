@@ -76,44 +76,45 @@ async function loadRive() {
     const runtime = await loadRuntime();
     const { Rive } = runtime;
 
-    let animationsToPlay = [];
-    let stateMachinesToPlay = [];
-
-    if (typeof Rive?.load === "function") {
-      try {
-        const riveFile = await Rive.load({ src: "assets/black_cat.riv" });
-        const artboardNames = riveFile?.artboardNames ?? [];
-        const artboard =
-          riveFile?.artboardByName?.(ARTBOARD_NAME) ??
-          riveFile?.defaultArtboard?.();
-        const stateMachineNames = artboard?.stateMachineNames ?? [];
-        const animationNames = artboard?.animationNames ?? [];
-        animationsToPlay = PREFERRED_ANIMATIONS.filter((name) =>
-          animationNames.includes(name)
-        );
-        stateMachinesToPlay = PREFERRED_STATE_MACHINES.filter((name) =>
-          stateMachineNames.includes(name)
-        );
-        // eslint-disable-next-line no-console
-        console.info("[Rive] Artboards:", artboardNames);
-        // eslint-disable-next-line no-console
-        console.info("[Rive] State machines on", ARTBOARD_NAME, stateMachineNames);
-        // eslint-disable-next-line no-console
-        console.info("[Rive] Animations on", ARTBOARD_NAME, animationNames);
-        riveFile?.delete?.();
-      } catch (error) {
-        console.error("Failed to inspect Rive file", error);
-      }
-    }
-
     return new Promise((resolve, reject) => {
       const riveConfig = {
         src: "assets/black_cat.riv",
         canvas: riveCanvas,
         artboard: ARTBOARD_NAME,
-        autoplay: true,
+        autoplay: false,
         onLoad: () => {
           resizeCanvas();
+          try {
+            const availableAnimations = new Set(riveInstance?.animationNames ?? []);
+            const availableStateMachines = new Set(
+              riveInstance?.stateMachineNames ?? []
+            );
+            const animationsToPlay = PREFERRED_ANIMATIONS.filter((name) =>
+              availableAnimations.has(name)
+            );
+            const stateMachinesToPlay = PREFERRED_STATE_MACHINES.filter((name) =>
+              availableStateMachines.has(name)
+            );
+
+            const toPlay = [...stateMachinesToPlay, ...animationsToPlay];
+            if (toPlay.length > 0) {
+              riveInstance?.play(toPlay);
+            } else {
+              riveInstance?.play();
+            }
+
+            // eslint-disable-next-line no-console
+            console.info("[Rive] Available animations:", [...availableAnimations]);
+            // eslint-disable-next-line no-console
+            console.info(
+              "[Rive] Available state machines:",
+              [...availableStateMachines]
+            );
+            // eslint-disable-next-line no-console
+            console.info("[Rive] Playing:", toPlay.length > 0 ? toPlay : "default");
+          } catch (error) {
+            console.error("Failed to start Rive animations", error);
+          }
           resolve(riveInstance);
         },
         onError: (error) => {
@@ -123,14 +124,6 @@ async function loadRive() {
           reject(error);
         }
       };
-
-      if (stateMachinesToPlay.length > 0) {
-        riveConfig.stateMachines = stateMachinesToPlay;
-      } else if (animationsToPlay.length > 0) {
-        riveConfig.animations = animationsToPlay;
-      } else {
-        riveConfig.animations = ["SOLO FX"];
-      }
 
       riveInstance = new Rive(riveConfig);
     });
