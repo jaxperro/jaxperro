@@ -1,5 +1,13 @@
 const ARTBOARD_NAME = "WCT 01";
-const STATE_MACHINE_NAME = "CAT STATE";
+const PREFERRED_STATE_MACHINES = ["CAT STATE", "CAT RUN"];
+const PREFERRED_ANIMATIONS = [
+  "BLACK CATW",
+  "EYES Y",
+  "EYES X",
+  "BLINK EYE",
+  "CAT RUN",
+  "SOLO FX"
+];
 
 let loadPromise = null;
 let riveInstance = null;
@@ -68,13 +76,24 @@ async function loadRive() {
     const runtime = await loadRuntime();
     const { Rive } = runtime;
 
+    let animationsToPlay = [];
+    let stateMachinesToPlay = [];
+
     if (typeof Rive?.load === "function") {
       try {
         const riveFile = await Rive.load({ src: "assets/black_cat.riv" });
         const artboardNames = riveFile?.artboardNames ?? [];
-        const artboard = riveFile?.artboardByName?.(ARTBOARD_NAME);
+        const artboard =
+          riveFile?.artboardByName?.(ARTBOARD_NAME) ??
+          riveFile?.defaultArtboard?.();
         const stateMachineNames = artboard?.stateMachineNames ?? [];
         const animationNames = artboard?.animationNames ?? [];
+        animationsToPlay = PREFERRED_ANIMATIONS.filter((name) =>
+          animationNames.includes(name)
+        );
+        stateMachinesToPlay = PREFERRED_STATE_MACHINES.filter((name) =>
+          stateMachineNames.includes(name)
+        );
         // eslint-disable-next-line no-console
         console.info("[Rive] Artboards:", artboardNames);
         // eslint-disable-next-line no-console
@@ -88,11 +107,10 @@ async function loadRive() {
     }
 
     return new Promise((resolve, reject) => {
-      riveInstance = new Rive({
+      const riveConfig = {
         src: "assets/black_cat.riv",
         canvas: riveCanvas,
         artboard: ARTBOARD_NAME,
-        stateMachines: [STATE_MACHINE_NAME],
         autoplay: true,
         onLoad: () => {
           resizeCanvas();
@@ -104,7 +122,17 @@ async function loadRive() {
           riveInstance = null;
           reject(error);
         }
-      });
+      };
+
+      if (stateMachinesToPlay.length > 0) {
+        riveConfig.stateMachines = stateMachinesToPlay;
+      } else if (animationsToPlay.length > 0) {
+        riveConfig.animations = animationsToPlay;
+      } else {
+        riveConfig.animations = ["SOLO FX"];
+      }
+
+      riveInstance = new Rive(riveConfig);
     });
   })();
 
