@@ -9,6 +9,9 @@ function loadRuntime() {
   }
 
   if (window.rive) {
+    if (window.rive.RuntimeLoader) {
+      window.rive.RuntimeLoader.setWasmUrl("scripts/vendor/rive.wasm");
+    }
     return Promise.resolve(window.rive);
   }
 
@@ -20,6 +23,9 @@ function loadRuntime() {
     script.async = true;
     script.onload = () => {
       if (window.rive) {
+        if (window.rive.RuntimeLoader) {
+          window.rive.RuntimeLoader.setWasmUrl("scripts/vendor/rive.wasm");
+        }
         resolve(window.rive);
       } else {
         reject(new Error("Rive runtime loaded without exposing window.rive."));
