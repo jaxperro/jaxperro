@@ -16,12 +16,6 @@
   #popup-layer{ position:fixed; inset:0; display:flex; justify-content:center; align-items:center; pointer-events:none;
                 opacity:0; transition:opacity .3s ease; }
   #popup-layer[data-visible="true"]{ opacity:1; }
-  #controls{ position:fixed; top:16px; right:18px; min-width:200px; padding:10px 12px; border-radius:12px;
-             background:rgba(9,12,24,.72); border:1px solid rgba(207,215,255,.3); font-size:13px;
-             color:#dbe1ff; box-shadow:0 12px 22px rgba(0,0,0,.35); pointer-events:auto; }
-  #controls label{ display:flex; flex-direction:column; gap:6px; font-weight:600; }
-  #controls span{ font-weight:500; font-size:12px; opacity:.85; }
-  #controls input{ width:100%; accent-color:#91a4ff; }
   .popup-card{ --scale:0.8; --alpha:0;
                background:rgba(12,16,35,.9); border:1px solid rgba(207,215,255,.65); border-radius:16px;
                padding:1.4rem 1.6rem; width:min(280px,82vw); color:#eef1ff;
@@ -45,13 +39,6 @@
     <h4></h4>
     <p></p>
   </div>
-</div>
-<div id="controls">
-  <label>
-    Spin per scroll
-    <input id="spin-slider" type="range" min="1" max="12" step="0.5" value="6">
-    <span id="spin-value">6.0 turns</span>
-  </label>
 </div>
 <main></main>
 
@@ -148,8 +135,6 @@ const popupLayer = document.getElementById('popup-layer');
 const popupCard = popupLayer.querySelector('.popup-card');
 const popupTitle = popupCard.querySelector('h4');
 const popupBody = popupCard.querySelector('p');
-const spinSlider = document.getElementById('spin-slider');
-const spinValue = document.getElementById('spin-value');
 
 const POPUPS = [
   { title: "Square One", body: "Checkpoint at the first third of the spiral." },
@@ -157,6 +142,7 @@ const POPUPS = [
   { title: "Square Three", body: "Final pause before the finish." }
 ];
 const popupStops = POPUPS.map((_, idx) => (idx + 1) / (POPUPS.length + 1));
+const SCROLL_SPIN_TURNS = 6; // adjust to change how many full spins happen over the scroll range
 
 let rawScrollProgress = 0;
 let lastScrollProgress = 0;
@@ -167,33 +153,12 @@ let lastTouchY = null;
 let tTarget = 0;
 let t = 0;
 let lockCooldownTimer = null;
-let spinTurns = spinSlider ? parseFloat(spinSlider.value) : 6;
 
 const SCROLL_KEYS = new Set([
   "ArrowUp","ArrowDown","ArrowLeft","ArrowRight",
   "PageUp","PageDown","Home","End"," ","Space","Spacebar"
 ]);
 const POPUP_REVEAL_MS = 500;
-
-function setSpinTurns(value){
-  spinTurns = Math.max(0.5, Math.min(20, value));
-  if (spinSlider && spinSlider.value !== spinTurns.toString()){
-    spinSlider.value = spinTurns.toString();
-  }
-  if (spinValue){
-    spinValue.textContent = `${spinTurns.toFixed(1)} turns`;
-  }
-}
-
-if (spinSlider){
-  setSpinTurns(spinTurns);
-  spinSlider.addEventListener('input', (event)=>{
-    const next = parseFloat(event.target.value);
-    if (!Number.isNaN(next)){
-      setSpinTurns(next);
-    }
-  });
-}
 
 function showPopup(index){
   const data = POPUPS[index];
@@ -410,7 +375,7 @@ function tick(now=performance.now()){
   // ease towards scroll target for smoothness
   t += (tTarget - t) * Math.min(1, dt*6);
 
-  const angle = t * spinTurns * Math.PI * 2;
+  const angle = t * SCROLL_SPIN_TURNS * Math.PI * 2;
   const y = THREE.MathUtils.lerp(yStart, yEnd, t);
   const bank = Math.sin(angle) * tilt;
 
