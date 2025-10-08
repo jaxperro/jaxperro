@@ -89,7 +89,7 @@ rainbowTex.repeat.set(2.0, 1.0);
 // --- Puck params ---
 const PUCK_RADIUS = 1.2;
 const PUCK_HEIGHT = 0.75;     // thickness of each puck
-const GAP        = 0.75;      // distance between puck centers (increase for larger gaps)
+const GAP        = 0.95;      // distance between puck centers (increase for larger gaps)
 const COUNT      = 50;        // number of pucks to draw (make it big so it feels infinite)
 const START_Y    = - (COUNT * GAP) / 2;
 const HELIX_RADIUS = 1;     // distance from center axis for the corkscrew path
@@ -363,6 +363,8 @@ addEventListener('resize', ()=>{
 
 handleScroll();
 t = tTarget;
+
+window.scrollTo({top:0, behavior:'auto'});
 
 // render loop
 let last = performance.now();
