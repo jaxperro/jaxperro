@@ -156,11 +156,13 @@ let lockCooldown = false;
 let lastTouchY = null;
 let tTarget = 0;
 let t = 0;
+let lockCooldownTimer = null;
 
 const SCROLL_KEYS = new Set([
   "ArrowUp","ArrowDown","ArrowLeft","ArrowRight",
   "PageUp","PageDown","Home","End"," ","Space","Spacebar"
 ]);
+const LOCK_COOLDOWN_MS = 230;
 function showPopup(index){
   const data = POPUPS[index];
   popupTitle.textContent = data.title;
@@ -170,6 +172,7 @@ function showPopup(index){
   popupCard.style.setProperty('--scale', '0.8');
   popupCard.style.setProperty('--alpha', '0');
   lockCooldown = true;
+  restartLockCooldownTimer();
   lastTouchY = null;
   requestAnimationFrame(()=> setPopupProgress(0));
 }
@@ -189,6 +192,23 @@ function setPopupProgress(value){
   popupCard.style.setProperty('--alpha', alpha.toFixed(3));
 }
 
+function restartLockCooldownTimer(){
+  if (lockCooldownTimer !== null){
+    clearTimeout(lockCooldownTimer);
+  }
+  lockCooldownTimer = setTimeout(()=>{
+    lockCooldown = false;
+    lockCooldownTimer = null;
+  }, LOCK_COOLDOWN_MS);
+}
+
+function clearLockCooldownTimer(){
+  if (lockCooldownTimer !== null){
+    clearTimeout(lockCooldownTimer);
+    lockCooldownTimer = null;
+  }
+}
+
 function clampScrollToStop(){
   if (lockedStop === null) return;
   const max = document.documentElement.scrollHeight - innerHeight;
@@ -206,6 +226,7 @@ function releasePopupLock(){
   lockedStop = null;
   activePopup = -1;
   lockCooldown = false;
+  clearLockCooldownTimer();
   lastTouchY = null;
   lastScrollProgress = stopValue;
   rawScrollProgress = stopValue;
@@ -233,15 +254,9 @@ function findBackwardStop(prev, next){
 
 function handleWheel(event){
   if (lockedStop === null) return;
+  event.preventDefault();
   if (lockCooldown){
-    event.preventDefault();
-    if (event.deltaY !== 0){
-      lockCooldown = false;
-    }
-    return;
-  }
-  if (event.deltaY === 0){
-    event.preventDefault();
+    restartLockCooldownTimer();
     return;
   }
   releasePopupLock();
@@ -253,6 +268,7 @@ function handleTouchStart(event){
     lastTouchY = event.touches[0].clientY;
   }
   lockCooldown = true;
+  restartLockCooldownTimer();
 }
 
 function handleTouchMove(event){
@@ -262,6 +278,7 @@ function handleTouchMove(event){
   if (lockCooldown){
     event.preventDefault();
     lockCooldown = false;
+    clearLockCooldownTimer();
     lastTouchY = y;
     return;
   }
@@ -283,6 +300,7 @@ function handleTouchEnd(){
   lastTouchY = null;
   if (lockedStop !== null){
     lockCooldown = true;
+    restartLockCooldownTimer();
   }
 }
 
@@ -292,6 +310,7 @@ function handleKeyDown(event){
   if (lockCooldown){
     event.preventDefault();
     lockCooldown = false;
+    clearLockCooldownTimer();
     return;
   }
   releasePopupLock();
