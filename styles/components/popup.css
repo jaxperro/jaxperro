@@ -28,6 +28,7 @@
   transition: transform 0.24s ease, opacity 0.24s ease;
   pointer-events: auto;
   text-align: left;
+  touch-action: none;
 }
 
 .popup-card h4 {

@@ -124,10 +124,11 @@ function isEventOnCanvas(event) {
 function attachPointerListeners() {
   if (!riveCanvas || pointerListenersAttached) return;
 
-  riveCanvas.addEventListener("pointermove", handlePointerMove);
-  riveCanvas.addEventListener("pointerdown", handlePointerMove);
-  riveCanvas.addEventListener("pointerup", handlePointerLeave);
-  riveCanvas.addEventListener("pointerleave", handlePointerLeave);
+  riveCanvas.addEventListener("pointerdown", handlePointerDown, { passive: false });
+  riveCanvas.addEventListener("pointermove", handlePointerMove, { passive: false });
+  riveCanvas.addEventListener("pointerup", handlePointerUp, { passive: false });
+  riveCanvas.addEventListener("pointercancel", handlePointerUp, { passive: false });
+  riveCanvas.addEventListener("pointerleave", handlePointerLeave, { passive: false });
   riveCanvas.addEventListener("wheel", preventScroll, { passive: false });
   pointerListenersAttached = true;
 }
@@ -135,9 +136,10 @@ function attachPointerListeners() {
 function detachPointerListeners() {
   if (!riveCanvas || !pointerListenersAttached) return;
 
+  riveCanvas.removeEventListener("pointerdown", handlePointerDown);
   riveCanvas.removeEventListener("pointermove", handlePointerMove);
-  riveCanvas.removeEventListener("pointerdown", handlePointerMove);
-  riveCanvas.removeEventListener("pointerup", handlePointerLeave);
+  riveCanvas.removeEventListener("pointerup", handlePointerUp);
+  riveCanvas.removeEventListener("pointercancel", handlePointerUp);
   riveCanvas.removeEventListener("pointerleave", handlePointerLeave);
   riveCanvas.removeEventListener("wheel", preventScroll);
   pointerListenersAttached = false;
@@ -167,13 +169,41 @@ function detachTouchListeners() {
   touchListenersAttached = false;
 }
 
-function handlePointerMove(event) {
+function handlePointerDown(event) {
   if (!riveCanvas || !riveInstance) return;
-  if (event.cancelable) {
-    event.preventDefault();
+  if (event.cancelable) event.preventDefault();
+  event.stopPropagation();
+  if (typeof riveCanvas.setPointerCapture === "function" && event.pointerId != null) {
+    try {
+      riveCanvas.setPointerCapture(event.pointerId);
+    } catch (error) {
+      // ignore capture errors
+    }
   }
   if (!hasInteractiveInputs()) return;
   updateInputsFromClientPosition(event.clientX, event.clientY);
+}
+
+function handlePointerMove(event) {
+  if (!riveCanvas || !riveInstance) return;
+  if (event.cancelable) event.preventDefault();
+  event.stopPropagation();
+  if (!hasInteractiveInputs()) return;
+  updateInputsFromClientPosition(event.clientX, event.clientY);
+}
+
+function handlePointerUp(event) {
+  if (!riveCanvas || !riveInstance) return;
+  if (event.cancelable) event.preventDefault();
+  event.stopPropagation();
+  if (typeof riveCanvas.releasePointerCapture === "function" && event.pointerId != null) {
+    try {
+      riveCanvas.releasePointerCapture(event.pointerId);
+    } catch (error) {
+      // ignore release errors
+    }
+  }
+  handlePointerLeave();
 }
 
 function handlePointerLeave() {
@@ -196,7 +226,7 @@ function handleTouchStart(event) {
   if (!hasInteractiveInputs()) return;
   if (!isEventOnCanvas(event)) return;
 
-  const touch = event.changedTouches[0];
+  const touch = event.changedTouches?.[0];
   if (!touch) return;
   activeTouchId = touch.identifier;
   updateInputsFromClientPosition(touch.clientX, touch.clientY);
@@ -212,6 +242,7 @@ function handleTouchMove(event) {
   const touch = findActiveTouch(event.changedTouches);
   if (!touch) return;
   updateInputsFromClientPosition(touch.clientX, touch.clientY);
+  event.stopPropagation();
 }
 
 function handleTouchEnd(event) {
