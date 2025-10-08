@@ -1,0 +1,23 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  background: #000;
+  color: #cfd7ff;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+
+main {
+  height: 500vh;
+}
+
+h3 {
+  margin: 0.2rem 0 0;
+  text-align: center;
+  font-weight: 700;
+}
+
+p {
+  margin: 0.1rem 0 0;
+  opacity: 0.75;
+  text-align: center;
+}
