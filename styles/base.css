@@ -6,6 +6,11 @@ html, body {
   font: 14px/1.4 system-ui, sans-serif;
 }
 
+html.scroll-locked,
+body.scroll-locked {
+  overflow: hidden;
+}
+
 main {
   height: 500vh;
 }

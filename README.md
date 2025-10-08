@@ -18,6 +18,6 @@ See [docs/structure.md](docs/structure.md) for a more detailed walkthrough and t
 1. **Export** the animation from the Rive editor using *Export → Runtime*, ensuring the artboard is named `WCT 01` (or update `ARTBOARD_NAME` in `scripts/ui/riveCat.js`).
 2. **State Machines / Animations**: the loader prefers the `BLACK CATW`, `CAT STATE`, and `CAT RUN` state machines. If those are missing it falls back to the matching animations listed in `PREFERRED_ANIMATIONS`.
 3. **Interactivity**: number inputs containing `x` or `y` drive the eye follow effect; boolean/trigger inputs containing `run` or `hover` fire when a pointer/touch is close to the centre orb. Adjust those heuristics inside `updateInputsFromClientPosition`.
-4. **Mobile Support**: the module captures pointer/touch events, locks the document scroll while interacting, and releases it on pointer/touch end. Everything is detached automatically when the popup closes.
+4. **Mobile Support**: the module captures pointer/touch events, locks the document scroll (adds the `.scroll-locked` class to `<html>`/`<body>`) while interacting, and releases it on pointer/touch end. Everything is detached automatically when the popup closes.
 
 To replace the animation, drop a new `.riv` file into `assets/black_cat.riv` and tweak the constants in `scripts/ui/riveCat.js` if the artboard or input names change.
