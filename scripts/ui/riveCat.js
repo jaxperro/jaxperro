@@ -104,9 +104,21 @@ function findActiveTouch(touchList) {
 
 function preventScroll(event) {
   if (!hasInteractiveInputs()) return;
+  if (!isEventOnCanvas(event)) return;
+  if (event.type.startsWith("touch")) {
+    const touch = findActiveTouch(event.changedTouches || event.touches);
+    if (!touch) return;
+  }
   if (event.cancelable) {
     event.preventDefault();
   }
+}
+
+function isEventOnCanvas(event) {
+  if (!riveCanvas) return false;
+  const target = event.target;
+  if (!target) return false;
+  return target === riveCanvas || riveCanvas.contains(target);
 }
 
 function attachPointerListeners() {
@@ -138,6 +150,8 @@ function attachTouchListeners() {
   riveCanvas.addEventListener("touchmove", handleTouchMove, { passive: false });
   riveCanvas.addEventListener("touchend", handleTouchEnd, { passive: false });
   riveCanvas.addEventListener("touchcancel", handleTouchEnd, { passive: false });
+  document.addEventListener("touchstart", preventScroll, { passive: false });
+  document.addEventListener("touchmove", preventScroll, { passive: false });
   touchListenersAttached = true;
 }
 
@@ -148,6 +162,8 @@ function detachTouchListeners() {
   riveCanvas.removeEventListener("touchmove", handleTouchMove);
   riveCanvas.removeEventListener("touchend", handleTouchEnd);
   riveCanvas.removeEventListener("touchcancel", handleTouchEnd);
+  document.removeEventListener("touchstart", preventScroll);
+  document.removeEventListener("touchmove", preventScroll);
   touchListenersAttached = false;
 }
 
@@ -178,17 +194,20 @@ function handleTouchStart(event) {
   if (!riveCanvas || !riveInstance) return;
   if (event.cancelable) event.preventDefault();
   if (!hasInteractiveInputs()) return;
+  if (!isEventOnCanvas(event)) return;
 
   const touch = event.changedTouches[0];
   if (!touch) return;
   activeTouchId = touch.identifier;
   updateInputsFromClientPosition(touch.clientX, touch.clientY);
+  event.stopPropagation();
 }
 
 function handleTouchMove(event) {
   if (!riveCanvas || !riveInstance) return;
   if (event.cancelable) event.preventDefault();
   if (!hasInteractiveInputs()) return;
+  if (!isEventOnCanvas(event)) return;
 
   const touch = findActiveTouch(event.changedTouches);
   if (!touch) return;
@@ -198,11 +217,13 @@ function handleTouchMove(event) {
 function handleTouchEnd(event) {
   if (!riveCanvas || !riveInstance) return;
   if (event.cancelable) event.preventDefault();
+  if (!isEventOnCanvas(event)) return;
 
   const touch = findActiveTouch(event.changedTouches);
   if (!touch) return;
 
   handlePointerLeave();
+  event.stopPropagation();
 }
 
 function registerStateMachineInputs(stateMachineNames) {
