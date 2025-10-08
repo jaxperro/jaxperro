@@ -25,6 +25,9 @@ let stateMachineInputRegistry = {
 let pointerListenersAttached = false;
 let touchListenersAttached = false;
 let activeTouchId = null;
+let scrollLockDepth = 0;
+let previousBodyOverflow = "";
+let previousHtmlOverflow = "";
 
 let loadPromise = null;
 let riveInstance = null;
@@ -42,6 +45,27 @@ function resetInputRegistry() {
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
+}
+
+function lockDocumentScroll() {
+  if (typeof document === "undefined") return;
+  if (scrollLockDepth === 0) {
+    previousBodyOverflow = document.body.style.overflow;
+    previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+  }
+  scrollLockDepth += 1;
+}
+
+function unlockDocumentScroll(force = false) {
+  if (typeof document === "undefined") return;
+  if (scrollLockDepth === 0) return;
+  scrollLockDepth = force ? 0 : Math.max(0, scrollLockDepth - 1);
+  if (scrollLockDepth === 0) {
+    document.body.style.overflow = previousBodyOverflow;
+    document.documentElement.style.overflow = previousHtmlOverflow;
+  }
 }
 
 function hasInteractiveInputs() {
@@ -112,6 +136,7 @@ function preventScroll(event) {
   if (event.cancelable) {
     event.preventDefault();
   }
+  event.stopPropagation();
 }
 
 function isEventOnCanvas(event) {
@@ -181,6 +206,7 @@ function handlePointerDown(event) {
     }
   }
   if (!hasInteractiveInputs()) return;
+  lockDocumentScroll();
   updateInputsFromClientPosition(event.clientX, event.clientY);
 }
 
@@ -218,6 +244,7 @@ function handlePointerLeave() {
   });
 
   activeTouchId = null;
+  unlockDocumentScroll();
 }
 
 function handleTouchStart(event) {
@@ -229,6 +256,7 @@ function handleTouchStart(event) {
   const touch = event.changedTouches?.[0];
   if (!touch) return;
   activeTouchId = touch.identifier;
+  lockDocumentScroll();
   updateInputsFromClientPosition(touch.clientX, touch.clientY);
   event.stopPropagation();
 }
@@ -449,4 +477,5 @@ export function destroyCatAnimation() {
   activeTouchId = null;
   riveCanvas = null;
   loadPromise = null;
+  unlockDocumentScroll(true);
 }

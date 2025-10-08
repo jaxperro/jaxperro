@@ -6,6 +6,12 @@ function pageProgress() {
   return Math.min(1, Math.max(0, window.scrollY / max));
 }
 
+function isScrollLockTarget(event) {
+  const target = event.target;
+  if (!target) return false;
+  return !!target.closest("[data-scroll-lock=\"true\"]");
+}
+
 function clampScroll(position) {
   const max = document.documentElement.scrollHeight - window.innerHeight;
   if (max <= 0) return;
@@ -119,6 +125,10 @@ export function initScrollController({ popupManager, onTargetChange }) {
 
   function handleWheel(event) {
     if (lockedStop === null) return;
+    if (isScrollLockTarget(event)) {
+      event.preventDefault();
+      return;
+    }
     event.preventDefault();
     const now = performance.now();
     if (lockCooldown) {
@@ -138,6 +148,10 @@ export function initScrollController({ popupManager, onTargetChange }) {
 
   function handleTouchStart(event) {
     if (lockedStop === null) return;
+    if (isScrollLockTarget(event)) {
+      lastTouchY = null;
+      return;
+    }
     if (event.touches.length > 0) {
       lastTouchY = event.touches[0].clientY;
     }
@@ -145,6 +159,11 @@ export function initScrollController({ popupManager, onTargetChange }) {
 
   function handleTouchMove(event) {
     if (lockedStop === null) return;
+    if (isScrollLockTarget(event)) {
+      event.preventDefault();
+      lastTouchY = null;
+      return;
+    }
     if (event.touches.length === 0) return;
 
     const y = event.touches[0].clientY;
@@ -172,6 +191,8 @@ export function initScrollController({ popupManager, onTargetChange }) {
   }
 
   function handleTouchEnd() {
+    if (lockedStop === null) return;
+    if (lastTouchY === null) return;
     lastTouchY = null;
   }
 
