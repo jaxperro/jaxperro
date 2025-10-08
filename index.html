@@ -372,8 +372,6 @@ function tick(now=performance.now()){
   // ease towards scroll target for smoothness
   t += (tTarget - t) * Math.min(1, dt*6);
 
-  holder.rotation.y += 0.1 * dt;
-
   const angle = t * turns * Math.PI * 2;
   const y = THREE.MathUtils.lerp(yStart, yEnd, t);
   const bank = Math.sin(angle) * tilt;
