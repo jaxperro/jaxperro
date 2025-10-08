@@ -11,7 +11,7 @@ Interactive Three.js experiment where the camera orbits a rainbow corkscrew of p
 - `assets/` – placeholder for textures, images, and other static files.
 - `docs/structure.md` – quick reference describing how everything fits together.
 
-See [docs/structure.md](docs/structure.md) for a more detailed walkthrough and tips on extending the project.
+See [docs/structure.md](docs/structure.md) for a breakdown of the file layout and how the pieces work together.
 
 ### Working With The Rive Animation
 

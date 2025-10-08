@@ -50,6 +50,60 @@ All scripts are ES modules loaded via `scripts/main.js`.
 
 - `docs/structure.md` — this file. Expand it with deployment instructions, workflow tips, or convention lists as the project grows.
 
+---
+
+# Architecture Overview
+
+This mini-site pulls together a 3D scene, scroll-driven choreography, popups, and a Rive animation that reacts to user input. The following sections highlight how the modules collaborate so you can extend or debug the experience quickly.
+
+## High-Level Flow
+
+1. **`index.html`** loads the shared CSS and boots `scripts/main.js`.
+2. **`scripts/main.js`**
+   - Instantiates the Three.js scene (`initScene`).
+  - Creates a popup manager (`createPopupManager`) and a scroll controller (`initScrollController`).
+  - Runs the render loop that lerps the camera toward the target scroll progress.
+  - Listens for `popup:show` events; when popup one opens it triggers `ensureCatAnimation()` to lazy-load the Rive asset.
+3. **Scroll interactions**
+  - User scroll/touch/keys are intercepted by `scripts/ui/scroll.js`.
+  - Crossing a configured stop locks the page, shows the popup, and emits `popup:show`.
+  - When the user intentionally continues, the popup hides and normal scrolling resumes.
+4. **Rive interactivity**
+  - `scripts/ui/riveCat.js` loads the runtime/WASM, instantiates the `WCT 01` artboard, and plays the preferred state machines (`BLACK CATW`, `CAT STATE`, `CAT RUN`) or matching animations.
+  - Pointer/touch events are mapped to state machine inputs: number inputs containing `x`/`y` drive the eye follow effect; boolean/trigger inputs containing `run` or `hover` fire when the pointer rests on the orb.
+  - While the user interacts, the controller adds `.scroll-locked` to `<html>`/`<body>` so the page cannot scroll. It cleans everything up on pointer/touch end or when the popup closes.
+  - A spinner inside the popup shows until the first Rive frame renders.
+
+## Module Responsibilities
+
+| Module | Role | Key Exports |
+| ------ | ---- | ----------- |
+| `scripts/config.js` | Central constants (helix geometry, camera path, popup content, scroll config). | `HELIX_CONFIG`, `CAMERA_PATH`, `POPUP_CONTENT`, `SCROLL_CONFIG`, DOM id constants. |
+| `scripts/three/scene.js` | Sets up the Three.js renderer, spiralling puck instancing, and camera animation helpers. | `initScene(canvas)` returning `{ resize, render }`. |
+| `scripts/ui/popups.js` | DOM manipulation for the popup layer (copy injection, show/hide animations). | `createPopupManager()` returning `{ show, hide, setProgress }`. |
+| `scripts/ui/scroll.js` | Converts wheel/touch/key events into scroll progress, pauses at popup stops, and emits `popup:show`. | `initScrollController({ popupManager, onTargetChange })`. |
+| `scripts/ui/riveCat.js` | Encapsulates the Rive runtime and interactive behaviour using the `RiveCatController` class. | `ensureCatAnimation()`, `resizeCatAnimation()`, `destroyCatAnimation()`. |
+| `scripts/main.js` | Entry point that wires everything together and runs the animation loop. | – |
+
+## RiveCatController Internals
+
+`RiveCatController` keeps all Rive-related state scoped to the popup:
+
+- **Runtime Loading** – Injects `scripts/vendor/rive.js`, points the runtime at `scripts/vendor/rive.wasm`, and caches the promise.
+- **Canvas Setup** – Instantiates `new Rive({ … })`, plays whichever state machine/animation list is available, and toggles the spinner via a `data-loaded` attribute.
+- **Input Discovery** – Caches references to number/boolean/trigger inputs for the active state machines so pointer/touch events can update them directly.
+- **Event Wiring** – Pointer/touch listeners feed coordinates into the state machine. Document-level listeners call a shared prevent handler to block the page from scrolling while the cat is being manipulated.
+- **Scroll Locking** – Adds/removes the `.scroll-locked` class on `<html>` and `<body>` so multiple overlays can share the same behaviour if needed.
+- **Lifecycle** – `ensure()` loads on demand, `resize()` adjusts DPI whenever the popup resizes, `destroy()` cleans listeners, unlocks scroll, and hides the spinner.
+
+## Extending The Architecture
+
+- **Additional Popups** – Follow the same pattern: add copy in `POPUP_CONTENT`, build UI in `popups.js`, register any custom modules from `main.js`, and mark interactive popups with `data-scroll-lock="true"` if they must pause scrolling.
+- **More Rive Animations** – Create a controller module similar to `RiveCatController`; hook it into `popup:show` for the corresponding stop.
+- **Shared Scroll Locks** – Reuse the `.scroll-locked` class for any overlay that should suspend document scrolling.
+- **Bundle/Build Step** – When the project outgrows CDN imports, add a bundler (e.g. Vite/Rollup) to tree-shake Three.js, host vendor assets locally, and manage cache busting.
+
+
 ### Extending The Project
 
 - New UI feature? Add a stylesheet under `styles/components/`, a module under `scripts/ui/`, and expose a clean API for `main.js`.
