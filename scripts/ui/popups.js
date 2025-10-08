@@ -19,14 +19,19 @@ export function createPopupManager() {
     body.textContent = data.body;
     layer.dataset.visible = "true";
     card.dataset.visible = "true";
+    card.dataset.popupIndex = String(index);
     card.style.setProperty("--scale", "0.8");
     card.style.setProperty("--alpha", "0");
+    document.dispatchEvent(
+      new CustomEvent("popup:show", { detail: { index } })
+    );
     requestAnimationFrame(() => setProgress(0));
   }
 
   function hide() {
     if (!layer || !card) return;
     card.dataset.visible = "false";
+    delete card.dataset.popupIndex;
     layer.dataset.visible = "false";
     card.style.setProperty("--scale", "0.8");
     card.style.setProperty("--alpha", "0");
