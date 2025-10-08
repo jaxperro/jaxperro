@@ -19,7 +19,7 @@ All scripts are ES modules loaded via `scripts/main.js`.
 
 - `scripts/config.js`
   - Central place for constants and identifiers (helix geometry, camera path, popup copy, scroll behaviour, DOM ids).
-  - Edit values here to tweak behaviour without touching feature code.
+  - Edit values here (e.g. `spinTurns`, `popupRevealMs`, `wheelUnlockPauseMs`) to tweak behaviour without touching feature code.
 
 - `scripts/three/scene.js`
   - Creates the Three.js renderer, scene, camera, lights, and rainbow puck instancing.

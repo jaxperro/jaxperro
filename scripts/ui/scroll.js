@@ -47,6 +47,7 @@ export function initScrollController({ popupManager, onTargetChange }) {
   let lockCooldown = false;
   let lockTimer = null;
   let lastTouchY = null;
+  let lastWheelEventTime = 0;
 
   function beginLockCooldown() {
     lockCooldown = true;
@@ -55,6 +56,7 @@ export function initScrollController({ popupManager, onTargetChange }) {
       lockCooldown = false;
       lockTimer = null;
     }, SCROLL_CONFIG.popupRevealMs);
+    lastWheelEventTime = performance.now();
   }
 
   function clearLockTimer() {
@@ -71,6 +73,7 @@ export function initScrollController({ popupManager, onTargetChange }) {
     lockCooldown = false;
     clearLockTimer();
     lastTouchY = null;
+    lastWheelEventTime = 0;
     onTargetChange(rawProgress);
   }
 
@@ -105,6 +108,7 @@ export function initScrollController({ popupManager, onTargetChange }) {
       clampScroll(lockedStop);
       rawProgress = lockedStop;
       lastProgress = lockedStop;
+      lastWheelEventTime = performance.now();
       onTargetChange(lockedStop);
       return;
     }
@@ -116,7 +120,19 @@ export function initScrollController({ popupManager, onTargetChange }) {
   function handleWheel(event) {
     if (lockedStop === null) return;
     event.preventDefault();
-    if (lockCooldown) return;
+    const now = performance.now();
+    if (lockCooldown) {
+      lastWheelEventTime = now;
+      return;
+    }
+    if (
+      lastWheelEventTime &&
+      now - lastWheelEventTime < SCROLL_CONFIG.wheelUnlockPauseMs
+    ) {
+      lastWheelEventTime = now;
+      return;
+    }
+    lastWheelEventTime = now;
     releaseLock();
   }
 
