@@ -130,11 +130,6 @@ for (let i = 0; i < COUNT; i++) {
 }
 pucks.instanceMatrix.needsUpdate = true;
 
-// subtle idle spin
-const holder = new THREE.Group();
-holder.add(pucks);
-scene.add(holder);
-
 // Popup checkpoints configuration
 const popupLayer = document.getElementById('popup-layer');
 const popupCard = popupLayer.querySelector('.popup-card');
@@ -162,7 +157,7 @@ const SCROLL_KEYS = new Set([
   "ArrowUp","ArrowDown","ArrowLeft","ArrowRight",
   "PageUp","PageDown","Home","End"," ","Space","Spacebar"
 ]);
-const POPUP_REVEAL_MS = 260;
+const POPUP_REVEAL_MS = 500;
 function showPopup(index){
   const data = POPUPS[index];
   popupTitle.textContent = data.title;
