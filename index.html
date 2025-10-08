@@ -162,7 +162,7 @@ const SCROLL_KEYS = new Set([
   "ArrowUp","ArrowDown","ArrowLeft","ArrowRight",
   "PageUp","PageDown","Home","End"," ","Space","Spacebar"
 ]);
-const LOCK_COOLDOWN_MS = 10;
+const POPUP_REVEAL_MS = 260;
 function showPopup(index){
   const data = POPUPS[index];
   popupTitle.textContent = data.title;
@@ -172,7 +172,7 @@ function showPopup(index){
   popupCard.style.setProperty('--scale', '0.8');
   popupCard.style.setProperty('--alpha', '0');
   lockCooldown = true;
-  restartLockCooldownTimer();
+  startPopupRevealTimer();
   lastTouchY = null;
   requestAnimationFrame(()=> setPopupProgress(0));
 }
@@ -192,14 +192,14 @@ function setPopupProgress(value){
   popupCard.style.setProperty('--alpha', alpha.toFixed(3));
 }
 
-function restartLockCooldownTimer(){
+function startPopupRevealTimer(){
   if (lockCooldownTimer !== null){
     clearTimeout(lockCooldownTimer);
   }
   lockCooldownTimer = setTimeout(()=>{
     lockCooldown = false;
     lockCooldownTimer = null;
-  }, LOCK_COOLDOWN_MS);
+  }, POPUP_REVEAL_MS);
 }
 
 function clearLockCooldownTimer(){
@@ -255,10 +255,7 @@ function findBackwardStop(prev, next){
 function handleWheel(event){
   if (lockedStop === null) return;
   event.preventDefault();
-  if (lockCooldown){
-    restartLockCooldownTimer();
-    return;
-  }
+  if (lockCooldown) return;
   releasePopupLock();
 }
 
@@ -267,8 +264,6 @@ function handleTouchStart(event){
   if (event.touches.length > 0){
     lastTouchY = event.touches[0].clientY;
   }
-  lockCooldown = true;
-  restartLockCooldownTimer();
 }
 
 function handleTouchMove(event){
@@ -277,9 +272,6 @@ function handleTouchMove(event){
   const y = event.touches[0].clientY;
   if (lockCooldown){
     event.preventDefault();
-    lockCooldown = false;
-    clearLockCooldownTimer();
-    lastTouchY = y;
     return;
   }
   if (lastTouchY === null){
@@ -298,10 +290,6 @@ function handleTouchMove(event){
 
 function handleTouchEnd(){
   lastTouchY = null;
-  if (lockedStop !== null){
-    lockCooldown = true;
-    restartLockCooldownTimer();
-  }
 }
 
 function handleKeyDown(event){
@@ -309,8 +297,6 @@ function handleKeyDown(event){
   if (!SCROLL_KEYS.has(event.key)) return;
   if (lockCooldown){
     event.preventDefault();
-    lockCooldown = false;
-    clearLockCooldownTimer();
     return;
   }
   releasePopupLock();
