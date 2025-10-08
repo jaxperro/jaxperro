@@ -31,7 +31,11 @@ All scripts are ES modules loaded via `scripts/main.js`.
 
 - `scripts/ui/scroll.js`
   - Handles scroll/touch/keyboard input, computes scroll progress, triggers popup locks, and notifies the main loop by calling `onTargetChange`.
-  - Keeps the stop locking logic self-contained; main code assigns callbacks and uses the manager’s API.
+  - Keeps the stop locking logic self-contained; main code assigns callbacks and uses the manager’s API. When events originate inside a `[data-scroll-lock="true"]` element (the popup/Rive canvas), the handler exits early so page scroll is temporarily disabled.
+
+- `scripts/ui/riveCat.js`
+  - Lazy-loads the Rive runtime, initialises the `WCT 01` artboard, and plays the preferred state machine list (falling back to animations when required).
+  - Registers pointer/touch listeners that translate screen coordinates into state machine inputs (eyes follow, run trigger) while locking document scroll, then detaches and restores scroll when the interaction ends.
 
 - `scripts/main.js`
   - Entry point. Finds the canvas, initializes the scene and popup manager, wires the scroll controller, and runs the animation loop.

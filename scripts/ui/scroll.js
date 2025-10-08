@@ -6,6 +6,8 @@ function pageProgress() {
   return Math.min(1, Math.max(0, window.scrollY / max));
 }
 
+// Returns true when the event started inside an element that should keep
+// the popup locked in place (e.g. the interactive Rive canvas).
 function isScrollLockTarget(event) {
   const target = event.target;
   if (!target) return false;

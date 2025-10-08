@@ -1,15 +1,15 @@
-const ARTBOARD_NAME = "WCT 01";
-const PREFERRED_STATE_MACHINES = ["BLACK CATW", "CAT STATE", "CAT RUN"];
-const PREFERRED_ANIMATIONS = [
-  "CAT STATE",
-  "CAT RUN",
-  "EYES Y",
-  "EYES X",
-  "BLINK EYE",
-  "BLACK CATW",
-  "SOLO FX"
-];
+/**
+ * Hooks the exported Rive file into popup one, lazy loading the runtime,
+ * synchronising sizing, and proxying pointer/touch input into the state machine.
+ */
 
+const ARTBOARD_NAME = "WCT 01";
+// Prefer state machines first so interactivity remains intact, fall back to raw animations.
+const PREFERRED_STATE_MACHINES = ["BLACK CATW", "CAT STATE", "CAT RUN"];
+const PREFERRED_ANIMATIONS = ["CAT STATE", "CAT RUN", "EYES Y", "EYES X", "BLINK EYE"];
+const CENTER_HOVER_RADIUS = 0.18;
+
+// Rive runtime input type identifiers (documented in the Rive runtime source).
 const STATE_MACHINE_INPUT_TYPES = {
   NUMBER: 56,
   TRIGGER: 58,
@@ -50,6 +50,7 @@ function clamp(value, min, max) {
 function lockDocumentScroll() {
   if (typeof document === "undefined") return;
   if (scrollLockDepth === 0) {
+    // Remember host styles so we can restore them when the interaction ends.
     previousBodyOverflow = document.body.style.overflow;
     previousHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
@@ -87,6 +88,7 @@ function updateInputsFromClientPosition(clientX, clientY) {
   const centeredX = (normX - 0.5) * 2;
   const centeredY = (0.5 - normY) * 2;
 
+  // Feed XY offsets into any number inputs whose name hints at axis control.
   stateMachineInputRegistry.numberInputs.forEach((input, name) => {
     const lower = name.toLowerCase();
     if (lower.includes("x")) {
@@ -97,8 +99,9 @@ function updateInputsFromClientPosition(clientX, clientY) {
   });
 
   const distanceFromCenter = Math.hypot(normX - 0.5, normY - 0.5);
-  const isCenterHover = distanceFromCenter < 0.18;
+  const isCenterHover = distanceFromCenter < CENTER_HOVER_RADIUS;
 
+  // Run/hover boolean inputs act like a latch while the pointer stays in the orb.
   stateMachineInputRegistry.booleanInputs.forEach((input, name) => {
     const lower = name.toLowerCase();
     if (lower.includes("run") || lower.includes("hover")) {
@@ -106,6 +109,7 @@ function updateInputsFromClientPosition(clientX, clientY) {
     }
   });
 
+  // Trigger inputs fire once per pass; Rive handles the actual transition.
   stateMachineInputRegistry.triggerInputs.forEach((input, name) => {
     const lower = name.toLowerCase();
     if ((lower.includes("run") || lower.includes("hover")) && isCenterHover) {
@@ -126,6 +130,7 @@ function findActiveTouch(touchList) {
   return null;
 }
 
+// Prevent the parent page from scrolling while the user manipulates the cat.
 function preventScroll(event) {
   if (!hasInteractiveInputs()) return;
   if (!isEventOnCanvas(event)) return;
@@ -289,6 +294,7 @@ function registerStateMachineInputs(stateMachineNames) {
   resetInputRegistry();
   if (!riveInstance || !Array.isArray(stateMachineNames)) return;
 
+  // Cache references to each input so pointer/touch events can update them directly.
   stateMachineNames.forEach((name) => {
     const inputs = riveInstance.stateMachineInputs?.(name) ?? [];
     inputs.forEach((input) => {
@@ -300,15 +306,6 @@ function registerStateMachineInputs(stateMachineNames) {
       } else if (input.type === STATE_MACHINE_INPUT_TYPES.TRIGGER) {
         stateMachineInputRegistry.triggerInputs.set(input.name, input);
       }
-      // eslint-disable-next-line no-console
-      console.info(
-        `[Rive] Input (${name})`,
-        input.name,
-        "type",
-        input.type,
-        "default",
-        input.value
-      );
     });
   });
 
@@ -419,16 +416,6 @@ async function loadRive() {
             }
 
             registerStateMachineInputs(stateMachinesToPlay);
-
-            // eslint-disable-next-line no-console
-            console.info("[Rive] Available animations:", [...availableAnimations]);
-            // eslint-disable-next-line no-console
-            console.info(
-              "[Rive] Available state machines:",
-              [...availableStateMachines]
-            );
-            // eslint-disable-next-line no-console
-            console.info("[Rive] Playing:", toPlay.length > 0 ? toPlay : "default");
           } catch (error) {
             console.error("Failed to start Rive animations", error);
           }
