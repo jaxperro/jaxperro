@@ -42,12 +42,14 @@
 }
 
 .popup-card .popup-media {
-  display: none;
   width: 100%;
   aspect-ratio: 1;
   margin: 0 0 0.8rem;
   border-radius: 12px;
   overflow: hidden;
+  position: relative;
+  background: rgba(12, 16, 35, 0.65);
+  display: none;
 }
 
 .popup-card[data-popup-index="0"] .popup-media {
@@ -58,4 +60,43 @@
   width: 100%;
   height: 100%;
   display: block;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.popup-media .rive-spinner {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.popup-media .rive-spinner::before {
+  content: "";
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 3px solid rgba(207, 215, 255, 0.35);
+  border-top-color: rgba(207, 215, 255, 0.85);
+  animation: rive-spinner 1s linear infinite;
+}
+
+.popup-media[data-loaded="true"] .rive-spinner {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease;
+}
+
+.popup-media[data-loaded="true"] #rive-animation {
+  opacity: 1;
+}
+
+@keyframes rive-spinner {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

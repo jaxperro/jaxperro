@@ -28,6 +28,7 @@ let activeTouchId = null;
 let scrollLockDepth = 0;
 let previousBodyOverflow = "";
 let previousHtmlOverflow = "";
+let mediaContainer = null;
 
 let loadPromise = null;
 let riveInstance = null;
@@ -375,6 +376,10 @@ async function loadRive() {
 
   riveCanvas = getCanvas();
   if (!riveCanvas) return null;
+  mediaContainer = riveCanvas.parentElement;
+  if (mediaContainer) {
+    mediaContainer.removeAttribute("data-loaded");
+  }
 
   const pending = (async () => {
     const runtime = await loadRuntime();
@@ -413,9 +418,12 @@ async function loadRive() {
               riveInstance.play(toPlay);
             } else {
               riveInstance.play();
-            }
+          }
 
-            registerStateMachineInputs(stateMachinesToPlay);
+          registerStateMachineInputs(stateMachinesToPlay);
+          if (mediaContainer) {
+            mediaContainer.setAttribute("data-loaded", "true");
+          }
           } catch (error) {
             console.error("Failed to start Rive animations", error);
           }
@@ -462,7 +470,11 @@ export function destroyCatAnimation() {
   detachTouchListeners();
   resetInputRegistry();
   activeTouchId = null;
+  if (mediaContainer) {
+    mediaContainer.removeAttribute("data-loaded");
+  }
   riveCanvas = null;
+  mediaContainer = null;
   loadPromise = null;
   unlockDocumentScroll(true);
 }
