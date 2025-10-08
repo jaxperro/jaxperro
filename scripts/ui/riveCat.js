@@ -68,6 +68,25 @@ async function loadRive() {
     const runtime = await loadRuntime();
     const { Rive } = runtime;
 
+    if (typeof Rive?.load === "function") {
+      try {
+        const riveFile = await Rive.load({ src: "assets/black_cat.riv" });
+        const artboardNames = riveFile?.artboardNames ?? [];
+        const artboard = riveFile?.artboardByName?.(ARTBOARD_NAME);
+        const stateMachineNames = artboard?.stateMachineNames ?? [];
+        const animationNames = artboard?.animationNames ?? [];
+        // eslint-disable-next-line no-console
+        console.info("[Rive] Artboards:", artboardNames);
+        // eslint-disable-next-line no-console
+        console.info("[Rive] State machines on", ARTBOARD_NAME, stateMachineNames);
+        // eslint-disable-next-line no-console
+        console.info("[Rive] Animations on", ARTBOARD_NAME, animationNames);
+        riveFile?.delete?.();
+      } catch (error) {
+        console.error("Failed to inspect Rive file", error);
+      }
+    }
+
     return new Promise((resolve, reject) => {
       riveInstance = new Rive({
         src: "assets/black_cat.riv",
