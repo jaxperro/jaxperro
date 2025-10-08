@@ -22,7 +22,7 @@ export const POPUP_CONTENT = [
 
 export const SCROLL_CONFIG = {
   spinTurns: 1.5,
-  popupRevealMs: 100,
+  popupRevealMs: 500,
   scrollKeys: [
     "ArrowUp",
     "ArrowDown",
