@@ -13,6 +13,17 @@
             background:linear-gradient(180deg,rgba(0,0,0,.35),transparent 35%); }
   h3{ margin:.2rem 0 0; text-align:center; font-weight:700; }
   p{ margin:.1rem 0 0; opacity:.75; text-align:center; }
+  #popup-layer{ position:fixed; inset:0; display:flex; justify-content:center; align-items:center; pointer-events:none;
+                opacity:0; transition:opacity .3s ease; }
+  #popup-layer[data-visible="true"]{ opacity:1; }
+  .popup-card{ --scale:0.8; --alpha:0;
+               background:rgba(12,16,35,.9); border:1px solid rgba(207,215,255,.65); border-radius:16px;
+               padding:1.4rem 1.6rem; width:min(280px,82vw); color:#eef1ff;
+               box-shadow:0 18px 36px rgba(0,0,0,.45);
+               transform:scale(var(--scale)); opacity:var(--alpha);
+               transition:transform .24s ease, opacity .24s ease; pointer-events:auto; text-align:left; }
+  .popup-card h4{ margin:0 0 .4rem; font-size:1.05rem; }
+  .popup-card p{ margin:0; opacity:.88; }
 </style>
 </head>
 <body>
@@ -21,6 +32,12 @@
   <div>
     <h3>Scroll to spiral</h3>
     <p>One rainbow cylinder. Camera spirals around it as you scroll.</p>
+  </div>
+</div>
+<div id="popup-layer">
+  <div class="popup-card" data-visible="false">
+    <h4></h4>
+    <p></p>
   </div>
 </div>
 <main></main>
@@ -118,6 +135,52 @@ const holder = new THREE.Group();
 holder.add(pucks);
 scene.add(holder);
 
+// Popup checkpoints configuration
+const popupLayer = document.getElementById('popup-layer');
+const popupCard = popupLayer.querySelector('.popup-card');
+const popupTitle = popupCard.querySelector('h4');
+const popupBody = popupCard.querySelector('p');
+
+const POPUPS = [
+  { title: "Square One", body: "Checkpoint at the first third of the spiral." },
+  { title: "Square Two", body: "Halfway through the corkscrew journey." },
+  { title: "Square Three", body: "Final pause before the finish." }
+];
+const popupStops = POPUPS.map((_, idx) => (idx + 1) / (POPUPS.length + 1));
+const POPUP_OVERSHOOT = 0.08;
+
+let rawScrollProgress = 0;
+let lockedStop = null;
+let activePopup = -1;
+let completedPopup = -1;
+let tTarget = 0;
+let t = 0;
+
+function showPopup(index){
+  const data = POPUPS[index];
+  popupTitle.textContent = data.title;
+  popupBody.textContent = data.body;
+  popupLayer.dataset.visible = "true";
+  popupCard.dataset.visible = "true";
+  popupCard.style.setProperty('--scale', '0.8');
+  popupCard.style.setProperty('--alpha', '0');
+  requestAnimationFrame(()=> setPopupProgress(0));
+}
+
+function hidePopup(){
+  popupCard.dataset.visible = "false";
+  popupLayer.dataset.visible = "false";
+  popupCard.style.setProperty('--alpha', '0');
+}
+
+function setPopupProgress(value){
+  const clamped = Math.min(Math.max(value, 0), 1);
+  const scale = 1 - clamped * 0.55;
+  const alpha = 1 - clamped * 0.45;
+  popupCard.style.setProperty('--scale', scale.toFixed(3));
+  popupCard.style.setProperty('--alpha', alpha.toFixed(3));
+}
+
 // spiral params
 const radius = 8;
 const turns  = 6;
@@ -131,15 +194,57 @@ function pageProgress(){
   return max > 0 ? Math.min(1, Math.max(0, scrollY / max)) : 0;
 }
 
-let tTarget = pageProgress();
-let t = tTarget;
+function handleScroll(){
+  rawScrollProgress = pageProgress();
 
-addEventListener('scroll', ()=>{ tTarget = pageProgress(); }, {passive:true});
+  if (lockedStop !== null){
+    const overshoot = rawScrollProgress - lockedStop;
+    if (overshoot >= POPUP_OVERSHOOT){
+      setPopupProgress(1);
+      hidePopup();
+      completedPopup = activePopup;
+      lockedStop = null;
+      activePopup = -1;
+      tTarget = rawScrollProgress;
+      handleScroll();
+      return;
+    } else if (overshoot <= -POPUP_OVERSHOOT){
+      setPopupProgress(0);
+      hidePopup();
+      completedPopup = Math.max(-1, activePopup - 1);
+      lockedStop = null;
+      activePopup = -1;
+      tTarget = rawScrollProgress;
+    } else {
+      setPopupProgress(Math.max(0, overshoot / POPUP_OVERSHOOT));
+      tTarget = lockedStop;
+    }
+    return;
+  }
+
+  const nextIndex = completedPopup + 1;
+  if (nextIndex < POPUPS.length && rawScrollProgress >= popupStops[nextIndex]){
+    activePopup = nextIndex;
+    lockedStop = popupStops[nextIndex];
+    showPopup(nextIndex);
+    setPopupProgress(0);
+    tTarget = lockedStop;
+    return;
+  }
+
+  tTarget = rawScrollProgress;
+}
+
+addEventListener('scroll', handleScroll, {passive:true});
 addEventListener('resize', ()=>{
   renderer.setSize(innerWidth, innerHeight);
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
+  handleScroll();
 });
+
+handleScroll();
+t = tTarget;
 
 // render loop
 let last = performance.now();
