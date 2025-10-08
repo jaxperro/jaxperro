@@ -1,6 +1,39 @@
 let loadPromise = null;
 let riveInstance = null;
 let riveCanvas = null;
+let runtimePromise = null;
+
+function loadRuntime() {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Rive runtime requires a browser environment."));
+  }
+
+  if (window.rive) {
+    return Promise.resolve(window.rive);
+  }
+
+  if (runtimePromise) return runtimePromise;
+
+  runtimePromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "scripts/vendor/rive.js";
+    script.async = true;
+    script.onload = () => {
+      if (window.rive) {
+        resolve(window.rive);
+      } else {
+        reject(new Error("Rive runtime loaded without exposing window.rive."));
+      }
+    };
+    script.onerror = (event) => {
+      runtimePromise = null;
+      reject(new Error(`Failed to load Rive runtime: ${event?.message || "unknown error"}`));
+    };
+    document.head.appendChild(script);
+  });
+
+  return runtimePromise;
+}
 
 function getCanvas() {
   return document.getElementById("rive-animation");
@@ -22,10 +55,9 @@ async function loadRive() {
   riveCanvas = getCanvas();
   if (!riveCanvas) return null;
 
-  loadPromise = (async () => {
-    const { Rive } = await import(
-      "https://unpkg.com/@rive-app/canvas@2.17.4?module"
-    );
+  const pending = (async () => {
+    const runtime = await loadRuntime();
+    const { Rive } = runtime;
 
     return new Promise((resolve, reject) => {
       riveInstance = new Rive({
@@ -47,6 +79,11 @@ async function loadRive() {
       });
     });
   })();
+
+  loadPromise = pending.catch((error) => {
+    loadPromise = null;
+    return Promise.reject(error);
+  });
 
   return loadPromise;
 }
