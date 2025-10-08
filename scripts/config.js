@@ -15,7 +15,7 @@ export const CAMERA_PATH = {
 };
 
 export const POPUP_CONTENT = [
-  { title: "Square One", body: "Checkpoint at the first third of the spiral." },
+  { title: "Cat Animation", body: "Touch anywhere in the purple box and its eyes follow you, but whatever you do don't try to take its orb..." },
   { title: "Square Two", body: "Halfway through the corkscrew journey." },
   { title: "Square Three", body: "Final pause before the finish." }
 ];
