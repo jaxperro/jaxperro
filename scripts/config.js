@@ -3,7 +3,7 @@ export const HELIX_CONFIG = {
   puckHeight: 0.75,
   gap: 0.95,
   count: 50,
-  helixRadius: 2,
+  helixRadius: 5,
   helixTurns: 2
 };
 
