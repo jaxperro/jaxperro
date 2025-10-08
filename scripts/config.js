@@ -3,11 +3,11 @@ export const HELIX_CONFIG = {
   puckHeight: 0.75,
   gap: 0.95,
   count: 50,
-  helixRadius: 1,
+  helixRadius: 2,
   helixTurns: 2
 };
 
-export const CAMERA_PATH = {
+export const CAMERA_PATH = { 
   radius: 8,
   yStart: -2,
   yEnd: 2,
@@ -21,8 +21,8 @@ export const POPUP_CONTENT = [
 ];
 
 export const SCROLL_CONFIG = {
-  spinTurns: 6,
-  popupRevealMs: 500,
+  spinTurns: 1.5,
+  popupRevealMs: 100,
   scrollKeys: [
     "ArrowUp",
     "ArrowDown",
