@@ -6,7 +6,7 @@ import { createControls } from './controls.js';
 import { createIslands } from './islands.js';
 import { createPopupManager } from '/scripts/ui/popups.js';
 import { ensureCatAnimation, destroyCatAnimation } from '/scripts/ui/riveCat.js';
-import { CAMERA_FOLLOW, DOM_IDS } from './config.js';
+import { CAMERA_FOLLOW, CAMERA_INTRO, DOM_IDS } from './config.js';
 
 const canvas = document.getElementById(DOM_IDS.canvas);
 const hint = document.getElementById(DOM_IDS.hint);
@@ -72,8 +72,8 @@ window.addEventListener(
 );
 
 const hideHint = () => hint.classList.add('is-hidden');
-const hintTimer = setTimeout(hideHint, 8000);
-const controls = createControls(document.getElementById(DOM_IDS.joystickZone), {
+let hintTimer = null;
+const controls = createControls(joystickZone, {
   onFirstInput: () => {
     clearTimeout(hintTimer);
     hideHint();
@@ -102,9 +102,12 @@ function updateCamera(dt) {
   camera.position.lerp(desiredPosition, posDamp);
   cameraTarget.lerp(desiredTarget, targetDamp);
   camera.lookAt(cameraTarget);
+  applyPortraitShift();
+}
 
-  // Pitch up on narrow screens so the boat rides in the lower third of the
-  // frame; a screen-space shift of `s` NDC maps to atan(s * tan(fov/2)).
+// Pitch up on narrow screens so the boat rides in the lower third of the
+// frame; a screen-space shift of `s` NDC maps to atan(s * tan(fov/2)).
+function applyPortraitShift() {
   const portrait = THREE.MathUtils.clamp((1.1 - camera.aspect) / 0.4, 0, 1);
   const shift = portrait * CAMERA_FOLLOW.portraitScreenShift;
   if (shift > 0) {
@@ -112,12 +115,104 @@ function updateCamera(dt) {
   }
 }
 
-// Start with the camera already settled behind the boat.
+// --- Modes ---------------------------------------------------------------
+// 'intro': landing shot facing the bow, boat locked, mode buttons showing.
+// 'transition': Explore was clicked; camera arcs over the boat into the
+// chase position. 'play': normal driving with the joystick live.
+let mode = 'intro';
+let transitionT = 0;
+const introPosition = new THREE.Vector3();
+const introTarget = new THREE.Vector3();
+const arcPosition = new THREE.Vector3();
+const arcTarget = new THREE.Vector3();
+
+function updateIntroCamera() {
+  // Fixed in front of the bow, low over the water; the boat bobs in frame.
+  const forward = boat.getForward();
+  introPosition
+    .set(boat.position.x, 0, boat.position.z)
+    .addScaledVector(forward, CAMERA_INTRO.distance)
+    .add({ x: 0, y: CAMERA_INTRO.height, z: 0 });
+  introTarget.copy(boat.position).add({ x: 0, y: CAMERA_INTRO.lookHeight, z: 0 });
+  camera.position.copy(introPosition);
+  camera.lookAt(introTarget);
+  applyPortraitShift();
+}
+
+function updateTransitionCamera(dt) {
+  transitionT = Math.min(transitionT + dt / CAMERA_INTRO.transitionDuration, 1);
+  const e = THREE.MathUtils.smoothstep(transitionT, 0, 1);
+  const forward = boat.getForward();
+
+  // Sweep around the boat's side from bow (angle 0) to stern (angle PI)
+  // rather than straight over the top — passing directly overhead whips the
+  // lookAt azimuth 180° in a few frames and reads as a jump. Radius and
+  // height blend from the intro pose to the chase pose, so both endpoints
+  // are exactly continuous.
+  const heading = Math.atan2(forward.x, forward.z);
+  const angle = heading + e * Math.PI;
+  const radius = THREE.MathUtils.lerp(CAMERA_INTRO.distance, CAMERA_FOLLOW.distance, e);
+  const height =
+    THREE.MathUtils.lerp(CAMERA_INTRO.height, boat.position.y + CAMERA_FOLLOW.height, e) +
+    Math.sin(e * Math.PI) * CAMERA_INTRO.arcHeight;
+  arcPosition.set(
+    boat.position.x + Math.sin(angle) * radius,
+    height,
+    boat.position.z + Math.cos(angle) * radius
+  );
+
+  // End look-target matches the chase camera exactly for a seamless handoff.
+  desiredTarget
+    .copy(boat.position)
+    .addScaledVector(forward, CAMERA_FOLLOW.lookAhead)
+    .add({ x: 0, y: CAMERA_FOLLOW.lookHeight, z: 0 });
+  arcTarget.lerpVectors(introTarget, desiredTarget, e);
+
+  camera.position.copy(arcPosition);
+  camera.lookAt(arcTarget);
+  applyPortraitShift();
+
+  if (transitionT >= 1) {
+    cameraTarget.copy(desiredTarget);
+    enterPlayMode();
+  }
+}
+
+const modeSelect = document.getElementById('mode-select');
+
+function enterPlayMode() {
+  mode = 'play';
+  joystickZone.style.display = '';
+  hint.classList.remove('is-hidden');
+  hintTimer = setTimeout(hideHint, 8000);
+}
+
+document.getElementById('btn-explore').addEventListener('click', () => {
+  if (mode !== 'intro') return;
+  mode = 'transition';
+  transitionT = 0;
+  modeSelect.classList.add('is-hidden');
+});
+
+document.getElementById('btn-regular').addEventListener('click', () => {
+  window.location.href = '/';
+});
+
+// Boat locked until a mode is chosen: joystick hidden, input zeroed.
+joystickZone.style.display = 'none';
 boat.update(0.016, { throttle: 0, steer: 0 }, 0);
-updateCamera(1000);
+updateIntroCamera();
 
 // Debug handle for console poking; not used by the app itself.
-window.__world = { boat, controls, camera, renderer, islands, snapCamera: () => updateCamera(1000) };
+window.__world = {
+  boat,
+  controls,
+  camera,
+  renderer,
+  islands,
+  snapCamera: () => updateCamera(1000),
+  getMode: () => mode,
+};
 
 const clock = new THREE.Clock();
 let elapsed = 0;
@@ -126,11 +221,19 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.05);
   elapsed += dt;
 
-  const input = popupOpen ? { throttle: 0, steer: 0 } : controls.read();
+  const driving = mode === 'play' && !popupOpen;
+  const input = driving ? controls.read() : { throttle: 0, steer: 0 };
   boat.update(dt, input, elapsed, islands.colliders);
   ocean.update(elapsed, boat.position);
   islands.update(dt, boat.position, elapsed);
-  updateCamera(dt);
+
+  if (mode === 'intro') {
+    updateIntroCamera();
+  } else if (mode === 'transition') {
+    updateTransitionCamera(dt);
+  } else {
+    updateCamera(dt);
+  }
 
   renderer.render(scene, camera);
 });
