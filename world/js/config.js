@@ -54,6 +54,17 @@ export const CAMERA_FOLLOW = {
   portraitScreenShift: 0.3,
 };
 
+// Landing shot before a mode is chosen: camera ahead of the bow, low to the
+// water, looking back at the boat. "Explore" sweeps from here around the
+// boat's side into the chase position; arcHeight is an extra mid-sweep rise.
+export const CAMERA_INTRO = {
+  distance: 12,
+  height: 2.6,
+  lookHeight: 1.1,
+  transitionDuration: 2.6,
+  arcHeight: 2.5,
+};
+
 // Portfolio islands. Adding a project = adding an entry here (and a new
 // action type in main.js if it does something novel). Positions are world
 // coordinates; the boat spawns at the origin facing +z. Footprint squares

@@ -65,6 +65,44 @@ body {
   z-index: 20;
 }
 
+#mode-select {
+  position: fixed;
+  top: max(20px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  z-index: 30;
+  transition: opacity 0.5s ease;
+}
+
+#mode-select.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#mode-select button {
+  font: inherit;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: rgba(10, 40, 60, 0.45);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  border-radius: 999px;
+  padding: 10px 26px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+#mode-select button:hover {
+  background: rgba(30, 70, 95, 0.65);
+}
+
+#btn-explore {
+  background: rgba(20, 90, 120, 0.75);
+}
+
 /* The shared popup.css has no z-index; keep the popup above the joystick
    layer so dragging the cat can't spawn joysticks behind the card. */
 #popup-layer {
