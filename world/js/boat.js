@@ -77,7 +77,28 @@ export function createBoat() {
   const forward = new THREE.Vector3();
   const right = new THREE.Vector3();
 
-  function update(dt, input, time) {
+  // Push the boat out of axis-aligned square colliders ({x, z, half}) along
+  // the axis of least penetration, bleeding speed while in contact so the
+  // hull grinds to a stop instead of bouncing.
+  const BOAT_RADIUS = 1.8;
+  function resolveCollisions(colliders) {
+    for (const c of colliders) {
+      const reach = c.half + BOAT_RADIUS;
+      const dx = position.x - c.x;
+      const dz = position.z - c.z;
+      if (Math.abs(dx) >= reach || Math.abs(dz) >= reach) continue;
+      const overlapX = reach - Math.abs(dx);
+      const overlapZ = reach - Math.abs(dz);
+      if (overlapX < overlapZ) {
+        position.x += Math.sign(dx || 1) * overlapX;
+      } else {
+        position.z += Math.sign(dz || 1) * overlapZ;
+      }
+      speed *= 0.9;
+    }
+  }
+
+  function update(dt, input, time, colliders = []) {
     const accel = input.throttle >= 0 ? BOAT.acceleration : BOAT.acceleration * 0.6;
     speed += input.throttle * accel * dt;
     speed -= speed * BOAT.drag * dt;
@@ -93,6 +114,7 @@ export function createBoat() {
     right.set(-Math.cos(heading), 0, Math.sin(heading));
     position.x += forward.x * speed * dt;
     position.z += forward.z * speed * dt;
+    resolveCollisions(colliders);
 
     // Buoyancy: sample the wave field at center, fore/aft, and port/starboard.
     const hCenter = getWaterHeight(position.x, position.z, time);

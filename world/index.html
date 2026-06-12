@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#7eb6d9" />
   <title>Jax's World</title>
+  <link rel="stylesheet" href="/styles/components/popup.css" />
   <link rel="stylesheet" href="styles.css" />
   <script type="importmap">
     {
@@ -23,6 +24,20 @@
   </div>
 
   <div id="joystick-zone" aria-hidden="true"></div>
+
+  <!-- Same structure as the home page popup so the shared popup/Rive modules
+       work unchanged; the close button is world-only (no scroll to dismiss). -->
+  <div id="popup-layer">
+    <div class="popup-card" data-visible="false" data-scroll-lock="true">
+      <button id="popup-close" type="button" aria-label="Close">&times;</button>
+      <div class="popup-media">
+        <div class="rive-spinner" aria-hidden="true"></div>
+        <canvas id="rive-animation"></canvas>
+      </div>
+      <h4></h4>
+      <p></p>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.2/dist/nipplejs.min.js"></script>
   <script type="module" src="js/main.js"></script>
