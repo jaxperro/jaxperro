@@ -111,3 +111,20 @@ This mini-site pulls together a 3D scene, scroll-driven choreography, popups, an
 - Additional pages? Duplicate `index.html`, include the shared styles/scripts, and customize the markup. Shared JS modules can be reused across pages.
 
 Keep separating concerns by responsibility; it will remain easy to reason about and maintain even as you add more interactive elements.
+
+---
+
+# World (`/world`)
+
+A self-contained 3D ocean scene served at `jaxperro.com/world`. Same conventions as the main site: ES modules from CDN (Three.js via import map, nipplejs as a UMD global), no build step, constants centralized in a config module.
+
+- `world/index.html` — scaffold: import map, canvas, hint HUD, joystick zone.
+- `world/styles.css` — full-viewport canvas, hint pill, full-screen joystick capture layer (the stick spawns where the user touches/clicks — nipplejs dynamic mode — and disappears on release).
+- `world/js/config.js` — all tunables: sun position, fog, wave definitions, boat physics, camera follow.
+- `world/js/scene.js` — renderer, camera, `Sky` dome, fog, lights. Exports `initScene(canvas)` returning `{ renderer, scene, camera, sunDirection }`.
+- `world/js/ocean.js` — shader ocean. The wave list in `config.js` is compiled into the GLSL vertex shader **and** mirrored by `getWaterHeight(x, z, t)` in JS, so the boat bobs on exactly the surface the shader draws. The mesh recenters on the boat each frame; waves are computed in world space, so the ocean is effectively infinite.
+- `world/js/boat.js` — low-poly boat built from primitives plus arcade physics (throttle/drag/speed-scaled steering) and wave-sampled buoyancy (height, pitch, roll).
+- `world/js/controls.js` — merges WASD/arrow keys and the nipplejs joystick into one `{ throttle, steer }` input.
+- `world/js/main.js` — entry point: wires scene, ocean, boat, controls, damped third-person follow camera, and the render loop. Exposes `window.__world` for console debugging.
+
+To add islands, pickups, or popups, create new modules under `world/js/` and wire them in `main.js`, mirroring the main site's pattern.
