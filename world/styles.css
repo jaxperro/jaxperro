@@ -1,0 +1,66 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  background: #7eb6d9;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#scene {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  /* Track the dynamic viewport on mobile (iOS/Android collapsing toolbars). */
+  height: 100dvh;
+  display: block;
+}
+
+#hud {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+#hint {
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(10, 40, 60, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition: opacity 1.2s ease;
+}
+
+#hint.is-hidden {
+  opacity: 0;
+}
+
+#hint kbd {
+  font-family: inherit;
+  font-weight: 700;
+}
+
+/* Full-screen capture layer: the joystick spawns wherever the user
+   touches or clicks (nipplejs dynamic mode) and disappears on release. */
+#joystick-zone {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
