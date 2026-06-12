@@ -49,9 +49,11 @@ function loadRuntime() {
     return Promise.reject(new Error("Rive runtime requires a browser environment."));
   }
 
+  // Root-absolute URLs so the module works from any page depth (the world
+  // page lives at /world/ and would otherwise resolve these to /world/...).
   if (window.rive) {
     if (window.rive.RuntimeLoader) {
-      window.rive.RuntimeLoader.setWasmUrl("scripts/vendor/rive.wasm");
+      window.rive.RuntimeLoader.setWasmUrl("/scripts/vendor/rive.wasm");
     }
     return Promise.resolve(window.rive);
   }
@@ -60,12 +62,12 @@ function loadRuntime() {
 
   runtimePromise = new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = "scripts/vendor/rive.js";
+    script.src = "/scripts/vendor/rive.js";
     script.async = true;
     script.onload = () => {
       if (window.rive) {
         if (window.rive.RuntimeLoader) {
-          window.rive.RuntimeLoader.setWasmUrl("scripts/vendor/rive.wasm");
+          window.rive.RuntimeLoader.setWasmUrl("/scripts/vendor/rive.wasm");
         }
         resolve(window.rive);
       } else {
@@ -414,7 +416,7 @@ class RiveCatController {
 
       return new Promise((resolve, reject) => {
         const riveConfig = {
-          src: "assets/black_cat.riv",
+          src: "/assets/black_cat.riv",
           canvas: this.canvas,
           artboard: ARTBOARD_NAME,
           autoplay: false,

@@ -48,10 +48,34 @@ export const CAMERA_FOLLOW = {
   lookHeight: 1.4,
   positionDamping: 3.5,
   targetDamping: 4.5,
+  // On portrait screens the camera pitches up so the boat sits in the lower
+  // third of the frame instead of dead center. Fraction of NDC half-height;
+  // fades out as the aspect ratio approaches landscape.
+  portraitScreenShift: 0.3,
 };
+
+// Portfolio islands. Adding a project = adding an entry here (and a new
+// action type in main.js if it does something novel). Positions are world
+// coordinates; the boat spawns at the origin facing +z. Footprint squares
+// are axis-aligned.
+export const ISLANDS = [
+  {
+    id: 'cat',
+    position: [0, 110],
+    footprint: 'square',
+    size: 18,
+    height: 10,
+    color: 0xd9c08a,
+    // Boat distance at which the island starts pulsing and accepts taps.
+    interactionRadius: 38,
+    action: { type: 'catPopup' },
+  },
+];
 
 export const DOM_IDS = {
   canvas: 'scene',
   joystickZone: 'joystick-zone',
   hint: 'hint',
+  popupLayer: 'popup-layer',
+  popupClose: 'popup-close',
 };
