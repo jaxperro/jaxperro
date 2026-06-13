@@ -2,6 +2,10 @@
 
 Interactive Three.js experiment where the camera orbits a rainbow corkscrew of pucks as you scroll. Popups pause the journey at evenly spaced checkpoints and resume after the user intentionally continues. Popup one now embeds a Rive animation that reacts to pointer/touch input.
 
+### /world — driveable 3D portfolio ocean
+
+`world/` is a second page served at [jaxperro.com/world](https://jaxperro.com/world): an infinite shader ocean with a boat you drive (WASD or touch joystick) and tappable islands that represent portfolio projects. It reuses this site's popup + Rive cat modules. **Developer guide — every config variable and the page logic — lives in [world/README.md](world/README.md).**
+
 ### Project Structure
 
 - `index.html` – minimal entry point that links shared styles and `scripts/main.js`.
