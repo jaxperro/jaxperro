@@ -78,6 +78,10 @@ export const CAMERA_INTRO = {
 // Optional `model` field swaps the procedural box for a 3D model (visual only
 // — the square collider and interaction still come from `size`): same shape
 // as the boat's, { url, scale, yOffset, rotationY }. See the models README.
+//
+// `active: false` removes an island entirely — not rendered, no collider, no
+// interaction. Flip it to true when its project is ready (omitting the field
+// counts as active).
 // Twelve islands ring the spawn in a full circle, one every 30° at radius
 // ~120 (x = r·sin θ, z = r·cos θ, θ from +z). The front three — green, tan,
 // purple — form the arc you see on load, with the tan cat island pushed
@@ -85,6 +89,7 @@ export const CAMERA_INTRO = {
 export const ISLANDS = [
   {
     id: 'cat', // 0°, dead ahead and furthest out
+    active: true,
     position: [0, 140],
     footprint: 'square',
     size: 18,
@@ -97,6 +102,7 @@ export const ISLANDS = [
   },
   {
     id: 'project-2', // -30°
+    active: true,
     position: [-60, 104],
     footprint: 'square',
     size: 16,
@@ -108,6 +114,7 @@ export const ISLANDS = [
   },
   {
     id: 'project-3', // +30°
+    active: true,
     position: [60, 104],
     footprint: 'square',
     size: 20,
@@ -119,6 +126,7 @@ export const ISLANDS = [
   },
   {
     id: 'project-4', // -60°
+    active: false,
     position: [-104, 60],
     footprint: 'square',
     size: 16,
@@ -130,6 +138,7 @@ export const ISLANDS = [
   },
   {
     id: 'project-5', // +60°
+    active: false,
     position: [104, 60],
     footprint: 'square',
     size: 18,
@@ -141,6 +150,7 @@ export const ISLANDS = [
   },
   {
     id: 'project-6', // -90°
+    active: false,
     position: [-120, 0],
     footprint: 'square',
     size: 16,
@@ -152,6 +162,7 @@ export const ISLANDS = [
   },
   {
     id: 'project-7', // +90°
+    active: false,
     position: [120, 0],
     footprint: 'square',
     size: 20,
@@ -163,6 +174,7 @@ export const ISLANDS = [
   },
   {
     id: 'project-8', // -120°
+    active: false,
     position: [-104, -60],
     footprint: 'square',
     size: 18,
@@ -174,6 +186,7 @@ export const ISLANDS = [
   },
   {
     id: 'project-9', // +120°
+    active: false,
     position: [104, -60],
     footprint: 'square',
     size: 16,
@@ -185,6 +198,7 @@ export const ISLANDS = [
   },
   {
     id: 'project-10', // -150°
+    active: false,
     position: [-60, -104],
     footprint: 'square',
     size: 20,
@@ -196,6 +210,7 @@ export const ISLANDS = [
   },
   {
     id: 'project-11', // +150°
+    active: false,
     position: [60, -104],
     footprint: 'square',
     size: 16,
@@ -207,6 +222,7 @@ export const ISLANDS = [
   },
   {
     id: 'project-12', // 180°, directly behind spawn
+    active: false,
     position: [0, -120],
     footprint: 'square',
     size: 18,

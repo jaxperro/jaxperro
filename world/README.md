@@ -153,6 +153,7 @@ One entry per portfolio project:
 ```js
 {
   id: 'cat',                      // unique name
+  active: true,                   // false = removed entirely (no render/collider/interaction)
   position: [0, 140],             // world [x, z]; boat spawns at origin facing +z
   footprint: 'square',            // axis-aligned square (only footprint so far)
   size: 18,                       // box width/depth — also the collider size
@@ -169,7 +170,8 @@ The twelve islands ring the spawn in a full circle — one every 30° at radius
 front three (green −30°, tan 0°, purple +30°) form the arc you see on load,
 with the tan cat island pushed to radius 140 as the far point. Slots
 `project-2` … `project-12` are `emptyPopup` placeholders waiting for real
-projects.
+projects; only the front three are `active` — the other nine are staged in
+config with `active: false` and don't exist in the scene until flipped on.
 
 **Adding an island** = add an entry here. Default it to
 `action: { type: 'emptyPopup' }` until the project has real content; if it

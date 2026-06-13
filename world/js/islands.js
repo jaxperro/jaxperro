@@ -31,7 +31,9 @@ export function createIslands({ onActivate }) {
     });
   }
 
-  const islands = ISLANDS.map((config) => {
+  // Inactive islands (active: false) are skipped entirely: no mesh, no
+  // collider, no interaction. Omitting the field counts as active.
+  const islands = ISLANDS.filter((config) => config.active !== false).map((config) => {
     const half = config.size / 2;
 
     const wrapper = new THREE.Group();
