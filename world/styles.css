@@ -146,6 +146,13 @@ body {
   background: rgba(60, 70, 110, 0.8);
 }
 
+/* The shared popup.css gives the card `pointer-events: auto` unconditionally.
+   Now that the card fills the viewport, a hidden card would swallow every tap
+   meant for the joystick — so disable it while the popup isn't visible. */
+#popup-layer:not([data-visible="true"]) .popup-card {
+  pointer-events: none;
+}
+
 /* World popups fill the whole screen (the shared card is a small centered box
    on the home page). Content is centered; the ocean shows faintly behind. */
 .popup-card {
