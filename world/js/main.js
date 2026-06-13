@@ -25,6 +25,8 @@ scene.add(boat.group);
 // zeroed and the joystick layer is hidden.
 const popupManager = createPopupManager();
 const joystickZone = document.getElementById(DOM_IDS.joystickZone);
+const popupLayer = document.getElementById(DOM_IDS.popupLayer);
+const popupCard = popupLayer.querySelector('.popup-card');
 let popupOpen = false;
 
 function openCatPopup() {
@@ -34,9 +36,29 @@ function openCatPopup() {
   ensureCatAnimation();
 }
 
+// Placeholder popup for islands without bespoke content yet. Reuses the shared
+// popup card and its CSS scale/alpha animation — no title, body, or Rive media.
+function showEmptyPopup() {
+  popupOpen = true;
+  joystickZone.style.display = 'none';
+  popupCard.querySelector('h4').textContent = '';
+  popupCard.querySelector('p').textContent = '';
+  delete popupCard.dataset.popupIndex; // keep the Rive media hidden
+  popupCard.classList.add('is-empty');
+  popupLayer.dataset.visible = 'true';
+  popupCard.dataset.visible = 'true';
+  popupCard.style.setProperty('--scale', '0.8');
+  popupCard.style.setProperty('--alpha', '0');
+  requestAnimationFrame(() => {
+    popupCard.style.setProperty('--scale', '1');
+    popupCard.style.setProperty('--alpha', '1');
+  });
+}
+
 function closePopup() {
   popupOpen = false;
   joystickZone.style.display = '';
+  popupCard.classList.remove('is-empty');
   popupManager.hide();
   destroyCatAnimation();
 }
@@ -45,6 +67,7 @@ document.getElementById(DOM_IDS.popupClose).addEventListener('click', closePopup
 
 const islandActions = {
   catPopup: openCatPopup,
+  emptyPopup: showEmptyPopup,
 };
 
 const islands = createIslands({
@@ -209,6 +232,7 @@ window.__world = {
   controls,
   camera,
   renderer,
+  scene,
   islands,
   snapCamera: () => updateCamera(1000),
   getMode: () => mode,

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BOAT } from './config.js';
 import { getWaterHeight } from './ocean.js';
+import { loadModel, clearGroup } from './models.js';
 
 function buildBoatMesh() {
   const group = new THREE.Group();
@@ -66,6 +67,17 @@ function buildBoatMesh() {
 export function createBoat() {
   const group = buildBoatMesh();
   group.rotation.order = 'YXZ';
+
+  // Optional model swap: the group stays the physics target, so replacing its
+  // visual children with a loaded model leaves driving/buoyancy untouched.
+  if (BOAT.model) {
+    loadModel(BOAT.model.url, BOAT.model)
+      .then((root) => {
+        clearGroup(group);
+        group.add(root);
+      })
+      .catch((err) => console.warn('Boat model failed to load:', err));
+  }
 
   const position = group.position;
   let heading = 0;

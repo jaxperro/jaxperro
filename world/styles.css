@@ -67,11 +67,11 @@ body {
 
 #mode-select {
   position: fixed;
-  top: max(20px, env(safe-area-inset-top));
+  top: max(28px, env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 12px;
+  gap: 18px;
   z-index: 30;
   transition: opacity 0.5s ease;
 }
@@ -83,13 +83,14 @@ body {
 
 #mode-select button {
   font: inherit;
-  font-size: 15px;
+  font-size: 24px;
+  font-weight: 600;
   letter-spacing: 0.02em;
   color: #fff;
   background: rgba(10, 40, 60, 0.45);
-  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  border: 2px solid rgba(255, 255, 255, 0.75);
   border-radius: 999px;
-  padding: 10px 26px;
+  padding: 18px 52px;
   cursor: pointer;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -97,6 +98,18 @@ body {
 
 #mode-select button:hover {
   background: rgba(30, 70, 95, 0.65);
+}
+
+/* Step down just enough on narrow phones that both buttons fit side by side. */
+@media (max-width: 480px) {
+  #mode-select {
+    gap: 12px;
+  }
+
+  #mode-select button {
+    font-size: 19px;
+    padding: 15px 34px;
+  }
 }
 
 #btn-explore {
@@ -111,17 +124,17 @@ body {
 
 #popup-close {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 38px;
-  height: 38px;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   background: rgba(10, 14, 30, 0.65);
   border: 1.5px solid rgba(255, 255, 255, 0.85);
   border-radius: 50%;
   color: #fff;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -133,6 +146,31 @@ body {
   background: rgba(60, 70, 110, 0.8);
 }
 
+/* World popups fill the whole screen (the shared card is a small centered box
+   on the home page). Content is centered; the ocean shows faintly behind. */
 .popup-card {
   position: relative;
+  box-sizing: border-box;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-width: none;
+  border: none;
+  border-radius: 0;
+  background: rgba(12, 16, 35, 0.94);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 0.6rem;
+  padding: max(28px, env(safe-area-inset-top)) 24px max(28px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+}
+
+/* Cap the Rive media so it doesn't stretch to the full viewport width. */
+.popup-card .popup-media {
+  width: min(70vmin, 480px);
+  max-width: 90vw;
+  margin: 0 0 0.4rem;
 }
