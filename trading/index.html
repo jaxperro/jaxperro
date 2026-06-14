@@ -75,6 +75,7 @@
   </div>
 
   <h2 id="curHead">Current bets — what you're in & when they settle</h2>
+  <div class="sub" style="margin:-6px 0 10px">P&amp;L here is <b>unrealized</b> — the live market price vs. what you paid. It only becomes <b>Realized</b> when the bet settles on its date.</div>
   <div class="scroll"><table id="current"><thead><tr>
     <th>Market</th><th>Wallet</th><th>Side</th><th>Entry</th><th>Now</th><th>P&amp;L</th><th>Settles</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
@@ -119,9 +120,10 @@ async function walletData(w){
   }
   trades = trades.filter(t=>(t.timestamp||0)>=START)
                  .map(t=>({...t, name:w.name, wallet:w.wallet, weight:w.weight}));
+  // pull several pages so the resolution-date lookup covers active wallets' many positions
   let open=[], closed=[];
-  try{ open   = await j(`${DATA}/positions?user=${w.wallet}&limit=100&sizeThreshold=0.5`);}catch(e){}
-  try{ closed = await j(`${DATA}/closed-positions?user=${w.wallet}&limit=100&sortBy=TIMESTAMP&sortDirection=DESC`);}catch(e){}
+  for(let o=0;o<500;o+=100){ let pg=[]; try{pg=await j(`${DATA}/positions?user=${w.wallet}&limit=100&offset=${o}&sizeThreshold=0`);}catch(e){} if(!pg.length)break; open.push(...pg); if(pg.length<100)break; }
+  for(let o=0;o<300;o+=100){ let pg=[]; try{pg=await j(`${DATA}/closed-positions?user=${w.wallet}&limit=100&offset=${o}&sortBy=TIMESTAMP&sortDirection=DESC`);}catch(e){} if(!pg.length)break; closed.push(...pg); if(pg.length<100)break; }
   const info={};
   for(const p of open||[])   info[p.asset]={end:p.endDate, cur:p.curPrice, title:p.title, outcome:p.outcome};
   for(const p of closed||[]) if(!(p.asset in info)) info[p.asset]={end:p.endDate, cur:p.curPrice, title:p.title, outcome:p.outcome};
