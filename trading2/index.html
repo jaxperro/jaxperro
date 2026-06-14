@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mop-Up Yield — Strategy 1 Paper Portfolio</title>
+<link rel="icon" type="image/png" sizes="512x512" href="/assets/flavorcon.png" />
+<style>
+  :root{--bg:#0a0e14;--panel:#121822;--panel2:#0f141c;--border:#1f2a38;
+        --text:#e6edf3;--dim:#8b9bb0;--green:#3fd17a;--red:#ff6b6b;--accent:#5bb0ff;--amber:#f5c451;--violet:#9d8bff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:15px/1.5 -apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:28px 20px 60px}
+  header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+  h1{font-size:20px;margin:0}
+  .sub{color:var(--dim);font-size:13px;margin:2px 0 22px}
+  .hero{background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--border);
+        border-radius:16px;padding:26px;margin-bottom:18px}
+  .equity{font-size:46px;font-weight:700;letter-spacing:-.5px;line-height:1}
+  .pnl{font-size:18px;font-weight:600;margin-top:8px}
+  .meta{color:var(--dim);font-size:12px;margin-top:14px}
+  .green{color:var(--green)}.red{color:var(--red)}.dim{color:var(--dim)}.amber{color:var(--amber)}.violet{color:var(--violet)}
+  .splits{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
+  .split{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .slabel{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  .sval{font-size:21px;font-weight:700;margin-top:4px}
+  .ssub{font-size:11px;color:var(--dim);margin-top:2px}
+  .deploybar{height:8px;border-radius:5px;background:#172230;overflow:hidden;margin-top:16px}
+  .deploybar>div{height:100%;background:linear-gradient(90deg,var(--accent),#7d6bff)}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin:26px 0 10px;font-weight:600}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:right;padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+  th{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+  th:first-child,td:first-child{text-align:left}
+  td.mkt{max-width:300px;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+  td.name{text-align:left}
+  .scroll{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--panel)}
+  .scroll table th,.scroll table td{border-bottom:1px solid var(--border)}
+  .scroll table tr:last-child td{border-bottom:0}
+  .feed .trade{display:flex;gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);font-size:13px}
+  .feed .trade:last-child{border-bottom:0}
+  .feed .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .pill{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px}
+  .win{background:rgba(63,209,122,.13);color:var(--green)}.loss{background:rgba(255,107,107,.13);color:var(--red)}
+  a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+  .row-actions{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+  button{background:#17202c;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button.ghost{font-size:12px;padding:5px 10px;color:var(--dim)}
+  .btns{display:flex;gap:8px;align-items:center}
+  .note{color:var(--dim);font-size:12px;margin-top:20px;line-height:1.7}
+  .loading{color:var(--dim);padding:16px}
+  .tag{font-size:10px;color:var(--violet);border:1px solid #2a2550;background:rgba(157,139,255,.08);
+       border-radius:5px;padding:1px 6px;margin-left:8px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>💵 Mop-Up Yield</h1><span class="dim">strategy 1 · paper portfolio</span>
+    <span class="tag">siloed — independent of /trading</span></header>
+  <div class="sub">A live $1,000 paper account that buys <b>heavy favorites (90–98.5¢)</b> on markets that are
+    effectively decided but not yet resolved, spreads across many uncorrelated markets, and <b>holds to redemption</b>
+    to collect $1.00. The real question it tests: do Polymarket favorites resolve YES <i>more</i> often than their
+    price implies (the favorite-longshot bias)? Tracking only — paper money.</div>
+
+  <div class="hero">
+    <div class="row-actions">
+      <div>
+        <div class="equity" id="equity">—</div>
+        <div class="pnl" id="pnl"></div>
+      </div>
+      <div class="btns">
+        <button id="refresh">↻ Refresh</button>
+        <button id="reset" class="ghost" title="Wipe this browser's paper book and start fresh">reset book</button>
+      </div>
+    </div>
+    <div class="splits">
+      <div class="split"><div class="slabel">💵 Liquid</div><div class="sval" id="liquid">—</div><div class="ssub">cash to deploy</div></div>
+      <div class="split"><div class="slabel">📊 Invested</div><div class="sval" id="invested">—</div><div class="ssub" id="investedSub">open positions</div></div>
+      <div class="split"><div class="slabel">🏦 Realized</div><div class="sval" id="realized">—</div><div class="ssub" id="realizedSub">settled P&amp;L</div></div>
+      <div class="split"><div class="slabel">🎯 Hit rate</div><div class="sval" id="hitrate">—</div><div class="ssub" id="hitrateSub">vs implied</div></div>
+    </div>
+    <div class="deploybar"><div id="deployfill"></div></div>
+    <div class="meta" id="meta">scanning near-resolution markets…</div>
+  </div>
+
+  <h2 id="curHead">Open positions — favorites held to redemption</h2>
+  <div class="scroll"><table id="current"><thead><tr>
+    <th>Market</th><th>Bet</th><th>Entry</th><th>Now</th><th>Stake</th><th>If wins</th><th>Settles</th>
+  </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
+
+  <h2>Best available right now — top mop-up candidates by annualized yield</h2>
+  <div class="scroll"><table id="universe"><thead><tr>
+    <th>Market</th><th>Fav</th><th>Price</th><th>Gross yield</th><th>APR*</th><th>Liquidity</th><th>Settles</th>
+  </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
+
+  <h2>Settled — resolution history</h2>
+  <div class="scroll feed" id="feed"><div class="loading">loading…</div></div>
+
+  <div class="note" id="note"></div>
+</div>
+
+<script>
+const GAMMA   = "https://gamma-api.polymarket.com";
+const BANKROLL= 1000;
+const KEY     = "trading2_book_v1";
+// mop-up universe gates
+const PMIN=0.90, PMAX=0.985;          // favorite price band
+const MIN_LIQ=2000, MIN_V24=500;      // real, fillable markets only
+const MIN_HRS=2, MAX_DAYS=45;         // resolves soon-ish, not locked for months
+const TARGET_POS=16;                  // diversification target
+const PER_STAKE=BANKROLL/TARGET_POS;  // ~$62.5 per position
+const PER_CAP=90;                     // hard cap per market
+
+const fmt = n => (n<0?"-":"")+"$"+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:Math.abs(n)>=100?0:2});
+const sg  = n => (n>=0?"+":"")+fmt(n);
+const pct = n => (n>=0?"+":"")+n.toFixed(1)+"%";
+const ep  = s => { if(!s) return 0; const t=Date.parse(String(s)); return isNaN(t)?0:t/1000; };
+const j   = async u => { const r=await fetch(u); if(!r.ok) throw 0; return r.json(); };
+const HOURLY = /up or down|\bet\)|hourly|\d+(am|pm)\b/i;
+// group all sub-markets of one underlying event (every prop of a single game)
+// so the book never stacks correlated bets. Slugs share a game prefix up to the date.
+function corrKey(m){
+  const ev=(m.events&&m.events[0]&&m.events[0].slug)||m.slug||m.conditionId||"";
+  const hit=ev.match(/(.+?\d{4}-\d{2}-\d{2})/);
+  return hit?hit[1]:ev;
+}
+
+function loadState(){
+  try{ const s=JSON.parse(localStorage.getItem(KEY)); if(s&&s.positions) return s; }catch(e){}
+  return { started:Date.now()/1000, cash:BANKROLL, positions:[], history:[] };
+}
+function saveState(s){ try{ localStorage.setItem(KEY, JSON.stringify(s)); }catch(e){} }
+
+// ---- pull the near-resolution universe from Gamma (favorites only) ----
+async function fetchUniverse(){
+  const out=[]; const now=Date.now()/1000;
+  for(let off=0; off<800; off+=100){
+    let d; try{ d = await j(`${GAMMA}/markets?limit=100&offset=${off}&active=true&closed=false&order=volume24hr&ascending=false`);}catch(e){break;}
+    if(!d||!d.length) break;
+    for(const m of d){
+      let oc,pr; try{ oc=JSON.parse(m.outcomes||"[]"); pr=JSON.parse(m.outcomePrices||"[]").map(Number);}catch(e){continue;}
+      if(pr.length!==2||!oc.length) continue;
+      const q=m.question||""; if(HOURLY.test(q)) continue;
+      const end=ep(m.endDate); const hrs=end?(end-now)/3600:0;
+      if(!(hrs>MIN_HRS && hrs<MAX_DAYS*24)) continue;
+      const liq=+(m.liquidityNum||m.liquidity||0), v24=+(m.volume24hr||0);
+      if(liq<MIN_LIQ||v24<MIN_V24) continue;
+      const fav=Math.max(pr[0],pr[1]), oi=pr[0]>=pr[1]?0:1;
+      if(!(fav>=PMIN&&fav<=PMAX)) continue;
+      const days=hrs/24, grossY=(1-fav)/fav, apr=grossY/days*365;
+      out.push({cid:m.conditionId, q, outcome:oc[oi], oi, price:fav, end, days,
+                liq, v24, grossY, apr, event:corrKey(m), slug:m.slug});
+    }
+    if(d.length<100) break;
+  }
+  out.sort((a,b)=>b.apr-a.apr);
+  return out;
+}
+
+async function marketByCid(cid){
+  try{ const d=await j(`${GAMMA}/markets?condition_ids=${cid}`); return d&&d[0]; }catch(e){ return null; }
+}
+
+// resolve held positions whose market has closed; mark the rest to market.
+// fetches each held market authoritatively (closed flag + live price) in parallel.
+async function settleAndMark(s){
+  const now=Date.now()/1000;
+  const mkts = await Promise.all(s.positions.map(p=>marketByCid(p.cid)));
+  const still=[];
+  s.positions.forEach((p,i)=>{
+    const m=mkts[i];
+    if(!m){ still.push(p); return; }                      // fetch failed → keep as-is
+    let pr=[]; try{ pr=JSON.parse(m.outcomePrices||"[]").map(Number);}catch(e){}
+    const closed = m.closed===true || m.closed==="true";
+    if(closed && pr.length===2 && (pr[0]>=0.99||pr[1]>=0.99||pr[0]<=0.01||pr[1]<=0.01)){
+      const won = pr[p.oi] >= 0.5;                        // our outcome resolved YES?
+      const payout = won ? p.shares*1 : 0;
+      s.cash += payout;
+      s.history.unshift({q:p.q, outcome:p.outcome, entry:p.entry, stake:p.stake,
+        payout, pnl:payout-p.stake, win:won, resolvedTs:now, slug:p.slug});
+    } else {
+      p.cur = pr.length===2 ? pr[p.oi] : p.entry;         // mark to current price
+      p.end = ep(m.endDate)||p.end;
+      still.push(p);
+    }
+  });
+  s.positions = still;
+}
+
+// deploy idle cash into the best available favorites (one per event, capped)
+function deploy(s, universe){
+  const heldEvents=new Set(s.positions.map(p=>p.event));
+  const settledCids=new Set(s.history.map(h=>h.slug));   // don't re-buy a market we already settled
+  const now=Date.now()/1000;
+  for(const c of universe){
+    if(s.cash < Math.min(PER_STAKE, 10)) break;
+    if(s.positions.length >= TARGET_POS) break;
+    if(heldEvents.has(c.event)) continue;                 // diversify: one position per event
+    if(s.positions.some(p=>p.cid===c.cid)) continue;
+    const stake=Math.min(PER_STAKE, PER_CAP, s.cash);
+    if(stake<10) break;
+    s.cash -= stake;
+    s.positions.push({cid:c.cid, q:c.q, outcome:c.outcome, oi:c.oi, entry:c.price, cur:c.price,
+      shares:stake/c.price, stake, entryTs:now, end:c.end, event:c.event, slug:c.slug});
+    heldEvents.add(c.event);
+  }
+}
+
+// canonical mode: just refresh live prices on held positions (the GitHub Action
+// owns settlement + deployment; the browser only marks open bets to market).
+async function markLive(s){
+  const mkts = await Promise.all(s.positions.map(p=>marketByCid(p.cid)));
+  s.positions.forEach((p,i)=>{ const m=mkts[i]; if(!m) return;
+    let pr=[]; try{ pr=JSON.parse(m.outcomePrices||"[]").map(Number);}catch(e){}
+    if(pr.length===2) p.cur=pr[p.oi]; });
+}
+
+async function load(){
+  document.getElementById("meta").textContent="scanning near-resolution markets…";
+  // prefer the canonical shared book (maintained by GitHub Actions); fall back to a local demo book
+  let s=null, canonical=false;
+  try{ const r=await fetch("book.json?t="+Date.now()); if(r.ok){ s=await r.json(); s.positions=s.positions||[]; s.history=s.history||[]; canonical=true; } }catch(e){}
+  const universe=await fetchUniverse();
+  if(canonical){
+    await markLive(s);             // live unrealized P&L between Action runs
+  }else{
+    s=loadState();
+    await settleAndMark(s);        // authoritative resolve + mark-to-market on held positions
+    deploy(s, universe);           // put idle cash into the best available favorites
+    saveState(s);
+  }
+  document.getElementById("reset").style.display = canonical? "none" : "";
+
+  const now=Date.now()/1000;
+  let invMkt=0, invCost=0;
+  for(const p of s.positions){ const cp=p.cur??p.entry; invMkt+=p.shares*cp; invCost+=p.stake; }
+  const realized=s.history.reduce((a,h)=>a+h.pnl,0);
+  const liquid=s.cash, equity=liquid+invMkt, pl=equity-BANKROLL, unreal=invMkt-invCost;
+  const resN=s.history.length, wins=s.history.filter(h=>h.win).length;
+  const impliedAvg=resN? s.history.reduce((a,h)=>a+h.entry,0)/resN : 0;
+  const avgYield = s.positions.length? s.positions.reduce((a,p)=>a+(1-p.entry)/p.entry,0)/s.positions.length : 0;
+  const medDays = s.positions.length? [...s.positions].map(p=>Math.max((p.end-now)/86400,0)).sort((a,b)=>a-b)[s.positions.length>>1] : 0;
+
+  // ---- hero ----
+  document.getElementById("equity").textContent=fmt(equity);
+  const pe=document.getElementById("pnl"); pe.className="pnl "+(pl>=0?"green":"red");
+  pe.textContent=`${sg(pl)} (${pct(pl/BANKROLL*100)}) on $1,000`;
+  document.getElementById("liquid").textContent=fmt(liquid);
+  document.getElementById("invested").textContent=fmt(invMkt);
+  document.getElementById("investedSub").innerHTML=`${s.positions.length} open · <span class="${unreal>=0?'green':'red'}">${sg(unreal)} unreal.</span>`;
+  const re=document.getElementById("realized"); re.textContent=sg(realized); re.className="sval "+(realized>=0?"green":"red");
+  document.getElementById("realizedSub").textContent=`${resN} settled`;
+  const hr=document.getElementById("hitrate");
+  hr.textContent = resN? (wins/resN*100).toFixed(0)+"%" : "—";
+  hr.className="sval "+(resN&&wins/resN>=impliedAvg?"green":"amber");
+  document.getElementById("hitrateSub").textContent = resN? `implied ${(impliedAvg*100).toFixed(0)}% · ${wins}/${resN}` : "no settles yet";
+  document.getElementById("deployfill").style.width=Math.max(0,Math.min(100,invCost/(BANKROLL+realized)*100))+"%";
+  const stamp = canonical&&s.updated? `bot ran ${new Date(s.updated*1000).toLocaleString()}` : `updated ${new Date().toLocaleTimeString()}`;
+  document.getElementById("meta").innerHTML=`book started ${new Date(s.started*1000).toLocaleDateString()} · `+
+    (liquid<PER_STAKE?`<span class="amber">fully deployed across ${s.positions.length} favorites</span>`:`${fmt(liquid)} idle cash`)+
+    ` · avg yield +${(avgYield*100).toFixed(1)}% · median settle ${medDays<1?'<1d':Math.round(medDays)+'d'} · `+
+    (canonical?`<span class="violet">canonical book · auto-run by GitHub Actions</span> · `:`<span class="amber">local demo book</span> · `)+stamp;
+
+  // ---- open positions ----
+  document.getElementById("curHead").textContent=`Open positions — ${s.positions.length} held, ${fmt(invMkt)} at work`;
+  const ps=[...s.positions].sort((a,b)=>(a.end||0)-(b.end||0));
+  document.querySelector("#current tbody").innerHTML = ps.length? ps.map(p=>{
+    const e=p.end, days=e?(e-now)/86400:null;
+    const when=!e?'pending':(e<now?'<span class="amber">settling…</span>':(days<1?'today':`in ${Math.round(days)}d`));
+    const ifwin=p.shares-p.stake;
+    return `<tr>
+      <td class="mkt">${p.slug?`<a href="https://polymarket.com/market/${p.slug}" target="_blank">${p.q}</a>`:p.q}</td>
+      <td class="name">${p.outcome}</td>
+      <td>${(p.entry*100).toFixed(0)}¢</td>
+      <td>${((p.cur??p.entry)*100).toFixed(0)}¢</td>
+      <td>${fmt(p.stake)}</td>
+      <td class="green">${sg(ifwin)}</td>
+      <td>${when}</td></tr>`;}).join("")
+    : '<tr><td colspan="7" class="loading">no open positions — all cash is liquid</td></tr>';
+
+  // ---- universe (top candidates not already held) ----
+  const heldEvents=new Set(s.positions.map(p=>p.event));
+  const avail=universe.filter(c=>!heldEvents.has(c.event)).slice(0,18);
+  document.querySelector("#universe tbody").innerHTML = avail.length? avail.map(c=>{
+    const days=c.days, when=days<1?'today':`in ${Math.round(days)}d`;
+    return `<tr>
+      <td class="mkt">${c.slug?`<a href="https://polymarket.com/market/${c.slug}" target="_blank">${c.q}</a>`:c.q}</td>
+      <td class="name">${c.outcome}</td>
+      <td>${(c.price*100).toFixed(0)}¢</td>
+      <td class="green">+${(c.grossY*100).toFixed(1)}%</td>
+      <td class="violet">${(c.apr*100).toFixed(0)}%</td>
+      <td>${fmt(c.liq)}</td>
+      <td>${when}</td></tr>`;}).join("")
+    : '<tr><td colspan="7" class="loading">no qualifying favorites right now</td></tr>';
+
+  // ---- settled feed ----
+  document.getElementById("feed").innerHTML = s.history.length? s.history.slice(0,20).map(h=>`
+    <div class="trade"><span class="pill ${h.win?'win':'loss'}">${h.win?'WON':'LOST'}</span>
+      <span class="t">${h.outcome} · ${(h.q||'').slice(0,52)}</span>
+      <span class="${h.pnl>=0?'green':'red'}">${sg(h.pnl)}</span>
+      <span class="dim">${(h.entry*100).toFixed(0)}¢→${h.win?'100':'0'}¢</span></div>`).join("")
+    : '<div class="loading">nothing settled yet — favorites are still held to resolution</div>';
+
+  document.getElementById("note").innerHTML =
+    `<b>How it works:</b> a $1,000 paper account `+
+    (canonical?`maintained server-side by a <b>GitHub Action</b> every ~3 hours (so it keeps trading with your computer off); this page just shows the latest committed book and live prices. `
+             :`persisted in <i>this browser</i> (localStorage). `)+
+    `It scans live Polymarket markets, keeps the heavy favorites (${PMIN*100|0}–${PMAX*100}¢) that are effectively decided but still `+
+    `open, and spreads idle cash across up to ${TARGET_POS} <i>uncorrelated</i> markets (one per event, ~${fmt(PER_STAKE)} each). `+
+    `It <b>holds every position to resolution</b> — win → redeem at $1.00, loss → $0 — then redeploys the freed cash. `+
+    `<b>Hit rate</b> vs <b>implied</b> is the whole experiment: buying a favorite at price <i>p</i> is zero-EV <i>if</i> the `+
+    `market is efficient, so this only makes money if favorites resolve YES <i>more</i> often than their price implies `+
+    `(the favorite-longshot bias). Watch whether the green hit-rate stays above implied. `+
+    `<b>*APR</b> is the gross (1−p)/p yield annualized by time-to-resolution — an upper bound; real fills pay the ask + gas, `+
+    `and one favorite losing wipes ~${((1/(1-PMAX))|0)}+ winners, so treat APR as the reward for carrying tail risk, not free money. `+
+    `Fully siloed from the wallet-copy test at <a href="/trading">/trading</a>. `+
+    `Built with <a href="https://github.com/jaxperro/winning-wallet-finder" target="_blank">winning-wallet-finder</a>.`;
+}
+
+document.getElementById("refresh").onclick=load;
+document.getElementById("reset").onclick=()=>{ if(confirm("Wipe this browser's paper book and start a fresh $1,000?")){ localStorage.removeItem(KEY); load(); } };
+load(); setInterval(load,120000);
+</script>
+</body>
+</html>

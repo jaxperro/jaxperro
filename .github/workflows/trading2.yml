@@ -1,0 +1,37 @@
+name: trading2 mop-up book
+
+# Runs the Strategy-1 paper account on GitHub's servers (no local machine needed):
+# scan favorites -> settle resolved positions -> redeploy idle cash -> commit book.json.
+on:
+  schedule:
+    - cron: "17 */3 * * *"   # every 3 hours (UTC; GitHub may delay under load)
+  workflow_dispatch: {}       # allow manual runs from the Actions tab
+
+permissions:
+  contents: write             # needed to commit book.json back to the repo
+
+concurrency:
+  group: trading2-book
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run mop-up book
+        run: python3 trading2/run.py
+      - name: Commit updated book
+        run: |
+          git config user.name  "trading2-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if ! git diff --quiet -- trading2/book.json; then
+            git add trading2/book.json
+            git commit -m "trading2: update mop-up book [skip ci]"
+            git push
+          else
+            echo "no change to book.json"
+          fi
