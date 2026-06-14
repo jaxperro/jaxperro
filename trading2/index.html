@@ -117,6 +117,14 @@ const fmt = n => (n<0?"-":"")+"$"+Math.abs(n).toLocaleString(undefined,{maximumF
 const sg  = n => (n>=0?"+":"")+fmt(n);
 const pct = n => (n>=0?"+":"")+n.toFixed(1)+"%";
 const ep  = s => { if(!s) return 0; const t=Date.parse(String(s)); return isNaN(t)?0:t/1000; };
+// scheduled settlement: actual local date-time + a compact relative hint
+const settleAt = (e,now) => {
+  if(!e) return 'pending';
+  if(e<now) return '<span class="amber">settling…</span>';
+  const dt=new Date(e*1000).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  const s=e-now, rel = s<3600?`${Math.round(s/60)}m`:(s<86400?`${Math.round(s/3600)}h`:`${Math.round(s/86400)}d`);
+  return `${dt} <span class="dim">· ${rel}</span>`;
+};
 const j   = async u => { const r=await fetch(u); if(!r.ok) throw 0; return r.json(); };
 const HOURLY = /up or down|\bet\)|hourly|\d+(am|pm)\b/i;
 // group all sub-markets of one underlying event (every prop of a single game)
@@ -267,8 +275,7 @@ async function load(){
   document.getElementById("curHead").textContent=`Open positions — ${s.positions.length} held, ${fmt(invMkt)} at work`;
   const ps=[...s.positions].sort((a,b)=>(a.end||0)-(b.end||0));
   document.querySelector("#current tbody").innerHTML = ps.length? ps.map(p=>{
-    const e=p.end, days=e?(e-now)/86400:null;
-    const when=!e?'pending':(e<now?'<span class="amber">settling…</span>':(days<1?'today':`in ${Math.round(days)}d`));
+    const when=settleAt(p.end,now);
     const ifwin=p.shares-p.stake;
     return `<tr>
       <td class="mkt">${p.slug?`<a href="https://polymarket.com/market/${p.slug}" target="_blank">${p.q}</a>`:p.q}</td>
@@ -284,7 +291,7 @@ async function load(){
   const heldEvents=new Set(s.positions.map(p=>p.event));
   const avail=universe.filter(c=>!heldEvents.has(c.event)).slice(0,18);
   document.querySelector("#universe tbody").innerHTML = avail.length? avail.map(c=>{
-    const days=c.days, when=days<1?'today':`in ${Math.round(days)}d`;
+    const when=settleAt(c.end,now);
     return `<tr>
       <td class="mkt">${c.slug?`<a href="https://polymarket.com/market/${c.slug}" target="_blank">${c.q}</a>`:c.q}</td>
       <td class="name">${c.outcome}</td>
