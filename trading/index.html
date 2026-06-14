@@ -80,6 +80,11 @@
     <th>Market</th><th>Wallet</th><th>Side</th><th>Entry</th><th>Now</th><th>P&amp;L</th><th>Settles</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
 
+  <h2 id="resHead">Resolved bets — settled</h2>
+  <div class="scroll"><table id="resolved"><thead><tr>
+    <th>Market</th><th>Wallet</th><th>Side</th><th>Bought @</th><th>Resolved at</th><th>P&amp;L</th><th>Date</th>
+  </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
+
   <h2>Allocation by wallet</h2>
   <div class="scroll"><table id="wallets"><thead><tr>
     <th>Wallet</th><th>Weight</th><th>Bets in</th><th>Invested</th><th>Realized</th>
@@ -143,10 +148,13 @@ async function load(){
   const open={}, missedSeen=new Set(), entered=new Set();
   let missedPnl=0, missedCount=0;
   const perW=Object.fromEntries(WALLETS.map(w=>[w.wallet,{bets:0, invested:0, realized:0}]));
+  const settled=[];   // history of bets that have resolved/closed
 
   const settle = T => { for(const a of Object.keys(open)){ const r=resAt(a);
-    if(r && r<=T){ const p=open[a], pay=p.shares*(won(a)?1:0);
-      cash+=pay; realized+=pay-p.stake; perW[p.wallet].realized+=pay-p.stake; delete open[a]; } } };
+    if(r && r<=T){ const p=open[a], w=won(a), pay=p.shares*(w?1:0);
+      cash+=pay; realized+=pay-p.stake; perW[p.wallet].realized+=pay-p.stake;
+      settled.push({title:p.title,name:p.name,outcome:p.outcome,entry:p.entry,res:w?1:0,pnl:pay-p.stake,date:r});
+      delete open[a]; } } };
 
   for(const ev of events){
     settle(ev.timestamp);
@@ -167,7 +175,9 @@ async function load(){
       }
     } else if(open[a]){                                         // they exited → we exit
       const p=open[a], proceeds=p.shares*(ev.price||0);
-      cash+=proceeds; realized+=proceeds-p.stake; perW[p.wallet].realized+=proceeds-p.stake; delete open[a];
+      cash+=proceeds; realized+=proceeds-p.stake; perW[p.wallet].realized+=proceeds-p.stake;
+      settled.push({title:p.title,name:p.name,outcome:p.outcome,entry:p.entry,res:ev.price||0,pnl:proceeds-p.stake,date:ev.timestamp,sold:true});
+      delete open[a];
     }
   }
   settle(now);
@@ -179,6 +189,7 @@ async function load(){
     // it stuck as an open "pending" bet with phantom unrealized P&L
     if(!resAt(a) && (cp<=0.001 || cp>=0.999)){
       const pay=p.shares*(cp>=0.5?1:0); cash+=pay; realized+=pay-p.stake; perW[p.wallet].realized+=pay-p.stake;
+      settled.push({title:p.title,name:p.name,outcome:p.outcome,entry:p.entry,res:cp>=0.5?1:0,pnl:pay-p.stake,date:null});
       continue;
     }
     const val=p.shares*cp; invMkt+=val; invCost+=p.stake; perW[p.wallet].invested+=val;
@@ -217,6 +228,25 @@ async function load(){
       <td class="${p.pnl>=0?'green':'red'}">${sg(p.pnl)}</td>
       <td>${when}</td></tr>`;}).join("")
     : '<tr><td colspan="7" class="loading">no open bets right now — all cash is liquid</td></tr>';
+
+  // resolved bets (most recent first)
+  settled.sort((a,b)=>(b.date||now)-(a.date||now));
+  const wins=settled.filter(s=>s.pnl>0).length;
+  document.getElementById("resHead").textContent =
+    `Resolved bets — ${settled.length} settled${settled.length?` (${wins}W / ${settled.length-wins}L)`:''}`;
+  document.querySelector("#resolved tbody").innerHTML = settled.length ? settled.slice(0,60).map(s=>{
+    const result = s.sold ? `sold ${(s.res*100).toFixed(0)}¢`
+      : (s.res>=0.5 ? `<span class="green">won · 100¢</span>` : `<span class="red">lost · 0¢</span>`);
+    const d = s.date ? new Date(s.date*1000).toLocaleDateString() : '<span class="dim">—</span>';
+    return `<tr>
+      <td class="mkt">${s.title||''}</td>
+      <td class="name">${s.name}</td>
+      <td>${s.outcome||''}</td>
+      <td>${(s.entry*100).toFixed(0)}¢</td>
+      <td>${result}</td>
+      <td class="${s.pnl>=0?'green':'red'}">${sg(s.pnl)}</td>
+      <td>${d}</td></tr>`;}).join("")
+    : '<tr><td colspan="7" class="loading">no bets have settled yet — they\'ll appear here as markets resolve</td></tr>';
 
   // per-wallet
   const maxW=Math.max(...WALLETS.map(w=>w.weight));
