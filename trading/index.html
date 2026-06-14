@@ -6,62 +6,55 @@
 <title>Winning Wallet Finder — Paper Portfolio</title>
 <link rel="icon" type="image/png" sizes="512x512" href="/assets/flavorcon.png" />
 <style>
-  :root{
-    --bg:#0a0e14; --panel:#121822; --panel2:#0f141c; --border:#1f2a38;
-    --text:#e6edf3; --dim:#8b9bb0; --green:#3fd17a; --red:#ff6b6b; --accent:#5bb0ff;
-  }
+  :root{--bg:#0a0e14;--panel:#121822;--panel2:#0f141c;--border:#1f2a38;
+        --text:#e6edf3;--dim:#8b9bb0;--green:#3fd17a;--red:#ff6b6b;--accent:#5bb0ff;--amber:#f5c451}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);
        font:15px/1.5 -apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:920px;margin:0 auto;padding:28px 20px 60px}
+  .wrap{max-width:960px;margin:0 auto;padding:28px 20px 60px}
   header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px}
-  h1{font-size:20px;margin:0;letter-spacing:.2px}
+  h1{font-size:20px;margin:0}
   .sub{color:var(--dim);font-size:13px;margin:2px 0 22px}
   .hero{background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--border);
         border-radius:16px;padding:26px;margin-bottom:18px}
   .equity{font-size:46px;font-weight:700;letter-spacing:-.5px;line-height:1}
   .pnl{font-size:18px;font-weight:600;margin-top:8px}
   .meta{color:var(--dim);font-size:12px;margin-top:14px}
-  .splits{display:flex;gap:14px;margin-top:20px;flex-wrap:wrap}
-  .split{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);
-         border-radius:10px;padding:12px 14px}
+  .green{color:var(--green)}.red{color:var(--red)}.dim{color:var(--dim)}.amber{color:var(--amber)}
+  .splits{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
+  .split{flex:1;min-width:130px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
   .slabel{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
-  .sval{font-size:22px;font-weight:700;margin-top:4px}
-  .deploybar{height:8px;border-radius:5px;background:#172230;overflow:hidden;margin-top:16px;display:flex}
-  .deploybar>#deployfill{height:100%;background:linear-gradient(90deg,var(--accent),#7d6bff)}
-  .green{color:var(--green)} .red{color:var(--red)} .dim{color:var(--dim)}
-  h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);
-     margin:26px 0 10px;font-weight:600}
+  .sval{font-size:21px;font-weight:700;margin-top:4px}
+  .ssub{font-size:11px;color:var(--dim);margin-top:2px}
+  .deploybar{height:8px;border-radius:5px;background:#172230;overflow:hidden;margin-top:16px}
+  .deploybar>div{height:100%;background:linear-gradient(90deg,var(--accent),#7d6bff)}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin:26px 0 10px;font-weight:600}
   table{width:100%;border-collapse:collapse}
-  th,td{text-align:right;padding:9px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
-  th{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  th,td{text-align:right;padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+  th{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
   th:first-child,td:first-child{text-align:left}
-  td.name{font-weight:600}
-  .bar{height:5px;border-radius:3px;background:#1b2735;overflow:hidden;min-width:54px}
-  .bar>div{height:100%;background:var(--accent)}
-  .feed{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-  .trade{display:flex;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px}
-  .trade:last-child{border-bottom:0}
-  .trade .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
-  .pill{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px}
-  .buy{background:rgba(63,209,122,.13);color:var(--green)}
-  .sell{background:rgba(255,107,107,.13);color:var(--red)}
-  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
-  .row-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-  button{background:#17202c;border:1px solid var(--border);color:var(--text);border-radius:8px;
-         padding:7px 14px;font-size:13px;cursor:pointer}
+  td.mkt{max-width:340px;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+  td.name{text-align:left}
+  .scroll{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--panel)}
+  .scroll table th,.scroll table td{border-bottom:1px solid var(--border)}
+  .scroll table tr:last-child td{border-bottom:0}
+  .feed .trade{display:flex;gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);font-size:13px}
+  .feed .trade:last-child{border-bottom:0}
+  .feed .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .pill{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px}
+  .buy{background:rgba(63,209,122,.13);color:var(--green)}.sell{background:rgba(255,107,107,.13);color:var(--red)}
+  a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+  .row-actions{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+  button{background:#17202c;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer}
   button:hover{border-color:var(--accent)}
-  .note{color:var(--dim);font-size:12px;margin-top:18px;line-height:1.6}
-  .loading{color:var(--dim);padding:20px 0}
+  .note{color:var(--dim);font-size:12px;margin-top:20px;line-height:1.7}
+  .loading{color:var(--dim);padding:16px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>🏆 Winning Wallet Finder</h1>
-    <span class="dim">paper portfolio</span>
-  </header>
-  <div class="sub">Following 8 Polymarket wallets with a statistically-verifiable edge, weighted by edge strength. Fake money — tracking only.</div>
+  <header><h1>🏆 Winning Wallet Finder</h1><span class="dim">paper portfolio</span></header>
+  <div class="sub">A live $1,000 paper account that <b>enters when these 8 edge wallets enter</b>, holds to resolution, and frees cash as bets settle — exactly like real money. Tracking only.</div>
 
   <div class="hero">
     <div class="row-actions">
@@ -72,21 +65,27 @@
       <button id="refresh">↻ Refresh</button>
     </div>
     <div class="splits">
-      <div class="split"><div class="slabel">💵 Liquid (cash)</div><div class="sval" id="liquid">—</div></div>
-      <div class="split"><div class="slabel">📊 Invested</div><div class="sval" id="invested">—</div></div>
-      <div class="split"><div class="slabel">🎯 Positions held</div><div class="sval" id="held">—</div></div>
+      <div class="split"><div class="slabel">💵 Liquid</div><div class="sval" id="liquid">—</div><div class="ssub">cash to deploy</div></div>
+      <div class="split"><div class="slabel">📊 Invested</div><div class="sval" id="invested">—</div><div class="ssub" id="investedSub">open bets</div></div>
+      <div class="split"><div class="slabel">🏦 Realized</div><div class="sval" id="realized">—</div><div class="ssub">settled P&amp;L</div></div>
+      <div class="split"><div class="slabel">🎟️ Missed</div><div class="sval" id="missed">—</div><div class="ssub" id="missedSub">no capital</div></div>
     </div>
     <div class="deploybar"><div id="deployfill"></div></div>
-    <div class="meta" id="meta">loading live data from Polymarket…</div>
+    <div class="meta" id="meta">replaying live trades…</div>
   </div>
 
-  <h2>Allocation &amp; per-wallet performance</h2>
-  <table id="wallets"><thead><tr>
-    <th>Wallet</th><th>Weight</th><th>Allocated</th><th>Positions</th><th>Invested</th>
-  </tr></thead><tbody><tr><td colspan="5" class="loading">loading…</td></tr></tbody></table>
+  <h2 id="curHead">Current bets — what you're in & when they settle</h2>
+  <div class="scroll"><table id="current"><thead><tr>
+    <th>Market</th><th>Wallet</th><th>Side</th><th>Entry</th><th>Now</th><th>P&amp;L</th><th>Settles</th>
+  </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
+
+  <h2>Allocation by wallet</h2>
+  <div class="scroll"><table id="wallets"><thead><tr>
+    <th>Wallet</th><th>Weight</th><th>Bets in</th><th>Invested</th><th>Realized</th>
+  </tr></thead><tbody></tbody></table></div>
 
   <h2>Live trade feed</h2>
-  <div class="feed" id="feed"><div class="loading" style="padding:14px">loading…</div></div>
+  <div class="scroll feed" id="feed"><div class="loading">loading…</div></div>
 
   <div class="note" id="note"></div>
 </div>
@@ -94,10 +93,9 @@
 <script>
 const DATA = "https://data-api.polymarket.com";
 const BANKROLL = 1000;
-const PER_POS = 0.12;     // stake per mirrored position = weight × $1000 × this
-const WINDOW_DAYS = 14;   // realized P&L window
-const MAX_POS_PER_WALLET = 10;  // mirror each wallet's biggest open bets, not dust
-// 8 edge wallets, weighted by edge strength (z) × copyability (bot-churn down-weighted)
+const PER_POS = 0.10;                       // stake per new market = weight × $1000 × this
+const START = Date.parse("2026-06-08T00:00:00Z")/1000;   // paper account inception
+
 const WALLETS = [
   {name:"Famecesgoal", wallet:"0x0b0f92507bbc340762d38eca43eba1e11ee37af1", weight:0.2379},
   {name:"Xixihaha008", wallet:"0xf6099a9eacfef24a4161bd857fbfbcd36cdfe68b", weight:0.2279},
@@ -108,125 +106,140 @@ const WALLETS = [
   {name:"donthackme",  wallet:"0x03805a13a0b3e058f55f6c6af95389d4f431073d", weight:0.0545},
   {name:"paspor",      wallet:"0x3dd2db2d398ff72c2c71c9ad6473368b941e9ab1", weight:0.0337},
 ];
-const fmt = n => (n<0?"-":"")+"$"+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:n>=100?0:2});
+const byWallet = Object.fromEntries(WALLETS.map(w=>[w.wallet,w]));
+const fmt = n => (n<0?"-":"")+"$"+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:Math.abs(n)>=100?0:2});
+const sg  = n => (n>=0?"+":"")+fmt(n);
 const pct = n => (n>=0?"+":"")+n.toFixed(1)+"%";
+const ep  = s => { if(!s) return 0; const t=Date.parse(String(s).replace(' ','T')); return isNaN(t)?0:t/1000; };
 const j = async u => { const r = await fetch(u); if(!r.ok) throw 0; return r.json(); };
 
-const parseEnd = s => { if(!s) return 0; const t=Date.parse(s.replace(' ','T')); return isNaN(t)?0:t/1000; };
-
-// REALIZED = resolved winners (closed) + resolved losers still sitting unredeemed
-// (open w/ past end date). INVESTED = only genuinely current (unresolved) bets.
 async function walletData(w){
+  let trades=[], off=0;
+  for(let i=0;i<4;i++){
+    let pg=[]; try{ pg = await j(`${DATA}/activity?user=${w.wallet}&type=TRADE&limit=500&offset=${off}`);}catch(e){break;}
+    if(!pg.length) break; trades.push(...pg); off+=500;
+    if(pg.length<500 || (pg[pg.length-1].timestamp||0) < START) break;
+  }
+  trades = trades.filter(t=>(t.timestamp||0)>=START)
+                 .map(t=>({...t, name:w.name, wallet:w.wallet, weight:w.weight}));
   let open=[], closed=[];
-  try{ open   = await j(`${DATA}/positions?user=${w.wallet}&limit=100&sizeThreshold=1`);}catch(e){}
+  try{ open   = await j(`${DATA}/positions?user=${w.wallet}&limit=100&sizeThreshold=0.5`);}catch(e){}
   try{ closed = await j(`${DATA}/closed-positions?user=${w.wallet}&limit=100&sortBy=TIMESTAMP&sortDirection=DESC`);}catch(e){}
-  const now = Date.now()/1000, cutoff = now - WINDOW_DAYS*86400;
-  const stake = w.weight*BANKROLL*PER_POS;
-  let realized = 0;
-  for(const p of (closed||[])){                       // redeemed/sold — mostly winners
-    if((p.timestamp||0) < cutoff) continue;
-    const init = (p.avgPrice||0)*(p.totalBought||0);
-    if(init>0) realized += stake * ((p.realizedPnl||0)/init);
-  }
-  const opens = [];
-  for(const p of (open||[])){
-    const init = p.initialValue||0; if(init<=0) continue;
-    const end = parseEnd(p.endDate), roi = Math.max(-1,(p.cashPnl||0)/init);
-    if(end && end < now){                             // resolved but unredeemed (the hidden losers)
-      if(end >= cutoff) realized += stake * roi;
-    } else {                                          // genuinely open current bet
-      opens.push({init, roi});
-    }
-  }
-  opens.sort((a,b)=>b.init-a.init);
-  return {name:w.name, wallet:w.wallet, weight:w.weight, stake, realized,
-          opens: opens.slice(0, MAX_POS_PER_WALLET)};
-}
-
-async function recentTrades(w){
-  try{
-    const a = await j(`${DATA}/activity?user=${w.wallet}&type=TRADE&limit=4`);
-    return (a||[]).map(t=>({name:w.name, ...t}));
-  }catch(e){ return []; }
+  const info={};
+  for(const p of open||[])   info[p.asset]={end:p.endDate, cur:p.curPrice, title:p.title, outcome:p.outcome};
+  for(const p of closed||[]) if(!(p.asset in info)) info[p.asset]={end:p.endDate, cur:p.curPrice, title:p.title, outcome:p.outcome};
+  return {trades, info};
 }
 
 async function load(){
-  document.getElementById("meta").textContent = "loading live data from Polymarket…";
-  const data = await Promise.all(WALLETS.map(walletData));
-  const realized = data.reduce((s,d)=>s+d.realized,0);   // banked P&L
+  document.getElementById("meta").textContent = "replaying live trades from Polymarket…";
+  const datas = await Promise.all(WALLETS.map(walletData));
+  const info = Object.assign({}, ...datas.map(d=>d.info));
+  const events = datas.flatMap(d=>d.trades).sort((a,b)=>(a.timestamp||0)-(b.timestamp||0));
+  const now = Date.now()/1000;
+  const resAt = a => ep(info[a]?.end);
+  const won   = a => (info[a]?.cur||0) >= 0.5;
 
-  // candidate open mirrors; fund highest-edge wallets first until cash runs out
-  const cands = [];
-  for(const d of data) for(const o of d.opens)
-    cands.push({name:d.name, weight:d.weight, stake:d.stake, roi:o.roi});
-  cands.sort((a,b)=> b.weight - a.weight);
+  let cash=BANKROLL, realized=0;
+  const open={}, missedSeen=new Set(), entered=new Set();
+  let missedPnl=0, missedCount=0;
+  const perW=Object.fromEntries(WALLETS.map(w=>[w.wallet,{bets:0, invested:0, realized:0}]));
 
-  let cash = BANKROLL + realized;            // realized winners returned to the pool
-  let investedCost = 0, invested = 0, held = 0, skipped = 0;
-  const per = {}; WALLETS.forEach(w=>per[w.name]={cost:0, invested:0, held:0});
-  for(const c of cands){
-    if(cash >= c.stake){
-      cash -= c.stake; investedCost += c.stake;
-      const val = c.stake*(1+c.roi); invested += val; held++;
-      per[c.name].cost += c.stake; per[c.name].invested += val; per[c.name].held++;
-    } else skipped++;
+  const settle = T => { for(const a of Object.keys(open)){ const r=resAt(a);
+    if(r && r<=T){ const p=open[a], pay=p.shares*(won(a)?1:0);
+      cash+=pay; realized+=pay-p.stake; perW[p.wallet].realized+=pay-p.stake; delete open[a]; } } };
+
+  for(const ev of events){
+    settle(ev.timestamp);
+    const a=ev.asset, stake=ev.weight*BANKROLL*PER_POS;
+    if(ev.side==="BUY"){
+      if(open[a] || entered.has(a)) continue;
+      if(resAt(a) && resAt(a)<=ev.timestamp) continue;        // already over
+      entered.add(a);
+      if(cash>=stake){
+        cash-=stake; perW[ev.wallet].bets++;
+        open[a]={name:ev.name, wallet:ev.wallet, asset:a, stake, entry:ev.price||0.01,
+                 shares:stake/(ev.price||0.01), title:ev.title, outcome:ev.outcome};
+      } else if(!missedSeen.has(a)){                            // couldn't afford it
+        missedSeen.add(a); missedCount++;
+        const p=ev.price||0.01, r=resAt(a), cp=info[a]?.cur;
+        if(r && r<=now)      missedPnl += stake*(((won(a)?1:0)/p)-1);
+        else if(cp!=null)    missedPnl += stake*((cp/p)-1);
+      }
+    } else if(open[a]){                                         // they exited → we exit
+      const p=open[a], proceeds=p.shares*(ev.price||0);
+      cash+=proceeds; realized+=proceeds-p.stake; perW[p.wallet].realized+=proceeds-p.stake; delete open[a];
+    }
   }
-  const liquid = cash;                        // = 1000 + realized − investedCost
-  const equity = liquid + invested;           // = 1000 + realized + open unrealized
-  const pl = equity - BANKROLL, plp = pl/BANKROLL*100;
-  const poolInit = BANKROLL + realized;
+  settle(now);
 
+  // mark remaining open bets to current price
+  let invMkt=0, invCost=0; const current=[];
+  for(const a of Object.keys(open)){ const p=open[a], cp=(info[a]?.cur ?? p.entry);
+    const val=p.shares*cp; invMkt+=val; invCost+=p.stake; perW[p.wallet].invested+=val;
+    current.push({...p, cur:cp, val, pnl:val-p.stake, end:info[a]?.end}); }
+
+  const liquid=cash, equity=liquid+invMkt, pl=equity-BANKROLL;
+  const unreal=invMkt-invCost;
+
+  // ---- render ----
   document.getElementById("equity").textContent = fmt(equity);
-  const pe = document.getElementById("pnl");
-  pe.className = "pnl " + (pl>=0?"green":"red");
-  pe.textContent = `${pl>=0?"+":""}${fmt(pl)}  (${pct(plp)})  on $1,000`;
-  document.getElementById("liquid").textContent = fmt(liquid);
-  document.getElementById("invested").textContent = fmt(invested);
-  document.getElementById("held").textContent = held;
-  document.getElementById("deployfill").style.width =
-    Math.max(0,Math.min(100, investedCost/poolInit*100))+"%";
-  document.getElementById("meta").innerHTML =
-    `live snapshot · stake ${(PER_POS*100)|0}% of each wallet's slice per trade · updated ${new Date().toLocaleTimeString()}`
-    + (skipped>0 ? ` · <span class="red">${skipped} trades skipped — capital fully deployed</span>` : ` · cash available`);
+  const pe=document.getElementById("pnl"); pe.className="pnl "+(pl>=0?"green":"red");
+  pe.textContent=`${sg(pl)} (${pct(pl/BANKROLL*100)}) on $1,000`;
+  document.getElementById("liquid").textContent=fmt(liquid);
+  document.getElementById("invested").textContent=fmt(invMkt);
+  document.getElementById("investedSub").innerHTML=`${current.length} open · <span class="${unreal>=0?'green':'red'}">${sg(unreal)} unreal.</span>`;
+  const re=document.getElementById("realized"); re.textContent=sg(realized); re.className="sval "+(realized>=0?"green":"red");
+  const me=document.getElementById("missed"); me.textContent=sg(missedPnl); me.className="sval "+(missedPnl>=0?"amber":"red");
+  document.getElementById("missedSub").textContent=`${missedCount} trades skipped`;
+  document.getElementById("deployfill").style.width=Math.max(0,Math.min(100,invCost/(BANKROLL+realized)*100))+"%";
+  document.getElementById("meta").innerHTML=`since ${new Date(START*1000).toLocaleDateString()} · `+
+    (liquid<5?`<span class="red">fully deployed — new trades being skipped</span>`:`cash available`)+
+    ` · updated ${new Date().toLocaleTimeString()}`;
 
-  const maxW = Math.max(...WALLETS.map(w=>w.weight));
-  document.querySelector("#wallets tbody").innerHTML = WALLETS
-    .sort((a,b)=>b.weight-a.weight).map(w=>{ const p=per[w.name]; const budget=w.weight*BANKROLL;
-      const wpl = p.invested - p.cost;
-      return `<tr>
-      <td class="name"><a href="https://polymarket.com/profile/${w.wallet}" target="_blank">${w.name}</a></td>
-      <td><div class="bar"><div style="width:${w.weight/maxW*100}%"></div></div></td>
-      <td>${fmt(budget)}</td>
-      <td>${p.held}</td>
-      <td class="${wpl>=0?'green':'red'}">${fmt(p.invested)}</td>
-    </tr>`;}).join("");
+  // current bets
+  document.getElementById("curHead").textContent=`Current bets — ${current.length} open, ${fmt(invMkt)} at work`;
+  current.sort((a,b)=>ep(a.end)-ep(b.end));
+  document.querySelector("#current tbody").innerHTML = current.length? current.map(p=>{
+    const e=ep(p.end), days=e?Math.round((e-now)/86400):null;
+    const when = !e?'pending':(e<now?'<span class="amber">settling…</span>':(days<=0?'today':`in ${days}d`));
+    return `<tr>
+      <td class="mkt">${p.title||''}</td>
+      <td class="name">${p.name}</td>
+      <td>${p.outcome||''}</td>
+      <td>${(p.entry*100).toFixed(0)}¢</td>
+      <td>${(p.cur*100).toFixed(0)}¢</td>
+      <td class="${p.pnl>=0?'green':'red'}">${sg(p.pnl)}</td>
+      <td>${when}</td></tr>`;}).join("")
+    : '<tr><td colspan="7" class="loading">no open bets right now — all cash is liquid</td></tr>';
 
-  const feeds = (await Promise.all(WALLETS.map(recentTrades))).flat()
-    .sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).slice(0,18);
-  document.getElementById("feed").innerHTML = feeds.map(t=>{
-    const buy = t.side==="BUY";
-    return `<div class="trade">
-      <span class="pill ${buy?'buy':'sell'}">${t.side}</span>
-      <span class="t"><b>${t.name}</b> ${t.outcome||''} · ${(t.title||'').slice(0,52)}</span>
-      <span class="dim">${(t.price||0).toFixed(2)} · ${new Date((t.timestamp||0)*1000).toLocaleDateString()}</span>
-    </div>`;
-  }).join("") || '<div class="loading" style="padding:14px">no recent trades</div>';
+  // per-wallet
+  const maxW=Math.max(...WALLETS.map(w=>w.weight));
+  document.querySelector("#wallets tbody").innerHTML = WALLETS.map(w=>{const p=perW[w.wallet];
+    return `<tr><td class="name"><a href="https://polymarket.com/profile/${w.wallet}" target="_blank">${w.name}</a></td>
+      <td>${(w.weight*100).toFixed(1)}%</td><td>${p.bets}</td>
+      <td>${fmt(p.invested)}</td>
+      <td class="${p.realized>=0?'green':'red'}">${sg(p.realized)}</td></tr>`;}).join("");
+
+  // feed
+  document.getElementById("feed").innerHTML = events.slice(-16).reverse().map(t=>{
+    const buy=t.side==="BUY";
+    return `<div class="trade"><span class="pill ${buy?'buy':'sell'}">${t.side}</span>
+      <span class="t"><b>${t.name}</b> ${t.outcome||''} · ${(t.title||'').slice(0,46)}</span>
+      <span class="dim">${((t.price||0)*100).toFixed(0)}¢ · ${new Date((t.timestamp||0)*1000).toLocaleDateString()}</span></div>`;
+  }).join("") || '<div class="loading">no recent trades</div>';
 
   document.getElementById("note").innerHTML =
-    "<b>Capital model:</b> a $1,000 pool. Each current open bet a wallet holds is mirrored with a stake of "+
-    "(edge weight × $1,000 × "+((PER_POS*100)|0)+"%), funding highest-edge wallets first until cash runs out — "+
-    "then new trades are <b>skipped</b> (fully deployed). <b>Liquid</b> = uninvested cash · <b>Invested</b> = "+
-    "marked-to-market value of open mirrors. These two are exact.<br><br>"+
-    "<b>⚠ The P&L number is a rough, optimistic estimate.</b> It's sampled from the last 100 positions per "+
-    "wallet; these wallets have more unredeemed losers than that, so losses are undercounted (the survivorship "+
-    "bias documented in the repo). The strategy is <b>unproven out-of-sample</b> — treat the P&L as noise, the "+
-    "allocation/feed as the real signal. Weights = z-score × copyability. Built with "+
-    "<a href='https://github.com/jaxperro/winning-wallet-finder' target='_blank'>winning-wallet-finder</a>.";
+    `<b>How it works:</b> a $1,000 cash account, started ${new Date(START*1000).toLocaleDateString()}. Replaying every trade `+
+    `these 8 wallets made since then: when one enters a new market, this account enters too with a stake of `+
+    `(edge weight × $1,000 × ${(PER_POS*100)|0}%) — <i>if there's cash</i>. When a market resolves, the bet settles `+
+    `(win → payout, loss → $0) and cash frees up. <b>Realized</b> = settled P&L · <b>Invested</b> = open bets marked `+
+    `to market · <b>Missed</b> = P&L of trades skipped because capital was fully deployed (the cost of a small bankroll). `+
+    `Weights = z-score × copyability. <b>Paper money — edge unproven out-of-sample.</b> Data sampled (last ~2,000 trades/wallet). `+
+    `Built with <a href="https://github.com/jaxperro/winning-wallet-finder" target="_blank">winning-wallet-finder</a>.`;
 }
-
-document.getElementById("refresh").onclick = load;
-load();
-setInterval(load, 90000);
+document.getElementById("refresh").onclick=load;
+load(); setInterval(load,90000);
 </script>
 </body>
 </html>
