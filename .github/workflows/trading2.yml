@@ -4,7 +4,7 @@ name: trading2 mop-up book
 # scan favorites -> settle resolved positions -> redeploy idle cash -> commit book.json.
 on:
   schedule:
-    - cron: "17 */3 * * *"   # every 3 hours (UTC; GitHub may delay under load)
+    - cron: "17 * * * *"     # hourly (UTC; GitHub may delay under load)
   workflow_dispatch: {}       # allow manual runs from the Actions tab
 
 permissions:
