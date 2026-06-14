@@ -166,7 +166,7 @@ async function load(){
       if(cash>=stake){
         cash-=stake; perW[ev.wallet].bets++;
         open[a]={name:ev.name, wallet:ev.wallet, asset:a, stake, entry:ev.price||0.01,
-                 shares:stake/(ev.price||0.01), title:ev.title, outcome:ev.outcome};
+                 shares:stake/(ev.price||0.01), title:ev.title, outcome:ev.outcome, cond:ev.conditionId};
       } else if(!missedSeen.has(a)){                            // couldn't afford it
         missedSeen.add(a); missedCount++;
         const p=ev.price||0.01, r=resAt(a), cp=info[a]?.cur;
@@ -194,6 +194,11 @@ async function load(){
     }
     const val=p.shares*cp; invMkt+=val; invCost+=p.stake; perW[p.wallet].invested+=val;
     current.push({...p, cur:cp, val, pnl:val-p.stake, end:info[a]?.end}); }
+
+  // fill resolution dates the position sample missed — look them up by market
+  await Promise.all(current.filter(p=>!ep(p.end) && p.cond).map(async p=>{
+    try{ const m=await j(`https://clob.polymarket.com/markets/${p.cond}`); if(m && m.end_date_iso) p.end=m.end_date_iso; }catch(e){}
+  }));
 
   const liquid=cash, equity=liquid+invMkt, pl=equity-BANKROLL;
   const unreal=invMkt-invCost;
