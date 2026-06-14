@@ -173,6 +173,12 @@ async function load(){
   // mark remaining open bets to current price
   let invMkt=0, invCost=0; const current=[];
   for(const a of Object.keys(open)){ const p=open[a], cp=(info[a]?.cur ?? p.entry);
+    // resolved but the market carried no date → settle it now instead of leaving
+    // it stuck as an open "pending" bet with phantom unrealized P&L
+    if(!resAt(a) && (cp<=0.001 || cp>=0.999)){
+      const pay=p.shares*(cp>=0.5?1:0); cash+=pay; realized+=pay-p.stake; perW[p.wallet].realized+=pay-p.stake;
+      continue;
+    }
     const val=p.shares*cp; invMkt+=val; invCost+=p.stake; perW[p.wallet].invested+=val;
     current.push({...p, cur:cp, val, pnl:val-p.stake, end:info[a]?.end}); }
 
@@ -199,7 +205,7 @@ async function load(){
   current.sort((a,b)=>ep(a.end)-ep(b.end));
   document.querySelector("#current tbody").innerHTML = current.length? current.map(p=>{
     const e=ep(p.end), days=e?Math.round((e-now)/86400):null;
-    const when = !e?'pending':(e<now?'<span class="amber">settling…</span>':(days<=0?'today':`in ${days}d`));
+    const when = !e?'<span class="dim">no date</span>':(e<now?'<span class="amber">settling…</span>':(days<=0?'today':`in ${days}d`));
     return `<tr>
       <td class="mkt">${p.title||''}</td>
       <td class="name">${p.name}</td>
