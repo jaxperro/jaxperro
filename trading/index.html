@@ -136,8 +136,8 @@ async function walletData(w){
   for(let o=0;o<500;o+=100){ let pg=[]; try{pg=await j(`${DATA}/positions?user=${w.wallet}&limit=100&offset=${o}&sizeThreshold=0`);}catch(e){} if(!pg.length)break; open.push(...pg); if(pg.length<100)break; }
   for(let o=0;o<300;o+=100){ let pg=[]; try{pg=await j(`${DATA}/closed-positions?user=${w.wallet}&limit=100&offset=${o}&sortBy=TIMESTAMP&sortDirection=DESC`);}catch(e){} if(!pg.length)break; closed.push(...pg); if(pg.length<100)break; }
   const info={};
-  for(const p of open||[])   info[p.asset]={end:p.endDate, cur:p.curPrice, title:p.title, outcome:p.outcome};
-  for(const p of closed||[]) if(!(p.asset in info)) info[p.asset]={end:p.endDate, cur:p.curPrice, title:p.title, outcome:p.outcome};
+  for(const p of open||[])   info[p.asset]={end:p.endDate, cur:p.curPrice, title:p.title, outcome:p.outcome, redeem:p.redeemable};
+  for(const p of closed||[]) if(!(p.asset in info)) info[p.asset]={end:p.endDate, cur:p.curPrice, title:p.title, outcome:p.outcome, redeem:p.redeemable};
   return {trades, info};
 }
 
@@ -197,8 +197,9 @@ async function load(){
   const mktCache={};
   const marketInfo = async cond => { if(!cond) return null;
     if(!(cond in mktCache)){ try{ const m=await j(`https://clob.polymarket.com/markets/${cond}`);
-      const prices={}; for(const t of (m&&m.tokens)||[]) prices[t.outcome]= t.winner===true?1 : t.winner===false?0 : t.price;
-      mktCache[cond]={end:(m&&m.end_date_iso)||null, prices}; }catch(e){ mktCache[cond]={end:null,prices:{}}; } }
+      const prices={}; let resolved=false;
+      for(const t of (m&&m.tokens)||[]){ if(t.winner===true||t.winner===false) resolved=true; prices[t.outcome]= t.winner===true?1 : t.winner===false?0 : t.price; }
+      mktCache[cond]={end:(m&&m.end_date_iso)||null, prices, resolved}; }catch(e){ mktCache[cond]={end:null,prices:{},resolved:false}; } }
     return mktCache[cond]; };
   const marketEnd = async cond => (await marketInfo(cond))?.end || null;
 
@@ -206,15 +207,16 @@ async function load(){
   // everything whose market has already ended
   await Promise.all(Object.values(open).filter(p=>p.cond && (!ep(info[p.asset]?.end) || info[p.asset]?.cur==null))
     .map(async p=>{ const m=await marketInfo(p.cond); if(!m) return;
-      info[p.asset]={...(info[p.asset]||{}), end:info[p.asset]?.end||m.end, cur:info[p.asset]?.cur ?? m.prices[p.outcome]}; }));
+      info[p.asset]={...(info[p.asset]||{}), end:info[p.asset]?.end||m.end, cur:info[p.asset]?.cur ?? m.prices[p.outcome], redeem:info[p.asset]?.redeem||m.resolved}; }));
   settle(now);
 
   // mark remaining open bets to current price
   let invMkt=0, invCost=0; const current=[];
   for(const a of Object.keys(open)){ const p=open[a], cp=(info[a]?.cur ?? p.entry);
-    // resolved but the market carried no date → settle it now instead of leaving
-    // it stuck as an open "pending" bet with phantom unrealized P&L
-    if(!resAt(a) && (cp<=0.001 || cp>=0.999)){
+    // already resolved on Polymarket (redeemable, or priced to an extreme) but
+    // the endDate is stale/in the future → settle it now instead of leaving a
+    // phantom "open" bet stuck at $0 (or full value) with unrealized P&L
+    if(info[a]?.redeem || (!resAt(a) && (cp<=0.001 || cp>=0.999))){
       const pay=p.shares*(cp>=0.5?1:0); cash+=pay; realized+=pay-p.stake; perW[p.wallet].realized+=pay-p.stake;
       settled.push({title:p.title,name:p.name,outcome:p.outcome,entry:p.entry,stake:p.stake,res:cp>=0.5?1:0,pnl:pay-p.stake,date:null});
       continue;
