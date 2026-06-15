@@ -85,6 +85,12 @@
     <th>Market</th><th>Wallet</th><th>Side</th><th>Bought @</th><th>Resolved at</th><th>P&amp;L</th><th>Date</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
 
+  <h2 id="missHead">Missed bets (resolved) — couldn't afford</h2>
+  <div class="sub" style="margin:-6px 0 10px">Bets the wallets made that we skipped because the $1,000 was fully deployed — and how they turned out. Missed P&amp;L = what we'd have made (or dodged).</div>
+  <div class="scroll"><table id="missedTbl"><thead><tr>
+    <th>Market</th><th>Wallet</th><th>Side</th><th>Bought @</th><th>Resolved at</th><th>Missed P&amp;L</th><th>Date</th>
+  </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
+
   <h2>Allocation by wallet</h2>
   <div class="scroll"><table id="wallets"><thead><tr>
     <th>Wallet</th><th>Weight</th><th>Bets in</th><th>Invested</th><th>Realized</th>
@@ -149,6 +155,7 @@ async function load(){
   let missedPnl=0, missedCount=0;
   const perW=Object.fromEntries(WALLETS.map(w=>[w.wallet,{bets:0, invested:0, realized:0}]));
   const settled=[];   // history of bets that have resolved/closed
+  const missedLog=[]; // bets we couldn't afford (capital fully deployed)
 
   const settle = T => { for(const a of Object.keys(open)){ const r=resAt(a);
     if(r && r<=T){ const p=open[a], w=won(a), pay=p.shares*(w?1:0);
@@ -170,8 +177,12 @@ async function load(){
       } else if(!missedSeen.has(a)){                            // couldn't afford it
         missedSeen.add(a); missedCount++;
         const p=ev.price||0.01, r=resAt(a), cp=info[a]?.cur;
-        if(r && r<=now)      missedPnl += stake*(((won(a)?1:0)/p)-1);
-        else if(cp!=null)    missedPnl += stake*((cp/p)-1);
+        let mp=null, res=null, date=null, resolved=false;
+        if(r && r<=now){ resolved=true; res=won(a)?1:0; date=r; mp=stake*((res/p)-1); }
+        else if(cp!=null && (cp<=0.001||cp>=0.999)){ resolved=true; res=cp>=0.5?1:0; mp=stake*((res/p)-1); }
+        else if(cp!=null){ mp=stake*((cp/p)-1); }
+        if(mp!=null) missedPnl += mp;
+        missedLog.push({title:ev.title,name:ev.name,outcome:ev.outcome,entry:p,res,pnl:mp,date,resolved,cond:ev.conditionId});
       }
     } else if(open[a]){                                         // they exited → we exit
       const p=open[a], proceeds=p.shares*(ev.price||0);
@@ -257,6 +268,27 @@ async function load(){
       <td class="${s.pnl>=0?'green':'red'}">${sg(s.pnl)}</td>
       <td>${d}</td></tr>`;}).join("")
     : '<tr><td colspan="7" class="loading">no bets have settled yet — they\'ll appear here as markets resolve</td></tr>';
+
+  // missed bets that have resolved (look up missing resolution dates, then sort)
+  const missedRes = missedLog.filter(m=>m.resolved);
+  await Promise.all(missedRes.filter(m=>!m.date && m.cond).slice(0,60).map(async m=>{ const e=await marketEnd(m.cond); if(e) m.date=ep(e); }));
+  missedRes.sort((a,b)=>(b.date||now)-(a.date||now));
+  const missNet = missedRes.reduce((s,m)=>s+(m.pnl||0),0);
+  const missWins = missedRes.filter(m=>m.res>=0.5).length;
+  document.getElementById("missHead").textContent =
+    `Missed bets (resolved) — ${missedRes.length} skipped${missedRes.length?` (${missWins}W / ${missedRes.length-missWins}L) · ${sg(missNet)} net`:''}`;
+  document.querySelector("#missedTbl tbody").innerHTML = missedRes.length ? missedRes.slice(0,60).map(m=>{
+    const result = m.res>=0.5 ? `<span class="green">won · 100¢</span>` : `<span class="red">lost · 0¢</span>`;
+    const d = m.date ? new Date(m.date*1000).toLocaleDateString() : '<span class="dim">—</span>';
+    return `<tr>
+      <td class="mkt">${m.title||''}</td>
+      <td class="name">${m.name}</td>
+      <td>${m.outcome||''}</td>
+      <td>${(m.entry*100).toFixed(0)}¢</td>
+      <td>${result}</td>
+      <td class="${m.pnl>=0?'green':'red'}">${sg(m.pnl)}</td>
+      <td>${d}</td></tr>`;}).join("")
+    : '<tr><td colspan="7" class="loading">no missed bets have resolved yet</td></tr>';
 
   // per-wallet
   const maxW=Math.max(...WALLETS.map(w=>w.weight));
