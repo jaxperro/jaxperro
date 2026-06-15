@@ -218,7 +218,10 @@ async function load(){
     // phantom "open" bet stuck at $0 (or full value) with unrealized P&L
     if(info[a]?.redeem || (!resAt(a) && (cp<=0.001 || cp>=0.999))){
       const pay=p.shares*(cp>=0.5?1:0); cash+=pay; realized+=pay-p.stake; perW[p.wallet].realized+=pay-p.stake;
-      settled.push({title:p.title,name:p.name,outcome:p.outcome,entry:p.entry,stake:p.stake,res:cp>=0.5?1:0,pnl:pay-p.stake,date:null});
+      // these resolved before their scheduled endDate, so we have no true
+      // resolution timestamp — stamp the past endDate if we have one, else today
+      const rdate = (resAt(a) && resAt(a)<=now) ? resAt(a) : now;
+      settled.push({title:p.title,name:p.name,outcome:p.outcome,entry:p.entry,stake:p.stake,res:cp>=0.5?1:0,pnl:pay-p.stake,date:rdate});
       continue;
     }
     const val=p.shares*cp; invMkt+=val; invCost+=p.stake; perW[p.wallet].invested+=val;
