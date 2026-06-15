@@ -85,8 +85,14 @@
     <th>Market</th><th>Wallet</th><th>Side</th><th>Bought in</th><th>Returned</th><th>P&amp;L</th><th>Date</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
 
+  <h2 id="missOpenHead">Missed bets (open) — couldn't afford</h2>
+  <div class="sub" style="margin:-6px 0 10px">Bets the wallets made that we skipped because the $1,000 was fully deployed — these markets are still live. Missed P&amp;L is unrealized: the position's value now vs. what we'd have paid.</div>
+  <div class="scroll"><table id="missedOpenTbl"><thead><tr>
+    <th>Market</th><th>Wallet</th><th>Side</th><th>Bought in</th><th>Value now</th><th>Missed P&amp;L</th><th>Settles</th>
+  </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
+
   <h2 id="missHead">Missed bets (resolved) — couldn't afford</h2>
-  <div class="sub" style="margin:-6px 0 10px">Bets the wallets made that we skipped because the $1,000 was fully deployed — and how they turned out. Missed P&amp;L = what we'd have made (or dodged).</div>
+  <div class="sub" style="margin:-6px 0 10px">Skipped bets whose markets have since resolved — how they turned out. Missed P&amp;L = what we'd have made (or dodged).</div>
   <div class="scroll"><table id="missedTbl"><thead><tr>
     <th>Market</th><th>Wallet</th><th>Side</th><th>Bought in</th><th>Returned</th><th>Missed P&amp;L</th><th>Date</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
@@ -176,13 +182,9 @@ async function load(){
                  shares:stake/(ev.price||0.01), title:ev.title, outcome:ev.outcome, cond:ev.conditionId};
       } else if(!missedSeen.has(a)){                            // couldn't afford it
         missedSeen.add(a); missedCount++;
-        const p=ev.price||0.01, r=resAt(a), cp=info[a]?.cur;
-        let mp=null, res=null, date=null, resolved=false;
-        if(r && r<=now){ resolved=true; res=won(a)?1:0; date=r; mp=stake*((res/p)-1); }
-        else if(cp!=null && (cp<=0.001||cp>=0.999)){ resolved=true; res=cp>=0.5?1:0; mp=stake*((res/p)-1); }
-        else if(cp!=null){ mp=stake*((cp/p)-1); }
-        if(mp!=null) missedPnl += mp;
-        missedLog.push({title:ev.title,name:ev.name,outcome:ev.outcome,entry:p,stake,res,pnl:mp,date,resolved,cond:ev.conditionId});
+        // record the raw skipped bet; outcome/resolved is computed after the
+        // market backfill below, so we use the authoritative resolution signal
+        missedLog.push({title:ev.title,name:ev.name,outcome:ev.outcome,entry:ev.price||0.01,stake,asset:a,cond:ev.conditionId});
       }
     } else if(open[a]){                                         // they exited → we exit
       const p=open[a], proceeds=p.shares*(ev.price||0);
@@ -209,6 +211,20 @@ async function load(){
     .map(async p=>{ const m=await marketInfo(p.cond); if(!m) return;
       info[p.asset]={...(info[p.asset]||{}), end:info[p.asset]?.end||m.end, cur:info[p.asset]?.cur ?? m.prices[p.outcome], redeem:info[p.asset]?.redeem||m.resolved}; }));
   settle(now);
+
+  // do the same backfill for skipped (missed) bets, then decide each one's
+  // outcome — resolved only if the date passed or Polymarket says it resolved
+  await Promise.all(missedLog.filter(m=>m.cond && (!ep(info[m.asset]?.end) || info[m.asset]?.cur==null))
+    .map(async m=>{ const mk=await marketInfo(m.cond); if(!mk) return;
+      info[m.asset]={...(info[m.asset]||{}), end:info[m.asset]?.end||mk.end, cur:info[m.asset]?.cur ?? mk.prices[m.outcome], redeem:info[m.asset]?.redeem||mk.resolved}; }));
+  for(const m of missedLog){ const a=m.asset, rr=resAt(a), cp=info[a]?.cur, p=m.entry;
+    if(rr && rr<=now){ m.resolved=true; m.res=won(a)?1:0; m.date=rr; }
+    else if(info[a]?.redeem){ m.resolved=true; m.res=cp>=0.5?1:0; m.date=now; }   // resolved early
+    else { m.resolved=false; m.res=null; m.date=null; }
+    m.pnl = m.resolved ? m.stake*((m.res/p)-1) : (cp!=null ? m.stake*((cp/p)-1) : null);
+    m.cur = cp;
+  }
+  missedPnl = missedLog.reduce((s,m)=>s+(m.pnl||0),0);
 
   // mark remaining open bets to current price
   let invMkt=0, invCost=0; const current=[];
@@ -284,9 +300,26 @@ async function load(){
       <td>${d}</td></tr>`;}).join("")
     : '<tr><td colspan="7" class="loading">no bets have settled yet — they\'ll appear here as markets resolve</td></tr>';
 
-  // missed bets that have resolved (look up missing resolution dates, then sort)
+  // missed bets — still-live markets, sorted by when they settle (closest first)
+  const missedOpen = missedLog.filter(m=>!m.resolved);
+  missedOpen.sort((a,b)=>(ep(info[a.asset]?.end)||Infinity)-(ep(info[b.asset]?.end)||Infinity));
+  const missOpenNet = missedOpen.reduce((s,m)=>s+(m.pnl||0),0);
+  document.getElementById("missOpenHead").textContent =
+    `Missed bets (open) — ${missedOpen.length} skipped${missedOpen.length?` · ${sg(missOpenNet)} unrealized`:''}`;
+  document.querySelector("#missedOpenTbl tbody").innerHTML = missedOpen.length ? missedOpen.slice(0,60).map(m=>{
+    const valNow = m.pnl!=null ? fmt(m.stake+m.pnl) : '<span class="dim">—</span>';
+    return `<tr>
+      <td class="mkt">${m.title||''}</td>
+      <td class="name">${m.name}</td>
+      <td>${m.outcome||''}</td>
+      <td>${fmt(m.stake)}</td>
+      <td>${valNow}</td>
+      <td class="${(m.pnl||0)>=0?'green':'red'}">${m.pnl!=null?sg(m.pnl):'<span class="dim">—</span>'}</td>
+      <td>${settleLabel(info[m.asset]?.end)}</td></tr>`;}).join("")
+    : '<tr><td colspan="7" class="loading">no open missed bets right now</td></tr>';
+
+  // missed bets that have resolved, sorted by resolution date (closest first)
   const missedRes = missedLog.filter(m=>m.resolved);
-  await Promise.all(missedRes.filter(m=>!m.date && m.cond).slice(0,60).map(async m=>{ const e=await marketEnd(m.cond); if(e) m.date=ep(e); }));
   missedRes.sort((a,b)=>(a.date||Infinity)-(b.date||Infinity));
   const missNet = missedRes.reduce((s,m)=>s+(m.pnl||0),0);
   const missWins = missedRes.filter(m=>m.res>=0.5).length;
