@@ -75,20 +75,20 @@
   </div>
 
   <h2 id="curHead">Current bets — what you're in & when they settle</h2>
-  <div class="sub" style="margin:-6px 0 10px">P&amp;L here is <b>unrealized</b> — the live market price vs. what you paid. It only becomes <b>Realized</b> when the bet settles on its date.</div>
+  <div class="sub" style="margin:-6px 0 10px">P&amp;L here is <b>unrealized</b> — the live market value vs. what you put in. It only becomes <b>Realized</b> when the bet settles on its date.</div>
   <div class="scroll"><table id="current"><thead><tr>
-    <th>Market</th><th>Wallet</th><th>Side</th><th>Entry</th><th>Now</th><th>P&amp;L</th><th>Settles</th>
+    <th>Market</th><th>Wallet</th><th>Side</th><th>Bought in</th><th>Value now</th><th>P&amp;L</th><th>Settles</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
 
   <h2 id="resHead">Resolved bets — settled</h2>
   <div class="scroll"><table id="resolved"><thead><tr>
-    <th>Market</th><th>Wallet</th><th>Side</th><th>Bought @</th><th>Resolved at</th><th>P&amp;L</th><th>Date</th>
+    <th>Market</th><th>Wallet</th><th>Side</th><th>Bought in</th><th>Returned</th><th>P&amp;L</th><th>Date</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
 
   <h2 id="missHead">Missed bets (resolved) — couldn't afford</h2>
   <div class="sub" style="margin:-6px 0 10px">Bets the wallets made that we skipped because the $1,000 was fully deployed — and how they turned out. Missed P&amp;L = what we'd have made (or dodged).</div>
   <div class="scroll"><table id="missedTbl"><thead><tr>
-    <th>Market</th><th>Wallet</th><th>Side</th><th>Bought @</th><th>Resolved at</th><th>Missed P&amp;L</th><th>Date</th>
+    <th>Market</th><th>Wallet</th><th>Side</th><th>Bought in</th><th>Returned</th><th>Missed P&amp;L</th><th>Date</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
 
   <h2>Allocation by wallet</h2>
@@ -160,7 +160,7 @@ async function load(){
   const settle = T => { for(const a of Object.keys(open)){ const r=resAt(a);
     if(r && r<=T){ const p=open[a], w=won(a), pay=p.shares*(w?1:0);
       cash+=pay; realized+=pay-p.stake; perW[p.wallet].realized+=pay-p.stake;
-      settled.push({title:p.title,name:p.name,outcome:p.outcome,entry:p.entry,res:w?1:0,pnl:pay-p.stake,date:r});
+      settled.push({title:p.title,name:p.name,outcome:p.outcome,entry:p.entry,stake:p.stake,res:w?1:0,pnl:pay-p.stake,date:r});
       delete open[a]; } } };
 
   for(const ev of events){
@@ -182,15 +182,31 @@ async function load(){
         else if(cp!=null && (cp<=0.001||cp>=0.999)){ resolved=true; res=cp>=0.5?1:0; mp=stake*((res/p)-1); }
         else if(cp!=null){ mp=stake*((cp/p)-1); }
         if(mp!=null) missedPnl += mp;
-        missedLog.push({title:ev.title,name:ev.name,outcome:ev.outcome,entry:p,res,pnl:mp,date,resolved,cond:ev.conditionId});
+        missedLog.push({title:ev.title,name:ev.name,outcome:ev.outcome,entry:p,stake,res,pnl:mp,date,resolved,cond:ev.conditionId});
       }
     } else if(open[a]){                                         // they exited → we exit
       const p=open[a], proceeds=p.shares*(ev.price||0);
       cash+=proceeds; realized+=proceeds-p.stake; perW[p.wallet].realized+=proceeds-p.stake;
-      settled.push({title:p.title,name:p.name,outcome:p.outcome,entry:p.entry,res:ev.price||0,pnl:proceeds-p.stake,date:ev.timestamp,sold:true});
+      settled.push({title:p.title,name:p.name,outcome:p.outcome,entry:p.entry,stake:p.stake,res:ev.price||0,pnl:proceeds-p.stake,date:ev.timestamp,sold:true});
       delete open[a];
     }
   }
+  // resolve each market once — its end date and, if settled, the winning prices.
+  // the trade/position sample misses dates for some markets, which used to leave
+  // bets stuck on "settling…" forever: settle(now) ran before the date was known.
+  const mktCache={};
+  const marketInfo = async cond => { if(!cond) return null;
+    if(!(cond in mktCache)){ try{ const m=await j(`https://clob.polymarket.com/markets/${cond}`);
+      const prices={}; for(const t of (m&&m.tokens)||[]) prices[t.outcome]= t.winner===true?1 : t.winner===false?0 : t.price;
+      mktCache[cond]={end:(m&&m.end_date_iso)||null, prices}; }catch(e){ mktCache[cond]={end:null,prices:{}}; } }
+    return mktCache[cond]; };
+  const marketEnd = async cond => (await marketInfo(cond))?.end || null;
+
+  // backfill missing resolution date / settled price for open bets, then settle
+  // everything whose market has already ended
+  await Promise.all(Object.values(open).filter(p=>p.cond && (!ep(info[p.asset]?.end) || info[p.asset]?.cur==null))
+    .map(async p=>{ const m=await marketInfo(p.cond); if(!m) return;
+      info[p.asset]={...(info[p.asset]||{}), end:info[p.asset]?.end||m.end, cur:info[p.asset]?.cur ?? m.prices[p.outcome]}; }));
   settle(now);
 
   // mark remaining open bets to current price
@@ -200,21 +216,15 @@ async function load(){
     // it stuck as an open "pending" bet with phantom unrealized P&L
     if(!resAt(a) && (cp<=0.001 || cp>=0.999)){
       const pay=p.shares*(cp>=0.5?1:0); cash+=pay; realized+=pay-p.stake; perW[p.wallet].realized+=pay-p.stake;
-      settled.push({title:p.title,name:p.name,outcome:p.outcome,entry:p.entry,res:cp>=0.5?1:0,pnl:pay-p.stake,date:null});
+      settled.push({title:p.title,name:p.name,outcome:p.outcome,entry:p.entry,stake:p.stake,res:cp>=0.5?1:0,pnl:pay-p.stake,date:null});
       continue;
     }
     const val=p.shares*cp; invMkt+=val; invCost+=p.stake; perW[p.wallet].invested+=val;
     current.push({...p, cur:cp, val, pnl:val-p.stake, end:info[a]?.end}); }
 
-  // shared market → resolution-date cache (fills dates the position sample missed)
-  const dateCache={};
-  const marketEnd = async cond => { if(!cond) return null;
-    if(!(cond in dateCache)){ try{ const m=await j(`https://clob.polymarket.com/markets/${cond}`); dateCache[cond]=(m&&m.end_date_iso)||null; }catch(e){ dateCache[cond]=null; } }
-    return dateCache[cond]; };
   const settleLabel = e0 => { const e=ep(e0); if(!e) return '<span class="dim">—</span>';
     const days=Math.round((e-now)/86400);
     return e<now?'<span class="amber">settling…</span>':(days<=0?'today':`in ${days}d`); };
-  await Promise.all(current.filter(p=>!ep(p.end) && p.cond).map(async p=>{ const e=await marketEnd(p.cond); if(e) p.end=e; }));
 
   const liquid=cash, equity=liquid+invMkt, pl=equity-BANKROLL;
   const unreal=invMkt-invCost;
@@ -244,8 +254,8 @@ async function load(){
       <td class="mkt">${p.title||''}</td>
       <td class="name">${p.name}</td>
       <td>${p.outcome||''}</td>
-      <td>${(p.entry*100).toFixed(0)}¢</td>
-      <td>${(p.cur*100).toFixed(0)}¢</td>
+      <td>${fmt(p.stake)}</td>
+      <td>${fmt(p.val)}</td>
       <td class="${p.pnl>=0?'green':'red'}">${sg(p.pnl)}</td>
       <td>${when}</td></tr>`;}).join("")
     : '<tr><td colspan="7" class="loading">no open bets right now — all cash is liquid</td></tr>';
@@ -256,14 +266,14 @@ async function load(){
   document.getElementById("resHead").textContent =
     `Resolved bets — ${settled.length} settled${settled.length?` (${wins}W / ${settled.length-wins}L)`:''}`;
   document.querySelector("#resolved tbody").innerHTML = settled.length ? settled.slice(0,60).map(s=>{
-    const result = s.sold ? `sold ${(s.res*100).toFixed(0)}¢`
-      : (s.res>=0.5 ? `<span class="green">won · 100¢</span>` : `<span class="red">lost · 0¢</span>`);
+    const result = s.sold ? `sold · ${fmt(s.stake+s.pnl)}`
+      : (s.res>=0.5 ? `<span class="green">won · ${fmt(s.stake+s.pnl)}</span>` : `<span class="red">lost · $0</span>`);
     const d = s.date ? new Date(s.date*1000).toLocaleDateString() : '<span class="dim">—</span>';
     return `<tr>
       <td class="mkt">${s.title||''}</td>
       <td class="name">${s.name}</td>
       <td>${s.outcome||''}</td>
-      <td>${(s.entry*100).toFixed(0)}¢</td>
+      <td>${fmt(s.stake)}</td>
       <td>${result}</td>
       <td class="${s.pnl>=0?'green':'red'}">${sg(s.pnl)}</td>
       <td>${d}</td></tr>`;}).join("")
@@ -278,13 +288,13 @@ async function load(){
   document.getElementById("missHead").textContent =
     `Missed bets (resolved) — ${missedRes.length} skipped${missedRes.length?` (${missWins}W / ${missedRes.length-missWins}L) · ${sg(missNet)} net`:''}`;
   document.querySelector("#missedTbl tbody").innerHTML = missedRes.length ? missedRes.slice(0,60).map(m=>{
-    const result = m.res>=0.5 ? `<span class="green">won · 100¢</span>` : `<span class="red">lost · 0¢</span>`;
+    const result = m.res>=0.5 ? `<span class="green">won · ${fmt(m.stake+m.pnl)}</span>` : `<span class="red">lost · $0</span>`;
     const d = m.date ? new Date(m.date*1000).toLocaleDateString() : '<span class="dim">—</span>';
     return `<tr>
       <td class="mkt">${m.title||''}</td>
       <td class="name">${m.name}</td>
       <td>${m.outcome||''}</td>
-      <td>${(m.entry*100).toFixed(0)}¢</td>
+      <td>${fmt(m.stake)}</td>
       <td>${result}</td>
       <td class="${m.pnl>=0?'green':'red'}">${sg(m.pnl)}</td>
       <td>${d}</td></tr>`;}).join("")
@@ -305,7 +315,7 @@ async function load(){
     const buy=t.side==="BUY";
     return `<div class="trade"><span class="pill ${buy?'buy':'sell'}">${t.side}</span>
       <span class="t"><b>${t.name}</b> ${t.outcome||''} · ${(t.title||'').slice(0,40)}</span>
-      <span class="dim">${((t.price||0)*100).toFixed(0)}¢ · settles ${settleLabel(t._end)}</span></div>`;
+      <span class="dim">${fmt(t.weight*BANKROLL*PER_POS)} · settles ${settleLabel(t._end)}</span></div>`;
   }).join("") || '<div class="loading">no recent trades</div>';
 
   document.getElementById("note").innerHTML =
