@@ -195,10 +195,15 @@ async function load(){
     const val=p.shares*cp; invMkt+=val; invCost+=p.stake; perW[p.wallet].invested+=val;
     current.push({...p, cur:cp, val, pnl:val-p.stake, end:info[a]?.end}); }
 
-  // fill resolution dates the position sample missed — look them up by market
-  await Promise.all(current.filter(p=>!ep(p.end) && p.cond).map(async p=>{
-    try{ const m=await j(`https://clob.polymarket.com/markets/${p.cond}`); if(m && m.end_date_iso) p.end=m.end_date_iso; }catch(e){}
-  }));
+  // shared market → resolution-date cache (fills dates the position sample missed)
+  const dateCache={};
+  const marketEnd = async cond => { if(!cond) return null;
+    if(!(cond in dateCache)){ try{ const m=await j(`https://clob.polymarket.com/markets/${cond}`); dateCache[cond]=(m&&m.end_date_iso)||null; }catch(e){ dateCache[cond]=null; } }
+    return dateCache[cond]; };
+  const settleLabel = e0 => { const e=ep(e0); if(!e) return '<span class="dim">—</span>';
+    const days=Math.round((e-now)/86400);
+    return e<now?'<span class="amber">settling…</span>':(days<=0?'today':`in ${days}d`); };
+  await Promise.all(current.filter(p=>!ep(p.end) && p.cond).map(async p=>{ const e=await marketEnd(p.cond); if(e) p.end=e; }));
 
   const liquid=cash, equity=liquid+invMkt, pl=equity-BANKROLL;
   const unreal=invMkt-invCost;
@@ -261,12 +266,14 @@ async function load(){
       <td>${fmt(p.invested)}</td>
       <td class="${p.realized>=0?'green':'red'}">${sg(p.realized)}</td></tr>`;}).join("");
 
-  // feed
-  document.getElementById("feed").innerHTML = events.slice(-16).reverse().map(t=>{
+  // feed — resolve each trade's settle date, then render it alongside the trade
+  const feedTrades = events.slice(-16).reverse();
+  await Promise.all(feedTrades.map(async t=>{ t._end = info[t.asset]?.end || await marketEnd(t.conditionId); }));
+  document.getElementById("feed").innerHTML = feedTrades.map(t=>{
     const buy=t.side==="BUY";
     return `<div class="trade"><span class="pill ${buy?'buy':'sell'}">${t.side}</span>
-      <span class="t"><b>${t.name}</b> ${t.outcome||''} · ${(t.title||'').slice(0,46)}</span>
-      <span class="dim">${((t.price||0)*100).toFixed(0)}¢ · ${new Date((t.timestamp||0)*1000).toLocaleDateString()}</span></div>`;
+      <span class="t"><b>${t.name}</b> ${t.outcome||''} · ${(t.title||'').slice(0,40)}</span>
+      <span class="dim">${((t.price||0)*100).toFixed(0)}¢ · settles ${settleLabel(t._end)}</span></div>`;
   }).join("") || '<div class="loading">no recent trades</div>';
 
   document.getElementById("note").innerHTML =
