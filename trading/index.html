@@ -246,7 +246,7 @@ async function load(){
 
   // current bets
   document.getElementById("curHead").textContent=`Current bets — ${current.length} open, ${fmt(invMkt)} at work`;
-  current.sort((a,b)=>ep(a.end)-ep(b.end));
+  current.sort((a,b)=>(ep(a.end)||Infinity)-(ep(b.end)||Infinity));
   document.querySelector("#current tbody").innerHTML = current.length? current.map(p=>{
     const e=ep(p.end), days=e?Math.round((e-now)/86400):null;
     const when = !e?'<span class="dim">no date</span>':(e<now?'<span class="amber">settling…</span>':(days<=0?'today':`in ${days}d`));
@@ -261,7 +261,7 @@ async function load(){
     : '<tr><td colspan="7" class="loading">no open bets right now — all cash is liquid</td></tr>';
 
   // resolved bets (most recent first)
-  settled.sort((a,b)=>(b.date||now)-(a.date||now));
+  settled.sort((a,b)=>(a.date||Infinity)-(b.date||Infinity));
   const wins=settled.filter(s=>s.pnl>0).length;
   document.getElementById("resHead").textContent =
     `Resolved bets — ${settled.length} settled${settled.length?` (${wins}W / ${settled.length-wins}L)`:''}`;
@@ -282,7 +282,7 @@ async function load(){
   // missed bets that have resolved (look up missing resolution dates, then sort)
   const missedRes = missedLog.filter(m=>m.resolved);
   await Promise.all(missedRes.filter(m=>!m.date && m.cond).slice(0,60).map(async m=>{ const e=await marketEnd(m.cond); if(e) m.date=ep(e); }));
-  missedRes.sort((a,b)=>(b.date||now)-(a.date||now));
+  missedRes.sort((a,b)=>(a.date||Infinity)-(b.date||Infinity));
   const missNet = missedRes.reduce((s,m)=>s+(m.pnl||0),0);
   const missWins = missedRes.filter(m=>m.res>=0.5).length;
   document.getElementById("missHead").textContent =
