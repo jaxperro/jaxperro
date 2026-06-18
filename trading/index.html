@@ -105,7 +105,7 @@
   <h2>Sharp wallets — 23 validated copyable</h2>
   <div class="sub" style="margin:-6px 0 10px">The repeatable find: wallets whose <b>large bets win on genuinely-uncertain markets</b>, validated forward, with multi-day entry-to-resolution lead times (copyable sharps, insiders filtered out). Stats below are pulled live and refresh each reload. Click a name for their Polymarket profile.</div>
   <div class="scroll"><table id="sharps"><thead><tr>
-    <th>Wallet</th><th>Win&nbsp;%</th><th>Record</th><th>Realized&nbsp;P&amp;L</th><th>Last&nbsp;bet</th>
+    <th>Wallet</th><th>Conv&nbsp;win&nbsp;%</th><th>Conv&nbsp;record</th><th>Avg&nbsp;lead</th><th>Realized&nbsp;P&amp;L</th>
   </tr></thead><tbody><tr><td colspan="5" class="loading">loading…</td></tr></tbody></table></div>
 
   <div class="note" id="note"></div>
@@ -130,30 +130,31 @@ const byWallet = Object.fromEntries(WALLETS.map(w=>[w.wallet,w]));
 
 // the 23 validated copyable sharps (conviction-profile scan -> forward validation
 // -> timing gate that drops insiders). Stats pulled live from the data-api below.
+const CONV = 200;   // a "conviction" bet = they staked >= $this. lead = avg days entry->resolution (from validation)
 const SHARPS = [
-  {n:"ArbTraderRookie",w:"0x72e1597864456eda62878413cf3e60c332e4a45d"},
-  {n:"15perces",w:"0xe8e086f7ef06af27889edfb5026e1453c61d7eec"},
-  {n:"Kruto2027",w:"0xe8ca3f758c93f44f3ec210542ab78afb7c0bcccb"},
-  {n:"US-Phenom",w:"0x71878dddb3cfa8744e47dcfa983b62eaac45f08b"},
-  {n:"vamnizar",w:"0xaf4635074c8f9966ff44f2497183b53fc0578c1d"},
-  {n:"fortuneking",w:"0x86c878cde72660ec52f5e6f0f0438b76de8fc867"},
-  {n:"BikesAreTheBikes",w:"0x215adbb63b47d0ca92f849fe2c2dc1adb0f6254c"},
-  {n:"igot50k",w:"0x60ec17443af511a21945f01430e61c803465f7b0"},
-  {n:".ethguy",w:"0x1e55408f217f58facdf1d663c74cfa7f55e9e3e2"},
-  {n:"iohihoo",w:"0xfc81760d44a21acc9fd4b749a5bf9a9b2eeae072"},
-  {n:"Poory",w:"0x825784480f002247beaf01ed1777a85436ceda02"},
-  {n:"0x6804b5",w:"0x6804b57400dfb0ac39c9c72c82f0c6e5662e29e2"},
-  {n:"lox-frogs",w:"0x6e4976c274384ada57ae03b75e463585ad01f1af"},
-  {n:"Glued",w:"0x9dd9e18b9dcc393705e73966bc79eccbbd9108bd"},
-  {n:"DumplingBMF",w:"0x8f69269039b9a401de28a38c2f1c3001364b7df1"},
-  {n:"Marco-Rubio",w:"0xd67ba35aef659c872377a5ac2becb7ada7f85780"},
-  {n:"oliman2",w:"0xc684828f6b03487759ced2ebdd975f91f3532228"},
-  {n:"0x03F8DB",w:"0x03f8dbae3f553fc35521f2bd877e71b06bf4d85a"},
-  {n:"0xd67767",w:"0xd677672c3995d47918d8ec013abca5138841a495"},
-  {n:"Nigel364",w:"0xfa2bc333d6d26372e7d1064c6fa61ecf67f2c35d"},
-  {n:"asdssss",w:"0x2be61c1adfa360aba1a144ec3a6bcdd94ab9e054"},
-  {n:"xuasna99a",w:"0x0a3217e01a10968f78518245b72eb9072fd79875"},
-  {n:"0xa1fc8b",w:"0xa1fc8bd4805a72dc630baa02e639ef690f8f7cc1"},
+  {n:"ArbTraderRookie",w:"0x72e1597864456eda62878413cf3e60c332e4a45d",lead:6.7},
+  {n:"15perces",w:"0xe8e086f7ef06af27889edfb5026e1453c61d7eec",lead:6.2},
+  {n:"Kruto2027",w:"0xe8ca3f758c93f44f3ec210542ab78afb7c0bcccb",lead:3.4},
+  {n:"US-Phenom",w:"0x71878dddb3cfa8744e47dcfa983b62eaac45f08b",lead:51.8},
+  {n:"vamnizar",w:"0xaf4635074c8f9966ff44f2497183b53fc0578c1d",lead:2.4},
+  {n:"fortuneking",w:"0x86c878cde72660ec52f5e6f0f0438b76de8fc867",lead:6.5},
+  {n:"BikesAreTheBikes",w:"0x215adbb63b47d0ca92f849fe2c2dc1adb0f6254c",lead:15.3},
+  {n:"igot50k",w:"0x60ec17443af511a21945f01430e61c803465f7b0",lead:6.4},
+  {n:".ethguy",w:"0x1e55408f217f58facdf1d663c74cfa7f55e9e3e2",lead:19.6},
+  {n:"iohihoo",w:"0xfc81760d44a21acc9fd4b749a5bf9a9b2eeae072",lead:7.1},
+  {n:"Poory",w:"0x825784480f002247beaf01ed1777a85436ceda02",lead:4.3},
+  {n:"0x6804b5",w:"0x6804b57400dfb0ac39c9c72c82f0c6e5662e29e2",lead:6.1},
+  {n:"lox-frogs",w:"0x6e4976c274384ada57ae03b75e463585ad01f1af",lead:4.7},
+  {n:"Glued",w:"0x9dd9e18b9dcc393705e73966bc79eccbbd9108bd",lead:27.5},
+  {n:"DumplingBMF",w:"0x8f69269039b9a401de28a38c2f1c3001364b7df1",lead:3.6},
+  {n:"Marco-Rubio",w:"0xd67ba35aef659c872377a5ac2becb7ada7f85780",lead:14.8},
+  {n:"oliman2",w:"0xc684828f6b03487759ced2ebdd975f91f3532228",lead:135.2},
+  {n:"0x03F8DB",w:"0x03f8dbae3f553fc35521f2bd877e71b06bf4d85a",lead:6.4},
+  {n:"0xd67767",w:"0xd677672c3995d47918d8ec013abca5138841a495",lead:19.3},
+  {n:"Nigel364",w:"0xfa2bc333d6d26372e7d1064c6fa61ecf67f2c35d",lead:15.7},
+  {n:"asdssss",w:"0x2be61c1adfa360aba1a144ec3a6bcdd94ab9e054",lead:4.7},
+  {n:"xuasna99a",w:"0x0a3217e01a10968f78518245b72eb9072fd79875",lead:3.1},
+  {n:"0xa1fc8b",w:"0xa1fc8bd4805a72dc630baa02e639ef690f8f7cc1",lead:6.6},
 ];
 const fmt = n => (n<0?"-":"")+"$"+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:Math.abs(n)>=100?0:2});
 const sg  = n => (n>=0?"+":"")+fmt(n);
@@ -180,31 +181,32 @@ async function walletData(w){
   return {trades, info};
 }
 
-// live, survivorship-corrected recent stats for a sharp wallet: win rate unions
-// redeemed/sold (closed-positions) with resolved-but-unredeemed losers (positions
-// at curPrice ~0), so the rate isn't inflated. Realized P&L from closed positions.
+// live conviction win% for a sharp wallet: over their resolved bets where THEY
+// staked >= $CONV, fraction won. Survivorship-corrected — unions redeemed/sold
+// (closed-positions) with resolved-but-unredeemed losers (positions at ~0). Also
+// returns realized P&L (closed positions). Recomputed every load.
 async function sharpStats(w){
-  let won=0, lost=0, pnl=0, last=0;
-  try{ const cl = await j(`${DATA}/closed-positions?user=${w}&limit=200&sortBy=TIMESTAMP&sortDirection=DESC`);
-    for(const p of cl||[]){ ((p.curPrice||0)>=0.5? won++ : lost++); pnl += (p.realizedPnl||0);
-      last = Math.max(last, p.timestamp||ep(p.endDate)||0); } }catch(e){}
-  try{ const ps = await j(`${DATA}/positions?user=${w}&limit=200&sizeThreshold=0`);
-    for(const p of ps||[]){ const cp=p.curPrice||0; if(cp<=0.001||cp>=0.999) (cp>=0.5? won++ : lost++); } }catch(e){}
+  let won=0, lost=0, pnl=0;
+  try{ const cl = await j(`${DATA}/closed-positions?user=${w}&limit=500&sortBy=TIMESTAMP&sortDirection=DESC`);
+    for(const p of cl||[]){ pnl += (p.realizedPnl||0);
+      if((p.avgPrice||0)*(p.totalBought||0) >= CONV) ((p.curPrice||0)>=0.5? won++ : lost++); } }catch(e){}
+  try{ const ps = await j(`${DATA}/positions?user=${w}&limit=500&sizeThreshold=0`);
+    for(const p of ps||[]){ const cp=p.curPrice||0;
+      if((p.initialValue||0) >= CONV && (cp<=0.001||cp>=0.999)) (cp>=0.5? won++ : lost++); } }catch(e){}
   const n=won+lost;
-  return {wr: n? 100*won/n : null, won, lost, n, pnl, last};
+  return {wr: n? 100*won/n : null, won, lost, n, pnl};
 }
 async function renderSharps(){
   const rows = await Promise.all(SHARPS.map(async s=>({...s, st: await sharpStats(s.w)})));
-  rows.sort((a,b)=> (b.st.wr ?? -1) - (a.st.wr ?? -1));   // best win rate first
+  rows.sort((a,b)=> (b.st.wr ?? -1) - (a.st.wr ?? -1));   // best conviction win% first
   document.querySelector("#sharps tbody").innerHTML = rows.map(r=>{ const st=r.st;
     const wr = st.wr==null? '<span class="dim">—</span>' : st.wr.toFixed(0)+'%';
-    const last = st.last? Math.round((Date.now()/1000 - st.last)/86400)+'d ago' : '—';
     return `<tr>
       <td class="name"><a href="https://polymarket.com/profile/${r.w}" target="_blank">${r.n}</a></td>
       <td>${wr}</td>
       <td>${st.n? st.won+'–'+st.lost : '<span class="dim">—</span>'}</td>
-      <td class="${st.pnl>=0?'green':'red'}">${st.n? sg(st.pnl) : '—'}</td>
-      <td class="dim">${last}</td></tr>`;
+      <td class="dim">${r.lead<1? Math.round(r.lead*24)+'h' : r.lead.toFixed(1)+'d'}</td>
+      <td class="${st.pnl>=0?'green':'red'}">${sg(st.pnl)}</td></tr>`;
   }).join("") || '<tr><td colspan="5" class="loading">no data</td></tr>';
 }
 
