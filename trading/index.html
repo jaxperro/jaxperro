@@ -105,8 +105,8 @@
   <h2>Sharp wallets — 23 validated copyable</h2>
   <div class="sub" style="margin:-6px 0 10px">The repeatable find: wallets whose <b>large bets win on genuinely-uncertain markets</b>, validated forward, with multi-day entry-to-resolution lead times (copyable sharps, insiders filtered out). Stats below are pulled live and refresh each reload. Click a name for their Polymarket profile.</div>
   <div class="scroll"><table id="sharps"><thead><tr>
-    <th>Wallet</th><th>Conv&nbsp;win&nbsp;%</th><th>Conv&nbsp;record</th><th>Avg&nbsp;lead</th><th>Realized&nbsp;P&amp;L</th>
-  </tr></thead><tbody><tr><td colspan="5" class="loading">loading…</td></tr></tbody></table></div>
+    <th>Wallet</th><th>Conv&nbsp;win&nbsp;%</th><th>Conv&nbsp;record</th><th>Avg&nbsp;lead</th><th>Realized&nbsp;P&amp;L</th><th>Last&nbsp;bet</th>
+  </tr></thead><tbody><tr><td colspan="6" class="loading">loading…</td></tr></tbody></table></div>
 
   <div class="note" id="note"></div>
 </div>
@@ -160,6 +160,7 @@ const fmt = n => (n<0?"-":"")+"$"+Math.abs(n).toLocaleString(undefined,{maximumF
 const sg  = n => (n>=0?"+":"")+fmt(n);
 const pct = n => (n>=0?"+":"")+n.toFixed(1)+"%";
 const ep  = s => { if(!s) return 0; const t=Date.parse(String(s).replace(' ','T')); return isNaN(t)?0:t/1000; };
+const ago = ts => { if(!ts) return '—'; const s=Date.now()/1000-ts, h=s/3600; return h<1?Math.max(1,Math.round(s/60))+'m ago':h<48?Math.round(h)+'h ago':Math.round(h/24)+'d ago'; };
 const j = async u => { const r = await fetch(u); if(!r.ok) throw 0; return r.json(); };
 
 async function walletData(w){
@@ -186,15 +187,17 @@ async function walletData(w){
 // (closed-positions) with resolved-but-unredeemed losers (positions at ~0). Also
 // returns realized P&L (closed positions). Recomputed every load.
 async function sharpStats(w){
-  let won=0, lost=0, pnl=0;
+  let won=0, lost=0, pnl=0, last=0;
   try{ const cl = await j(`${DATA}/closed-positions?user=${w}&limit=500&sortBy=TIMESTAMP&sortDirection=DESC`);
     for(const p of cl||[]){ pnl += (p.realizedPnl||0);
       if((p.avgPrice||0)*(p.totalBought||0) >= CONV) ((p.curPrice||0)>=0.5? won++ : lost++); } }catch(e){}
   try{ const ps = await j(`${DATA}/positions?user=${w}&limit=500&sizeThreshold=0`);
     for(const p of ps||[]){ const cp=p.curPrice||0;
       if((p.initialValue||0) >= CONV && (cp<=0.001||cp>=0.999)) (cp>=0.5? won++ : lost++); } }catch(e){}
+  try{ const a = await j(`${DATA}/activity?user=${w}&type=TRADE&limit=1`);
+    if(a && a[0]) last = a[0].timestamp||0; }catch(e){}
   const n=won+lost;
-  return {wr: n? 100*won/n : null, won, lost, n, pnl};
+  return {wr: n? 100*won/n : null, won, lost, n, pnl, last};
 }
 async function renderSharps(){
   const rows = await Promise.all(SHARPS.map(async s=>({...s, st: await sharpStats(s.w)})));
@@ -206,8 +209,9 @@ async function renderSharps(){
       <td>${wr}</td>
       <td>${st.n? st.won+'–'+st.lost : '<span class="dim">—</span>'}</td>
       <td class="dim">${r.lead<1? Math.round(r.lead*24)+'h' : r.lead.toFixed(1)+'d'}</td>
-      <td class="${st.pnl>=0?'green':'red'}">${sg(st.pnl)}</td></tr>`;
-  }).join("") || '<tr><td colspan="5" class="loading">no data</td></tr>';
+      <td class="${st.pnl>=0?'green':'red'}">${sg(st.pnl)}</td>
+      <td class="dim">${ago(st.last)}</td></tr>`;
+  }).join("") || '<tr><td colspan="6" class="loading">no data</td></tr>';
 }
 
 async function load(){
