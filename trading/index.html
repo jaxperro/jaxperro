@@ -54,7 +54,7 @@
 <body>
 <div class="wrap">
   <header><h1>🏆 Winning Wallet Finder</h1><span class="dim">paper portfolio</span></header>
-  <div class="sub">A $1,000 paper account copying the <b>2 top skilled wallets</b> (clean pre-May-30 selection, validated forward) — but only their <b>high-conviction bets</b> (they staked ≥ $200), from <b>June 1</b>, held to resolution, cash freeing as bets settle. This focus+conviction cut is the version that survived the $1,000 capital limit out-of-sample. No execution lag. Tracking only.</div>
+  <div class="sub">A $1,000 paper account following <b>only Kruto2027</b> — mirroring <b>every one of his high-conviction bets</b> (he staked ≥ $200) from <b>June 1</b> to now, and still live. Each is held to resolution; cash recycles as bets settle. No execution lag. Tracking only.</div>
 
   <div class="hero">
     <div class="row-actions">
@@ -105,7 +105,7 @@
   <h2>Sharp wallets — 23 validated copyable</h2>
   <div class="sub" style="margin:-6px 0 10px">The repeatable find: wallets whose <b>large bets win on genuinely-uncertain markets</b>, validated forward, with multi-day entry-to-resolution lead times (copyable sharps, insiders filtered out). Stats below are pulled live and refresh each reload. Click a name for their Polymarket profile.</div>
   <div class="scroll"><table id="sharps"><thead><tr>
-    <th>Wallet</th><th>Conv&nbsp;win&nbsp;%</th><th>Conv&nbsp;record</th><th>Avg&nbsp;lead</th><th>Realized&nbsp;P&amp;L</th><th>Last&nbsp;bet</th>
+    <th>Wallet</th><th>Conv&nbsp;win&nbsp;%</th><th>Conv&nbsp;record</th><th>Avg&nbsp;lead</th><th>Realized&nbsp;P&amp;L</th><th>Last&nbsp;conv&nbsp;bet</th>
   </tr></thead><tbody><tr><td colspan="6" class="loading">loading…</td></tr></tbody></table></div>
 
   <div class="note" id="note"></div>
@@ -114,17 +114,15 @@
 <script>
 const DATA = "https://data-api.polymarket.com";
 const BANKROLL = 1000;
-const PER_POS = 0.20;                       // stake per new market = weight × $1000 × this
+const PER_POS = 0.05;                       // $50/bet — small enough that $1k mirrors EVERY conviction bet
 const START = Date.parse("2026-06-01T00:00:00Z")/1000;   // copy new trades from June 1
 const MIN_CONVICTION = 200;                 // only copy a wallet's bet if THEY staked >= this ($)
 
-// the focused strategy that survived $1,000 + missed-trade constraints out-of-sample:
-// the 2 top wallets (clean pre-May-30 selection, validated forward), z-weighted, and we
-// only mirror their HIGH-CONVICTION bets (they staked >= $MIN_CONVICTION). Broad baskets
-// failed on $1k (capital can't follow 1,200 trades); this focus+conviction cut clears.
+// follow ONLY Kruto2027 (the cleanest validated sharp), mirroring EVERY one of his
+// high-conviction bets (he staked >= $MIN_CONVICTION) from June 1 onward, still live.
+// $50/stake keeps $1k able to fund them all (he holds to resolution, cash recycles).
 const WALLETS = [
-  {name:"Kruto2027", wallet:"0xe8ca3f758c93f44f3ec210542ab78afb7c0bcccb", weight:0.724},
-  {name:"Perypery",  wallet:"0x0a7aaf83341b52df34e8ffef52aa295538d6df1b", weight:0.276},
+  {name:"Kruto2027", wallet:"0xe8ca3f758c93f44f3ec210542ab78afb7c0bcccb", weight:1.0},
 ];
 const byWallet = Object.fromEntries(WALLETS.map(w=>[w.wallet,w]));
 
@@ -194,8 +192,8 @@ async function sharpStats(w){
   try{ const ps = await j(`${DATA}/positions?user=${w}&limit=500&sizeThreshold=0`);
     for(const p of ps||[]){ const cp=p.curPrice||0;
       if((p.initialValue||0) >= CONV && (cp<=0.001||cp>=0.999)) (cp>=0.5? won++ : lost++); } }catch(e){}
-  try{ const a = await j(`${DATA}/activity?user=${w}&type=TRADE&limit=1`);
-    if(a && a[0]) last = a[0].timestamp||0; }catch(e){}
+  try{ const a = await j(`${DATA}/activity?user=${w}&type=TRADE&limit=300`);
+    for(const t of a||[]){ if(t.side==="BUY" && (t.usdcSize||0)>=CONV){ last=t.timestamp||0; break; } } }catch(e){}
   const n=won+lost;
   return {wr: n? 100*won/n : null, won, lost, n, pnl, last};
 }
