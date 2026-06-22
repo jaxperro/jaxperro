@@ -103,7 +103,7 @@
   </tr></thead><tbody></tbody></table></div>
 
   <h2 id="sharpsHead">Sharp wallets — validated copyable</h2>
-  <div class="sub" style="margin:-6px 0 10px">The repeatable find: wallets whose <b>large bets win on genuinely-uncertain markets</b>, validated forward, with multi-day entry-to-resolution lead times (copyable sharps; last-minute wallets filtered out). The list and lead times come live from the winning-wallet-finder pipeline; win %, record and P&L are pulled live and refresh each reload. Click a name for their Polymarket profile.</div>
+  <div class="sub" style="margin:-6px 0 10px">The repeatable find: wallets whose <b>large bets win on genuinely-uncertain markets</b>, validated forward, with multi-day entry-to-resolution lead times (copyable sharps; last-minute wallets filtered out). The list and all stats (win %, record, P&L, lead) come from the winning-wallet-finder pipeline, refreshed daily. Conviction win %/record/P&L cover all of each wallet's top-20%-stake bets; realized P&L is over their last 500 resolved bets. Click a name for their Polymarket profile.</div>
   <div class="scroll"><table id="sharps"><thead><tr>
     <th>Wallet</th><th>Conv&nbsp;win&nbsp;%</th><th>Conv&nbsp;record</th><th>Conv&nbsp;P&amp;L</th><th>Avg&nbsp;lead</th><th>Realized&nbsp;P&amp;L</th><th>Last&nbsp;conv&nbsp;bet</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
@@ -137,20 +137,25 @@ const WALLETS = [
 ];
 const byWallet = Object.fromEntries(WALLETS.map(w=>[w.wallet,w]));
 
-// The validated copyable sharps — fetched live from watch_sharps.json (the
-// winning-wallet-finder pipeline output: conviction-profile scan -> forward
-// validation -> last-minute timing gate). No hardcoded list: the table reflects
-// ONLY the current pipeline output, so stale legacy picks can't leak in. Stats are
-// pulled live from the data-api. A "conviction" bet = a bet in the top 20% (p80)
-// of THAT wallet's own stake sizes. lead = days entry->resolution (from validation).
-// raw.githubusercontent sends CORS *, cached ~5min. Fields used: wallet, name, med_lead_h.
+// The validated copyable sharps — the table reads EVERYTHING from watch_sharps.json
+// (the winning-wallet-finder pipeline output: conviction-profile scan -> forward
+// validation -> last-minute timing gate). All per-wallet stats are precomputed in the
+// daily pipeline, so the page makes ONE request total instead of 3 data-api calls per
+// wallet (no rate-limit storms). No hardcoded list — the table reflects only the
+// current pipeline output. A "conviction" bet = a bet in the top 20% (p80) of THAT
+// wallet's own stake sizes. raw.githubusercontent sends CORS *, cached ~5min.
+// Feed fields: wallet, name, conv_win, conv_won, conv_lost, conv_pnl, realized_pnl,
+//   med_lead_h, last_conv_bet, last_trade.
 const SHARPS_URL = "https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/live/watch_sharps.json";
 let SHARPS_CACHE = null;
 async function getSharps(){
   if(SHARPS_CACHE) return SHARPS_CACHE;
   const d = await j(SHARPS_URL);   // throws on failure -> renderSharps shows an error row
   SHARPS_CACHE = (d||[]).filter(s=>s.wallet).map(s=>{ const w=s.wallet.toLowerCase();
-    return {n: s.name || w.slice(0,8), w, lead:(s.med_lead_h||0)/24}; });
+    return {n: s.name || w.slice(0,8), w, lead:(s.med_lead_h||0)/24,
+            wr: s.conv_win, won: s.conv_won||0, lost: s.conv_lost||0,
+            convPnl: s.conv_pnl||0, pnl: s.realized_pnl||0,
+            last: s.last_conv_bet||0, lastAny: s.last_trade||0}; });
   return SHARPS_CACHE;
 }
 const fmt = n => (n<0?"-":"")+"$"+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:Math.abs(n)>=100?0:2});
@@ -182,56 +187,31 @@ async function walletData(w){
   return {trades, info, convSizes};
 }
 
-// live conviction win% for a sharp wallet: over their resolved bets where THEY
-// staked >= $CONV, fraction won. Survivorship-corrected — unions redeemed/sold
-// (closed-positions) with resolved-but-unredeemed losers (positions at ~0). Also
-// returns realized P&L (closed positions). Recomputed every load.
-async function sharpStats(w){
-  let pnl=0, last=0, lastAny=0, name=null;
-  // gather every resolved bet as {size, won}, then keep this wallet's top 20% by
-  // stake (its conviction bets) and score the win rate over that subset.
-  // each bet also carries its P&L: realizedPnl for closed (redeemed/sold), cashPnl
-  // for resolved-but-unredeemed ones (loser = -stake, winner = gain) — so conviction
-  // P&L spans the SAME resolved population as the conviction win%/record.
-  const bets=[];
-  try{ const cl = await j(`${DATA}/closed-positions?user=${w}&limit=500&sortBy=TIMESTAMP&sortDirection=DESC`);
-    for(const p of cl||[]){ pnl += (p.realizedPnl||0);
-      bets.push({size:(p.avgPrice||0)*(p.totalBought||0), won:(p.curPrice||0)>=0.5, pnl:(p.realizedPnl||0)}); } }catch(e){}
-  try{ const ps = await j(`${DATA}/positions?user=${w}&limit=500&sizeThreshold=0`);
-    for(const p of ps||[]){ const cp=p.curPrice||0;
-      if(cp<=0.001||cp>=0.999) bets.push({size:(p.initialValue||0), won:cp>=0.5, pnl:(p.cashPnl||0)}); } }catch(e){}
-  const thr = pctl(bets.map(b=>b.size));
-  let won=0, lost=0, convPnl=0;
-  for(const b of bets){ if(b.size>0 && b.size>=thr){ b.won? won++ : lost++; convPnl += b.pnl||0; } }
-  try{ const a = await j(`${DATA}/activity?user=${w}&type=TRADE&limit=300`);
-    if(a && a[0]) lastAny = a[0].timestamp||0;
-    name = (a||[]).map(t=>t&&t.name).find(Boolean) || null;   // wallet's Polymarket display name
-    const tthr = pctl((a||[]).filter(t=>t.side==="BUY").map(t=>t.usdcSize||0));
-    for(const t of a||[]){ if(t.side==="BUY" && (t.usdcSize||0)>=tthr){ last=t.timestamp||0; break; } } }catch(e){}
-  const n=won+lost;
-  return {wr: n? 100*won/n : null, won, lost, n, pnl, convPnl, last, lastAny, thr, name};
-}
+// All sharp-wallet stats are precomputed in the daily pipeline (validate_timing.py)
+// and read straight from the feed — see getSharps(). The page no longer calls the
+// data-api per wallet, so the table renders from a single request.
+//   conv win%/record/P&L : over ALL the wallet's conviction bets (top-20% stake), from cache
+//   realized P&L         : over the wallet's last 500 resolved bets
 async function renderSharps(){
-  let list;
-  try{ list = await getSharps(); }
+  let rows;
+  try{ rows = await getSharps(); }
   catch(e){ document.querySelector("#sharps tbody").innerHTML =
       '<tr><td colspan="7" class="loading">couldn\'t load the sharp-wallet feed</td></tr>'; return; }
-  let rows = await Promise.all(list.map(async s=>({...s, st: await sharpStats(s.w)})));
   const monthAgo = Date.now()/1000 - 30*86400;
-  rows = rows.filter(r=> r.st.lastAny && r.st.lastAny >= monthAgo);   // drop wallets inactive >1 month
-  rows.sort((a,b)=> (b.st.wr ?? -1) - (a.st.wr ?? -1));   // best conviction win% first
+  rows = rows.filter(r=> r.lastAny && r.lastAny >= monthAgo);   // drop wallets inactive >1 month
+  rows.sort((a,b)=> (b.wr ?? -1) - (a.wr ?? -1));   // best conviction win% first
   const head = document.getElementById("sharpsHead");
   if(head) head.textContent = `Sharp wallets — ${rows.length} active (traded in last 30d)`;
-  document.querySelector("#sharps tbody").innerHTML = rows.map(r=>{ const st=r.st;
-    const wr = st.wr==null? '<span class="dim">—</span>' : st.wr.toFixed(0)+'%';
+  document.querySelector("#sharps tbody").innerHTML = rows.map(r=>{ const n=r.won+r.lost;
+    const wr = r.wr==null? '<span class="dim">—</span>' : r.wr.toFixed(0)+'%';
     return `<tr>
-      <td class="name"><a href="https://polymarket.com/profile/${r.w}" target="_blank">${st.name||r.n}</a></td>
+      <td class="name"><a href="https://polymarket.com/profile/${r.w}" target="_blank">${r.n}</a></td>
       <td>${wr}</td>
-      <td>${st.n? st.won+'–'+st.lost : '<span class="dim">—</span>'}</td>
-      <td class="${st.n? (st.convPnl>=0?'green':'red') : 'dim'}">${st.n? sg(st.convPnl) : '—'}</td>
+      <td>${n? r.won+'–'+r.lost : '<span class="dim">—</span>'}</td>
+      <td class="${n? (r.convPnl>=0?'green':'red') : 'dim'}">${n? sg(r.convPnl) : '—'}</td>
       <td class="dim">${r.lead<1? Math.round(r.lead*24)+'h' : r.lead.toFixed(1)+'d'}</td>
-      <td class="${st.pnl>=0?'green':'red'}">${sg(st.pnl)}</td>
-      <td class="dim">${ago(st.last)}</td></tr>`;
+      <td class="${r.pnl>=0?'green':'red'}">${sg(r.pnl)}</td>
+      <td class="dim">${ago(r.last)}</td></tr>`;
   }).join("") || '<tr><td colspan="7" class="loading">no data</td></tr>';
 }
 
