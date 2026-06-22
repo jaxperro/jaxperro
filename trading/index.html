@@ -102,7 +102,7 @@
     <th>Wallet</th><th>Weight</th><th>Bets in</th><th>Invested</th><th>Realized</th>
   </tr></thead><tbody></tbody></table></div>
 
-  <h2>Sharp wallets — 23 validated copyable</h2>
+  <h2 id="sharpsHead">Sharp wallets — validated copyable</h2>
   <div class="sub" style="margin:-6px 0 10px">The repeatable find: wallets whose <b>large bets win on genuinely-uncertain markets</b>, validated forward, with multi-day entry-to-resolution lead times (copyable sharps, insiders filtered out). Stats below are pulled live and refresh each reload. Click a name for their Polymarket profile.</div>
   <div class="scroll"><table id="sharps"><thead><tr>
     <th>Wallet</th><th>Conv&nbsp;win&nbsp;%</th><th>Conv&nbsp;record</th><th>Avg&nbsp;lead</th><th>Realized&nbsp;P&amp;L</th><th>Last&nbsp;conv&nbsp;bet</th>
@@ -185,7 +185,7 @@ async function walletData(w){
 // (closed-positions) with resolved-but-unredeemed losers (positions at ~0). Also
 // returns realized P&L (closed positions). Recomputed every load.
 async function sharpStats(w){
-  let won=0, lost=0, pnl=0, last=0;
+  let won=0, lost=0, pnl=0, last=0, lastAny=0;
   try{ const cl = await j(`${DATA}/closed-positions?user=${w}&limit=500&sortBy=TIMESTAMP&sortDirection=DESC`);
     for(const p of cl||[]){ pnl += (p.realizedPnl||0);
       if((p.avgPrice||0)*(p.totalBought||0) >= CONV) ((p.curPrice||0)>=0.5? won++ : lost++); } }catch(e){}
@@ -193,13 +193,18 @@ async function sharpStats(w){
     for(const p of ps||[]){ const cp=p.curPrice||0;
       if((p.initialValue||0) >= CONV && (cp<=0.001||cp>=0.999)) (cp>=0.5? won++ : lost++); } }catch(e){}
   try{ const a = await j(`${DATA}/activity?user=${w}&type=TRADE&limit=300`);
+    if(a && a[0]) lastAny = a[0].timestamp||0;
     for(const t of a||[]){ if(t.side==="BUY" && (t.usdcSize||0)>=CONV){ last=t.timestamp||0; break; } } }catch(e){}
   const n=won+lost;
-  return {wr: n? 100*won/n : null, won, lost, n, pnl, last};
+  return {wr: n? 100*won/n : null, won, lost, n, pnl, last, lastAny};
 }
 async function renderSharps(){
-  const rows = await Promise.all(SHARPS.map(async s=>({...s, st: await sharpStats(s.w)})));
+  let rows = await Promise.all(SHARPS.map(async s=>({...s, st: await sharpStats(s.w)})));
+  const monthAgo = Date.now()/1000 - 30*86400;
+  rows = rows.filter(r=> r.st.lastAny && r.st.lastAny >= monthAgo);   // drop wallets inactive >1 month
   rows.sort((a,b)=> (b.st.wr ?? -1) - (a.st.wr ?? -1));   // best conviction win% first
+  const head = document.getElementById("sharpsHead");
+  if(head) head.textContent = `Sharp wallets — ${rows.length} active (traded in last 30d)`;
   document.querySelector("#sharps tbody").innerHTML = rows.map(r=>{ const st=r.st;
     const wr = st.wr==null? '<span class="dim">—</span>' : st.wr.toFixed(0)+'%';
     return `<tr>
