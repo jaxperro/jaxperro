@@ -187,7 +187,7 @@ async function walletData(w){
 // (closed-positions) with resolved-but-unredeemed losers (positions at ~0). Also
 // returns realized P&L (closed positions). Recomputed every load.
 async function sharpStats(w){
-  let pnl=0, last=0, lastAny=0;
+  let pnl=0, last=0, lastAny=0, name=null;
   // gather every resolved bet as {size, won}, then keep this wallet's top 20% by
   // stake (its conviction bets) and score the win rate over that subset.
   // each bet also carries its P&L: realizedPnl for closed (redeemed/sold), cashPnl
@@ -205,10 +205,11 @@ async function sharpStats(w){
   for(const b of bets){ if(b.size>0 && b.size>=thr){ b.won? won++ : lost++; convPnl += b.pnl||0; } }
   try{ const a = await j(`${DATA}/activity?user=${w}&type=TRADE&limit=300`);
     if(a && a[0]) lastAny = a[0].timestamp||0;
+    name = (a||[]).map(t=>t&&t.name).find(Boolean) || null;   // wallet's Polymarket display name
     const tthr = pctl((a||[]).filter(t=>t.side==="BUY").map(t=>t.usdcSize||0));
     for(const t of a||[]){ if(t.side==="BUY" && (t.usdcSize||0)>=tthr){ last=t.timestamp||0; break; } } }catch(e){}
   const n=won+lost;
-  return {wr: n? 100*won/n : null, won, lost, n, pnl, convPnl, last, lastAny, thr};
+  return {wr: n? 100*won/n : null, won, lost, n, pnl, convPnl, last, lastAny, thr, name};
 }
 async function renderSharps(){
   let list;
@@ -224,7 +225,7 @@ async function renderSharps(){
   document.querySelector("#sharps tbody").innerHTML = rows.map(r=>{ const st=r.st;
     const wr = st.wr==null? '<span class="dim">—</span>' : st.wr.toFixed(0)+'%';
     return `<tr>
-      <td class="name"><a href="https://polymarket.com/profile/${r.w}" target="_blank">${r.n}</a></td>
+      <td class="name"><a href="https://polymarket.com/profile/${r.w}" target="_blank">${st.name||r.n}</a></td>
       <td>${wr}</td>
       <td>${st.n? st.won+'–'+st.lost : '<span class="dim">—</span>'}</td>
       <td class="${st.n? (st.convPnl>=0?'green':'red') : 'dim'}">${st.n? sg(st.convPnl) : '—'}</td>
