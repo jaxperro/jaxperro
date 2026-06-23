@@ -322,13 +322,51 @@ function renderPortfolio(P){
   // allocation
   document.querySelector("#wallets tbody").innerHTML=(P.wallets||[]).map(w=>
     `<tr><td class="name"><a href="https://polymarket.com/profile/${w.wallet}" target="_blank">${w.name}</a></td><td>${(100/P.wallets.length).toFixed(0)}%</td><td>${w.bets}</td><td>${fmt(w.invested)}</td><td class="${w.realized>=0?'green':'red'}">${sg(w.realized)}</td></tr>`).join("");
-  document.getElementById("note").innerHTML=`<b>How it works:</b> a ${fmt(bank)} paper account started ${new Date(P.started*1000).toLocaleDateString()}, mirroring each followed wallet's <b>conviction</b> bets (top 20% of their own stake sizes) at $${P.stake|0} per trade. Computed server-side from the winning-wallet-finder cache, so capital recycles at each market's <b>true resolution time</b> (refreshed daily). The <b>Copy P&amp;L</b> column on the sharps table below is the per-wallet copyability signal. <b>Paper money — idealized (no slippage/fees/lag), edge unproven out-of-sample.</b> Built with <a href="https://github.com/jaxperro/winning-wallet-finder" target="_blank">winning-wallet-finder</a>.`;
+  document.getElementById("note").innerHTML=`<b>How it works:</b> a ${fmt(bank)} paper account started ${new Date(P.started*1000).toLocaleDateString()}, mirroring each followed wallet's <b>conviction</b> bets (top 20% of their own stake sizes) at $${P.stake|0} per trade. Settled history + realized P&amp;L are computed daily from the winning-wallet-finder cache (capital recycles at each market's <b>true resolution time</b>); <b>open bets are tracked live</b> off the wallets' current positions. The <b>Copy P&amp;L</b> column on the sharps table below is the per-wallet copyability signal. <b>Paper money — idealized (no slippage/fees/lag), edge unproven out-of-sample.</b> Built with <a href="https://github.com/jaxperro/winning-wallet-finder" target="_blank">winning-wallet-finder</a>.`;
+}
+
+// LIVE open bets: the settled backbone (equity/realized/resolved) comes from the daily
+// feed, but the Current Bets panel is refreshed every reload off the 4 wallets' actual
+// current positions — so open bets and their settling status update in ~real time.
+async function liveCurrentBets(P){
+  const bank=P.bank||1000, stake=P.stake||50, maxN=Math.floor(bank/stake);
+  const thr=Object.fromEntries((P.wallets||[]).map(w=>[w.wallet.toLowerCase(), w.conv_thr||1e12]));
+  let open=[];
+  await Promise.all((P.wallets||[]).map(async w=>{
+    let ps=[]; try{ ps=await j(`${DATA}/positions?user=${w.wallet}&limit=500&sizeThreshold=0`);}catch(e){return;}
+    const seen=new Set();
+    for(const p of ps||[]){ const cp=p.curPrice||0;
+      if(cp<=0.001||cp>=0.999) continue;                                  // resolved -> not open
+      if((p.initialValue||0) < (thr[w.wallet.toLowerCase()]||1e12)) continue;  // conviction only
+      if(p.conditionId && seen.has(p.conditionId)) continue; if(p.conditionId) seen.add(p.conditionId);
+      const ap=p.avgPrice||0.5, val=(stake/ap)*cp;
+      open.push({title:p.title||'',name:w.name,outcome:p.outcome||'',stake,val,pnl:val-stake,end:p.endDate}); }
+  }));
+  open.sort((a,b)=>(ep(a.end)||Infinity)-(ep(b.end)||Infinity));
+  if(open.length>maxN) open=open.slice(0,maxN);          // $1k can hold ~20 at $50
+  const n=open.length, invested=open.reduce((s,b)=>s+b.val,0);
+  const liquid=bank+(P.realized||0)-stake*n, equity=liquid+invested, unreal=invested-stake*n, pl=equity-bank;
+  document.getElementById("equity").textContent=fmt(equity);
+  const pe=document.getElementById("pnl"); pe.className="pnl "+(pl>=0?"green":"red");
+  pe.textContent=`${sg(pl)} (${pct(pl/bank*100)}) on ${fmt(bank)}`;
+  document.getElementById("liquid").textContent=fmt(liquid);
+  document.getElementById("invested").textContent=fmt(invested);
+  document.getElementById("investedSub").innerHTML=`${n} open · <span class="${unreal>=0?'green':'red'}">${sg(unreal)} unreal.</span>`;
+  document.getElementById("deployfill").style.width=Math.max(0,Math.min(100,stake*n/bank*100))+"%";
+  document.getElementById("meta").innerHTML=`since ${new Date(P.started*1000).toLocaleDateString()} · settled history refreshed daily · open bets live · updated ${new Date().toLocaleTimeString()}`;
+  const now=Date.now()/1000;
+  document.getElementById("curHead").textContent=`Current bets — ${n} open, ${fmt(invested)} at work (live)`;
+  document.querySelector("#current tbody").innerHTML = n? open.map(c=>{
+    const e=ep(c.end), days=e?Math.round((e-now)/86400):null;
+    const when=!e?'<span class="dim">no date</span>':(e<now?'<span class="amber">settling…</span>':(days<=0?'today':`in ${days}d`));
+    return `<tr><td class="mkt">${c.title}</td><td class="name">${c.name}</td><td>${c.outcome}</td><td>${fmt(c.stake)}</td><td>${fmt(c.val)}</td><td class="${c.pnl>=0?'green':'red'}">${sg(c.pnl)}</td><td>${when}</td></tr>`;}).join("")
+    : '<tr><td colspan="7" class="loading">no open conviction bets right now — all cash is liquid</td></tr>';
 }
 
 async function load(){
-  // primary path: render the precomputed portfolio feed (1 request). falls back to the
-  // legacy client-side replay below only if the feed is unreachable.
-  try{ const P = await j(PORTFOLIO_URL); renderPortfolio(P); await renderSharps(); return; }
+  // primary path: render the precomputed portfolio feed (1 request), then refresh the
+  // Current Bets panel live. falls back to the legacy client-side replay if the feed is down.
+  try{ const P = await j(PORTFOLIO_URL); renderPortfolio(P); try{ await liveCurrentBets(P); }catch(e){} await renderSharps(); return; }
   catch(e){ /* feed down -> legacy replay */ }
   document.getElementById("meta").textContent = "replaying live trades from Polymarket…";
   const datas = await Promise.all(WALLETS.map(walletData));
