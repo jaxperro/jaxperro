@@ -105,10 +105,10 @@
   </tr></thead><tbody></tbody></table></div>
 
   <h2 id="sharpsHead">Sharp wallets — validated copyable</h2>
-  <div class="sub" style="margin:-6px 0 10px">The repeatable find: wallets whose <b>large bets win on genuinely-uncertain markets</b>, validated forward, with multi-day entry-to-resolution lead times (copyable sharps; last-minute wallets filtered out). The list and all stats (win %, record, P&L, lead) come from the winning-wallet-finder pipeline, refreshed daily. Conviction win %/record/P&L cover all of each wallet's top-20%-stake bets; realized P&L is over their last 500 resolved bets. Click a name for their Polymarket profile.</div>
+  <div class="sub" style="margin:-6px 0 10px">The repeatable find: wallets whose <b>large bets win on genuinely-uncertain markets</b>, validated forward, with multi-day entry-to-resolution lead times (copyable sharps; last-minute wallets filtered out). The list and all stats (win %, record, P&L, lead) come from the winning-wallet-finder pipeline, refreshed daily. <b>Copy P&amp;L</b> is the key number — what a flat-$50 copy of their conviction bets would have actually made since June 1 (mirroring their exits, settling held bets at true resolution). It cuts through high win rates that don't survive copying: a scalper can show ~100% conviction win % yet a negative Copy P&L. Conviction win %/record/P&L cover all of each wallet's top-20%-stake bets (a position stat); realized P&L is over their last 500 resolved bets. Click a name for their Polymarket profile.</div>
   <div class="scroll"><table id="sharps"><thead><tr>
-    <th data-k="name">Wallet</th><th data-k="win30">30&nbsp;Day&nbsp;Win&nbsp;%</th><th data-k="rec30">30&nbsp;Day&nbsp;Conv&nbsp;Record</th><th data-k="pnl30">30d&nbsp;Conv&nbsp;P&amp;L</th><th data-k="lifeWin">Life&nbsp;Conv&nbsp;Win&nbsp;%</th><th data-k="recLife">Life&nbsp;Conv&nbsp;Record</th><th data-k="convPnl">Life&nbsp;Conv&nbsp;P&amp;L</th><th data-k="realized">Realized&nbsp;P&amp;L</th><th data-k="avgBet">Avg&nbsp;bet</th><th data-k="lead">Avg&nbsp;lead</th><th data-k="last">Last&nbsp;conv&nbsp;bet</th>
-  </tr></thead><tbody><tr><td colspan="11" class="loading">loading…</td></tr></tbody></table></div>
+    <th data-k="name">Wallet</th><th data-k="copy">Copy&nbsp;P&amp;L</th><th data-k="win30">30&nbsp;Day&nbsp;Win&nbsp;%</th><th data-k="rec30">30&nbsp;Day&nbsp;Conv&nbsp;Record</th><th data-k="pnl30">30d&nbsp;Conv&nbsp;P&amp;L</th><th data-k="lifeWin">Life&nbsp;Conv&nbsp;Win&nbsp;%</th><th data-k="recLife">Life&nbsp;Conv&nbsp;Record</th><th data-k="convPnl">Life&nbsp;Conv&nbsp;P&amp;L</th><th data-k="realized">Realized&nbsp;P&amp;L</th><th data-k="avgBet">Avg&nbsp;bet</th><th data-k="lead">Avg&nbsp;lead</th><th data-k="last">Last&nbsp;conv&nbsp;bet</th>
+  </tr></thead><tbody><tr><td colspan="12" class="loading">loading…</td></tr></tbody></table></div>
 
   <div class="note" id="note"></div>
 </div>
@@ -160,6 +160,7 @@ async function getSharps(){
             won: s.conv_won||0, lost: s.conv_lost||0,
             won30: s.conv30_won||0, lost30: s.conv30_lost||0, pnl30: s.conv30_pnl||0,
             convPnl: s.conv_pnl||0, pnl: s.realized_pnl||0, avgBet: s.avg_bet||0,
+            copyPnl: s.copy_pnl||0,
             last: s.last_conv_bet||0, lastAny: s.last_trade||0}; });
   return SHARPS_CACHE;
 }
@@ -205,6 +206,7 @@ const pctlbl = p => p%1===0? p.toFixed(0) : p.toFixed(1);
 // click-to-sort: per-column sort key (numeric desc = greatest→least; name is alpha)
 const SK = {
   name:    r=> (r.n||'').toLowerCase(),
+  copy:    r=> r.copyPnl,
   win30:   r=>{ const n=r.won30+r.lost30; return n? r.won30/n : -1; },
   rec30:   r=> r.won30+r.lost30,
   pnl30:   r=> r.pnl30,
@@ -216,7 +218,7 @@ const SK = {
   lead:    r=> r.lead,
   last:    r=> r.last,
 };
-let SORT = {k:'lifeWin', dir:-1};   // default: best lifetime conviction win% first
+let SORT = {k:'copy', dir:-1};   // default: best copyability (real flat-$50 copy P&L) first
 let _sharpRows = [];
 
 function drawSharps(){
@@ -240,6 +242,7 @@ function drawSharps(){
     const nm = r.n.length>20 ? r.n.slice(0,20)+'…' : r.n;
     return `<tr>
       <td class="name"><a href="https://polymarket.com/profile/${r.w}" target="_blank" title="${r.n}">${nm}</a></td>
+      <td class="${r.copyPnl>=0?'green':'red'}"><b>${sg(r.copyPnl)}</b></td>
       <td>${wr30}</td>
       <td>${n30? r.won30+'–'+r.lost30 : '<span class="dim">—</span>'}</td>
       <td class="${n30? (r.pnl30>=0?'green':'red') : 'dim'}">${n30? sg(r.pnl30) : '—'}</td>
@@ -250,14 +253,14 @@ function drawSharps(){
       <td class="dim">${r.avgBet? fmt(r.avgBet) : '—'}</td>
       <td class="dim">${r.lead<1? Math.round(r.lead*24)+'h' : r.lead.toFixed(1)+'d'}</td>
       <td class="dim">${ago(r.last)}</td></tr>`;
-  }).join("") || '<tr><td colspan="11" class="loading">no data</td></tr>';
+  }).join("") || '<tr><td colspan="12" class="loading">no data</td></tr>';
 }
 
 async function renderSharps(){
   let rows;
   try{ rows = await getSharps(); }
   catch(e){ document.querySelector("#sharps tbody").innerHTML =
-      '<tr><td colspan="11" class="loading">couldn\'t load the sharp-wallet feed</td></tr>'; return; }
+      '<tr><td colspan="12" class="loading">couldn\'t load the sharp-wallet feed</td></tr>'; return; }
   const monthAgo = Date.now()/1000 - 30*86400;
   _sharpRows = rows.filter(r=> r.lastAny && r.lastAny >= monthAgo);   // drop wallets inactive >1 month
   const head = document.getElementById("sharpsHead");
