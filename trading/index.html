@@ -33,6 +33,8 @@
   th,td{text-align:right;padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
   th{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
   th:first-child,td:first-child{text-align:left}
+  #sharps thead th{cursor:pointer;user-select:none}
+  #sharps thead th.sorted{color:#dfe7f2}
   td.mkt{max-width:340px;overflow:hidden;text-overflow:ellipsis;font-weight:500}
   td.name{text-align:left}
   .scroll{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--panel)}
@@ -105,7 +107,7 @@
   <h2 id="sharpsHead">Sharp wallets — validated copyable</h2>
   <div class="sub" style="margin:-6px 0 10px">The repeatable find: wallets whose <b>large bets win on genuinely-uncertain markets</b>, validated forward, with multi-day entry-to-resolution lead times (copyable sharps; last-minute wallets filtered out). The list and all stats (win %, record, P&L, lead) come from the winning-wallet-finder pipeline, refreshed daily. Conviction win %/record/P&L cover all of each wallet's top-20%-stake bets; realized P&L is over their last 500 resolved bets. Click a name for their Polymarket profile.</div>
   <div class="scroll"><table id="sharps"><thead><tr>
-    <th>Wallet</th><th>30&nbsp;Day&nbsp;Win&nbsp;%</th><th>30&nbsp;Day&nbsp;Conv&nbsp;Record</th><th>30d&nbsp;Conv&nbsp;P&amp;L</th><th>Life&nbsp;Conv&nbsp;Win&nbsp;%</th><th>Life&nbsp;Conv&nbsp;Record</th><th>Life&nbsp;Conv&nbsp;P&amp;L</th><th>Realized&nbsp;P&amp;L</th><th>Avg&nbsp;bet</th><th>Avg&nbsp;lead</th><th>Last&nbsp;conv&nbsp;bet</th>
+    <th data-k="name">Wallet</th><th data-k="win30">30&nbsp;Day&nbsp;Win&nbsp;%</th><th data-k="rec30">30&nbsp;Day&nbsp;Conv&nbsp;Record</th><th data-k="pnl30">30d&nbsp;Conv&nbsp;P&amp;L</th><th data-k="lifeWin">Life&nbsp;Conv&nbsp;Win&nbsp;%</th><th data-k="recLife">Life&nbsp;Conv&nbsp;Record</th><th data-k="convPnl">Life&nbsp;Conv&nbsp;P&amp;L</th><th data-k="realized">Realized&nbsp;P&amp;L</th><th data-k="avgBet">Avg&nbsp;bet</th><th data-k="lead">Avg&nbsp;lead</th><th data-k="last">Last&nbsp;conv&nbsp;bet</th>
   </tr></thead><tbody><tr><td colspan="11" class="loading">loading…</td></tr></tbody></table></div>
 
   <div class="note" id="note"></div>
@@ -194,17 +196,37 @@ async function walletData(w){
 //   conv win%/record/P&L : over ALL the wallet's conviction bets (top-20% stake), from cache
 //   realized P&L         : over the wallet's last 500 resolved bets
 const winRate = r => { const n=r.won+r.lost; return n? 100*r.won/n : null; };   // derive % from the record so they always agree
-async function renderSharps(){
-  let rows;
-  try{ rows = await getSharps(); }
-  catch(e){ document.querySelector("#sharps tbody").innerHTML =
-      '<tr><td colspan="11" class="loading">couldn\'t load the sharp-wallet feed</td></tr>'; return; }
-  const monthAgo = Date.now()/1000 - 30*86400;
-  rows = rows.filter(r=> r.lastAny && r.lastAny >= monthAgo);   // drop wallets inactive >1 month
-  rows.sort((a,b)=> (winRate(b) ?? -1) - (winRate(a) ?? -1));   // best conviction win% first
-  const head = document.getElementById("sharpsHead");
-  if(head) head.textContent = `Sharp wallets — ${rows.length} active (traded in last 30d)`;
-  const pctlbl = p => p%1===0? p.toFixed(0) : p.toFixed(1);
+const pctlbl = p => p%1===0? p.toFixed(0) : p.toFixed(1);
+// click-to-sort: per-column sort key (numeric desc = greatest→least; name is alpha)
+const SK = {
+  name:    r=> (r.n||'').toLowerCase(),
+  win30:   r=>{ const n=r.won30+r.lost30; return n? r.won30/n : -1; },
+  rec30:   r=> r.won30+r.lost30,
+  pnl30:   r=> r.pnl30,
+  lifeWin: r=>{ const n=r.won+r.lost; return n? r.won/n : -1; },
+  recLife: r=> r.won+r.lost,
+  convPnl: r=> r.convPnl,
+  realized:r=> r.pnl,
+  avgBet:  r=> r.avgBet,
+  lead:    r=> r.lead,
+  last:    r=> r.last,
+};
+let SORT = {k:'lifeWin', dir:-1};   // default: best lifetime conviction win% first
+let _sharpRows = [];
+
+function drawSharps(){
+  const f = SK[SORT.k] || SK.lifeWin;
+  const rows = _sharpRows.slice().sort((a,b)=>{
+    const va=f(a), vb=f(b);
+    const c = (typeof va==='string') ? va.localeCompare(vb) : (va-vb);
+    return SORT.dir * c;
+  });
+  document.querySelectorAll('#sharps thead th').forEach(th=>{
+    const base = th.dataset.label || (th.dataset.label = th.textContent.replace(/\s*[▲▼]$/,''));
+    const on = th.dataset.k===SORT.k;
+    th.classList.toggle('sorted', on);
+    th.textContent = base + (on ? (SORT.dir<0?' ▼':' ▲') : '');
+  });
   document.querySelector("#sharps tbody").innerHTML = rows.map(r=>{ const n=r.won+r.lost;
     const w=winRate(r);
     const wr = w==null? '<span class="dim">—</span>' : pctlbl(w)+'%';
@@ -225,6 +247,25 @@ async function renderSharps(){
       <td class="dim">${ago(r.last)}</td></tr>`;
   }).join("") || '<tr><td colspan="11" class="loading">no data</td></tr>';
 }
+
+async function renderSharps(){
+  let rows;
+  try{ rows = await getSharps(); }
+  catch(e){ document.querySelector("#sharps tbody").innerHTML =
+      '<tr><td colspan="11" class="loading">couldn\'t load the sharp-wallet feed</td></tr>'; return; }
+  const monthAgo = Date.now()/1000 - 30*86400;
+  _sharpRows = rows.filter(r=> r.lastAny && r.lastAny >= monthAgo);   // drop wallets inactive >1 month
+  const head = document.getElementById("sharpsHead");
+  if(head) head.textContent = `Sharp wallets — ${_sharpRows.length} active (traded in last 30d)`;
+  drawSharps();
+}
+
+// header click -> sort (first click greatest→least; click again toggles direction)
+document.querySelector('#sharps thead').addEventListener('click', e=>{
+  const th = e.target.closest('th[data-k]'); if(!th) return;
+  if(SORT.k===th.dataset.k) SORT.dir = -SORT.dir; else SORT = {k:th.dataset.k, dir:-1};
+  drawSharps();
+});
 
 async function load(){
   document.getElementById("meta").textContent = "replaying live trades from Polymarket…";
