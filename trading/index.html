@@ -307,6 +307,33 @@ async function load(){
       settled.push({title:p.title,name:p.name,outcome:p.outcome,entry:p.entry,stake:p.stake,res:w?1:0,pnl:pay-p.stake,date:r});
       delete open[a]; } } };
 
+  // resolve a market once via the CLOB (authoritative end date + winner prices),
+  // cached. defined before the replay so the pre-pass can use it.
+  const mktCache={};
+  const marketInfo = async cond => { if(!cond) return null;
+    if(!(cond in mktCache)){ try{ const m=await j(`https://clob.polymarket.com/markets/${cond}`);
+      const prices={}; let resolved=false;
+      for(const t of (m&&m.tokens)||[]){ if(t.winner===true||t.winner===false) resolved=true; prices[t.outcome]= t.winner===true?1 : t.winner===false?0 : t.price; }
+      mktCache[cond]={end:(m&&m.end_date_iso)||null, prices, resolved}; }catch(e){ mktCache[cond]={end:null,prices:{},resolved:false}; } }
+    return mktCache[cond]; };
+
+  // CAPITAL-RECYCLING FIX: the positions pull misses resolution dates for high-volume
+  // wallets, so settle() used to leave their bets "open" through the whole replay —
+  // phantom-locking capital and skipping bets we could actually afford. Pre-fetch the
+  // true end date + winner for every conviction market BEFORE the replay, so settle()
+  // frees cash at the real resolution moment and the $1k recycles correctly.
+  const convMkts={};   // asset -> {cond, outcome}
+  for(const ev of events){
+    if(ev.side!=="BUY" || !ev.conditionId) continue;
+    if((mktTotal[ev.wallet][ev.asset]||0) < convThr[ev.wallet]) continue;
+    if(!(ev.asset in convMkts)) convMkts[ev.asset]={cond:ev.conditionId, outcome:ev.outcome};
+  }
+  await Promise.all(Object.entries(convMkts)
+    .filter(([a])=> !ep(info[a]?.end) || info[a]?.cur==null)
+    .map(async ([a,o])=>{ const m=await marketInfo(o.cond); if(!m) return;
+      info[a]={...(info[a]||{}), outcome:info[a]?.outcome||o.outcome,
+               end:info[a]?.end||m.end, cur:info[a]?.cur ?? m.prices[o.outcome], redeem:info[a]?.redeem||m.resolved}; }));
+
   for(const ev of events){
     settle(ev.timestamp);
     const a=ev.asset, stake=ev.weight*BANKROLL*PER_POS;
@@ -332,17 +359,7 @@ async function load(){
       delete open[a];
     }
   }
-  // resolve each market once — its end date and, if settled, the winning prices.
-  // the trade/position sample misses dates for some markets, which used to leave
-  // bets stuck on "settling…" forever: settle(now) ran before the date was known.
-  const mktCache={};
-  const marketInfo = async cond => { if(!cond) return null;
-    if(!(cond in mktCache)){ try{ const m=await j(`https://clob.polymarket.com/markets/${cond}`);
-      const prices={}; let resolved=false;
-      for(const t of (m&&m.tokens)||[]){ if(t.winner===true||t.winner===false) resolved=true; prices[t.outcome]= t.winner===true?1 : t.winner===false?0 : t.price; }
-      mktCache[cond]={end:(m&&m.end_date_iso)||null, prices, resolved}; }catch(e){ mktCache[cond]={end:null,prices:{},resolved:false}; } }
-    return mktCache[cond]; };
-  const marketEnd = async cond => (await marketInfo(cond))?.end || null;
+  // (marketInfo defined above the replay for the capital-recycling pre-pass)
 
   // backfill missing resolution date / settled price for open bets, then settle
   // everything whose market has already ended
