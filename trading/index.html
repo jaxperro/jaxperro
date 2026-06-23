@@ -56,7 +56,7 @@
 <body>
 <div class="wrap">
   <header><h1>🏆 Winning Wallet Finder</h1><span class="dim">paper portfolio</span></header>
-  <div class="sub">A $1,000 paper account following <b>only Kruto2027</b> — mirroring <b>every one of his high-conviction bets</b> (the top 20% by stake size — his biggest-conviction calls) from <b>June 1</b> to now, and still live. Each is held to resolution; cash recycles as bets settle. No execution lag. Tracking only.</div>
+  <div class="sub">A $1,000 paper account following <b>ArbTraderRookie & Kruto2027</b> — mirroring <b>every one of their high-conviction bets</b> (the top 20% by stake size — their biggest-conviction calls), <b>$50 per trade</b>, from <b>June 1</b> to now, and still live. Each is held to resolution; cash recycles as bets settle. No execution lag. Tracking only.</div>
 
   <div class="hero">
     <div class="row-actions">
@@ -131,11 +131,13 @@ const pctl = (arr,q=CONV_PCTILE) => { const s=arr.filter(x=>x>0).sort((a,b)=>a-b
   if(!s.length) return Infinity; const k=(s.length-1)*q, f=Math.floor(k);
   return s[f+1]===undefined ? s[f] : s[f]+(s[f+1]-s[f])*(k-f); };
 
-// follow ONLY Kruto2027 (the cleanest validated sharp), mirroring EVERY one of his
-// high-conviction bets (top 20% of his stake sizes) from June 1 onward, still live.
-// $50/stake keeps $1k able to fund them all (he holds to resolution, cash recycles).
+// follow ArbTraderRookie + Kruto2027 (two of the cleanest validated sharps),
+// mirroring EVERY one of their high-conviction bets (top 20% of each wallet's stake
+// sizes) from June 1 onward, still live. $50/trade (weight 1.0 × $1k × 5%) caps each
+// position so $1k can fund them all; first wallet to enter a market gets the slot.
 const WALLETS = [
-  {name:"Kruto2027", wallet:"0xe8ca3f758c93f44f3ec210542ab78afb7c0bcccb", weight:1.0},
+  {name:"ArbTraderRookie", wallet:"0x72e1597864456eda62878413cf3e60c332e4a45d", weight:1.0},
+  {name:"Kruto2027",       wallet:"0xe8ca3f758c93f44f3ec210542ab78afb7c0bcccb", weight:1.0},
 ];
 const byWallet = Object.fromEntries(WALLETS.map(w=>[w.wallet,w]));
 
@@ -175,9 +177,12 @@ async function walletData(w){
     if(!pg.length) break; trades.push(...pg); off+=500;
     if(pg.length<500 || (pg[pg.length-1].timestamp||0) < START) break;
   }
-  // raw BUY stake sizes across ALL pulled trades — used to set this wallet's p80
-  // conviction threshold before we narrow to the post-START copy window.
-  const convSizes = trades.filter(t=>t.side==="BUY").map(t=>t.usdcSize||0);
+  // POSITION-level conviction: sum each market's BUY stake across ALL pulled trades
+  // (a wallet that scales in with many small buys — e.g. an arb trader — still has
+  // its true position size measured here, matching the sharps table's definition,
+  // not the per-trade size). The p80 of these per-market totals is the threshold.
+  const mktTotal = {};
+  for(const t of trades){ if(t.side==="BUY") mktTotal[t.asset]=(mktTotal[t.asset]||0)+(t.usdcSize||0); }
   trades = trades.filter(t=>(t.timestamp||0)>=START)
                  .map(t=>({...t, name:w.name, wallet:w.wallet, weight:w.weight}));
   // pull several pages so the resolution-date lookup covers active wallets' many positions
@@ -187,7 +192,7 @@ async function walletData(w){
   const info={};
   for(const p of open||[])   info[p.asset]={end:p.endDate, cur:p.curPrice, title:p.title, outcome:p.outcome, redeem:p.redeemable};
   for(const p of closed||[]) if(!(p.asset in info)) info[p.asset]={end:p.endDate, cur:p.curPrice, title:p.title, outcome:p.outcome, redeem:p.redeemable};
-  return {trades, info, convSizes};
+  return {trades, info, mktTotal};
 }
 
 // All sharp-wallet stats are precomputed in the daily pipeline (validate_timing.py)
@@ -272,10 +277,11 @@ async function load(){
   const datas = await Promise.all(WALLETS.map(walletData));
   const info = Object.assign({}, ...datas.map(d=>d.info));
   const events = datas.flatMap(d=>d.trades).sort((a,b)=>(a.timestamp||0)-(b.timestamp||0));
-  // per-wallet conviction threshold = p80 of that wallet's BUY stake sizes. Computed
-  // over all trades pulled (walletData keeps the raw sizes in convSizes) so the cutoff
-  // reflects the wallet's full recent staking behavior, not just post-START bets.
-  const convThr = Object.fromEntries(datas.map((d,i)=>[WALLETS[i].wallet, pctl(d.convSizes)]));
+  // per-wallet conviction threshold = p80 of that wallet's PER-MARKET total stakes
+  // (position-level, matching the sharps table). mktTotal[wallet][asset] = how much
+  // they staked in that market across all their buys.
+  const convThr = Object.fromEntries(datas.map((d,i)=>[WALLETS[i].wallet, pctl(Object.values(d.mktTotal))]));
+  const mktTotal = Object.fromEntries(WALLETS.map((w,i)=>[w.wallet, datas[i].mktTotal]));
   const now = Date.now()/1000;
   const resAt = a => ep(info[a]?.end);
   const won   = a => (info[a]?.cur||0) >= 0.5;
@@ -297,7 +303,7 @@ async function load(){
     settle(ev.timestamp);
     const a=ev.asset, stake=ev.weight*BANKROLL*PER_POS;
     if(ev.side==="BUY"){
-      if((ev.usdcSize||0) < convThr[ev.wallet]) continue;     // only mirror high-conviction bets (wallet's top 20%)
+      if((mktTotal[ev.wallet][a]||0) < convThr[ev.wallet]) continue;  // conviction = their TOTAL stake in this market is top 20%
       if(open[a] || entered.has(a)) continue;
       if(resAt(a) && resAt(a)<=ev.timestamp) continue;        // already over
       entered.add(a);
@@ -476,8 +482,8 @@ async function load(){
 
   document.getElementById("note").innerHTML =
     `<b>How it works:</b> a $1,000 cash account, started ${new Date(START*1000).toLocaleDateString()}. Replaying every trade `+
-    `Kruto2027 has made since then: when he enters a new market, this account enters too with a stake of `+
-    `(edge weight × $1,000 × ${(PER_POS*100)|0}%) — <i>if there's cash</i>. When a market resolves, the bet settles `+
+    `ArbTraderRookie or Kruto2027 has made since then: when either enters a new market, this account enters too with a stake of `+
+    `$${(BANKROLL*PER_POS)|0} — <i>if there's cash</i>. When a market resolves, the bet settles `+
     `(win → payout, loss → $0) and cash frees up. A bet counts as <b>high-conviction</b> only if its stake is in the `+
     `top 20% of that wallet's own bet sizes (a per-wallet cutoff, not a flat dollar amount) — empirically this is where `+
     `the win rate jumps (~74% vs ~51% on all bets). <b>Realized</b> = settled P&L · <b>Invested</b> = open bets marked `+
