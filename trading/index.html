@@ -56,7 +56,7 @@
 <body>
 <div class="wrap">
   <header><h1>🏆 Winning Wallet Finder</h1><span class="dim">paper portfolio</span></header>
-  <div class="sub">A $1,000 paper account following <b>ArbTraderRookie & Kruto2027</b> — mirroring <b>every one of their high-conviction bets</b> (the top 20% by stake size — their biggest-conviction calls), <b>$50 per trade</b>, from <b>June 1</b> to now, and still live. Each is held to resolution; cash recycles as bets settle. No execution lag. Tracking only.</div>
+  <div class="sub">A $1,000 paper account following <b>fortuneking & Kruto2027</b> — mirroring <b>every one of their high-conviction bets</b> (the top 20% by stake size — their biggest-conviction calls), <b>$50 per trade</b>, from <b>June 1</b> to now, and still live. Each is held to resolution; cash recycles as bets settle. No execution lag. Tracking only.</div>
 
   <div class="hero">
     <div class="row-actions">
@@ -131,13 +131,14 @@ const pctl = (arr,q=CONV_PCTILE) => { const s=arr.filter(x=>x>0).sort((a,b)=>a-b
   if(!s.length) return Infinity; const k=(s.length-1)*q, f=Math.floor(k);
   return s[f+1]===undefined ? s[f] : s[f]+(s[f+1]-s[f])*(k-f); };
 
-// follow ArbTraderRookie + Kruto2027 (two of the cleanest validated sharps),
-// mirroring EVERY one of their high-conviction bets (top 20% of each wallet's stake
-// sizes) from June 1 onward, still live. $50/trade (weight 1.0 × $1k × 5%) caps each
-// position so $1k can fund them all; first wallet to enter a market gets the slot.
+// follow fortuneking + Kruto2027 — the two wallets that are genuinely profitable to
+// COPY (positive flat-$50 copy P&L, hold-to-resolution; not scalpers). Mirror EVERY
+// one of their high-conviction bets (top 20% of each wallet's stake sizes) from June 1
+// onward, still live. $50/trade (weight 1.0 × $1k × 5%) caps each position so $1k can
+// fund them all; first wallet to enter a market gets the slot.
 const WALLETS = [
-  {name:"ArbTraderRookie", wallet:"0x72e1597864456eda62878413cf3e60c332e4a45d", weight:1.0},
-  {name:"Kruto2027",       wallet:"0xe8ca3f758c93f44f3ec210542ab78afb7c0bcccb", weight:1.0},
+  {name:"fortuneking", wallet:"0x86c878cde72660ec52f5e6f0f0438b76de8fc867", weight:1.0},
+  {name:"Kruto2027",   wallet:"0xe8ca3f758c93f44f3ec210542ab78afb7c0bcccb", weight:1.0},
 ];
 const byWallet = Object.fromEntries(WALLETS.map(w=>[w.wallet,w]));
 
@@ -485,7 +486,7 @@ async function load(){
 
   document.getElementById("note").innerHTML =
     `<b>How it works:</b> a $1,000 cash account, started ${new Date(START*1000).toLocaleDateString()}. Replaying every trade `+
-    `ArbTraderRookie or Kruto2027 has made since then: when either enters a new market, this account enters too with a stake of `+
+    `fortuneking or Kruto2027 has made since then: when either enters a new market, this account enters too with a stake of `+
     `$${(BANKROLL*PER_POS)|0} — <i>if there's cash</i>. When a market resolves, the bet settles `+
     `(win → payout, loss → $0) and cash frees up. A bet counts as <b>high-conviction</b> only if its stake is in the `+
     `top 20% of that wallet's own bet sizes (a per-wallet cutoff, not a flat dollar amount) — empirically this is where `+
