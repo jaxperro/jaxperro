@@ -156,6 +156,7 @@ const byWallet = Object.fromEntries(WALLETS.map(w=>[w.wallet,w]));
 // Feed fields: wallet, name, conv_win, conv_won, conv_lost, conv_pnl, realized_pnl,
 //   med_lead_h, last_conv_bet, last_trade.
 const SHARPS_URL = "https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/live/watch_sharps.json";
+const PORTFOLIO_URL = "https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/live/portfolio.json";
 let SHARPS_CACHE = null;
 async function getSharps(){
   if(SHARPS_CACHE) return SHARPS_CACHE;
@@ -280,7 +281,55 @@ document.querySelector('#sharps thead').addEventListener('click', e=>{
   drawSharps();
 });
 
+// render the top portfolio from the server-precomputed feed (cache-based replay with
+// correct capital recycling + full bet history). One request, no client-side replay.
+function renderPortfolio(P){
+  const now=Date.now()/1000, bank=P.bank||1000;
+  document.getElementById("equity").textContent=fmt(P.equity);
+  const pe=document.getElementById("pnl"); pe.className="pnl "+(P.pnl>=0?"green":"red");
+  pe.textContent=`${sg(P.pnl)} (${pct(P.pnl/bank*100)}) on ${fmt(bank)}`;
+  document.getElementById("liquid").textContent=fmt(P.liquid);
+  document.getElementById("invested").textContent=fmt(P.invested);
+  document.getElementById("investedSub").innerHTML=`${P.open_count} open · <span class="${(P.unreal||0)>=0?'green':'red'}">${sg(P.unreal||0)} unreal.</span>`;
+  const re=document.getElementById("realized"); re.textContent=sg(P.realized); re.className="sval "+(P.realized>=0?"green":"red");
+  const me=document.getElementById("missed"); me.textContent=sg(P.missed_pnl||0); me.className="sval "+((P.missed_pnl||0)>=0?"amber":"red");
+  document.getElementById("missedSub").textContent=`${P.missed_count||0} trades skipped`;
+  document.getElementById("deployfill").style.width=Math.max(0,Math.min(100,P.invested/bank*100))+"%";
+  document.getElementById("meta").innerHTML=`since ${new Date(P.started*1000).toLocaleDateString()} · refreshed daily · updated ${new Date(P.updated*1000).toLocaleString()}`;
+  // current bets
+  document.getElementById("curHead").textContent=`Current bets — ${P.open_count} open, ${fmt(P.invested)} at work`;
+  document.querySelector("#current tbody").innerHTML=(P.current&&P.current.length)? P.current.map(c=>{
+    const e=ep(c.end), days=e?Math.round((e-now)/86400):null;
+    const when=!e?'<span class="dim">no date</span>':(e<now?'<span class="amber">settling…</span>':(days<=0?'today':`in ${days}d`));
+    return `<tr><td class="mkt">${c.title||''}</td><td class="name">${c.name}</td><td>${c.outcome||''}</td><td>${fmt(c.stake)}</td><td>${fmt(c.val)}</td><td class="${c.pnl>=0?'green':'red'}">${sg(c.pnl)}</td><td>${when}</td></tr>`;}).join("")
+    : '<tr><td colspan="7" class="loading">no open bets right now — all cash is liquid</td></tr>';
+  // resolved bets
+  document.getElementById("resHead").textContent=`Resolved bets — ${P.resolved_count} settled (${P.wins}W / ${P.losses}L)`;
+  document.querySelector("#resolved tbody").innerHTML=(P.resolved&&P.resolved.length)? P.resolved.map(s=>{
+    const result=s.won?`<span class="green">won · ${fmt(s.stake+s.pnl)}</span>`:`<span class="red">lost · $0</span>`;
+    const d=s.date?new Date(s.date*1000).toLocaleDateString():'<span class="dim">—</span>';
+    return `<tr><td class="mkt">${s.title||''}</td><td class="name">${s.name}</td><td></td><td>${fmt(s.stake)}</td><td>${result}</td><td class="${s.pnl>=0?'green':'red'}">${sg(s.pnl)}</td><td>${d}</td></tr>`;}).join("")
+    : '<tr><td colspan="7" class="loading">none yet</td></tr>';
+  // missed (resolved history); hide the legacy open-missed table (cache has resolved only)
+  document.getElementById("missHead").textContent=`Missed bets — ${P.missed_count||0} skipped${(P.missed&&P.missed.length)?` · ${sg(P.missed_pnl||0)} would-be`:''}`;
+  document.querySelector("#missedTbl tbody").innerHTML=(P.missed&&P.missed.length)? P.missed.map(m=>{
+    const result=m.won?`<span class="green">won · ${fmt(m.stake+m.pnl)}</span>`:`<span class="red">lost · $0</span>`;
+    const d=m.date?new Date(m.date*1000).toLocaleDateString():'<span class="dim">—</span>';
+    return `<tr><td class="mkt">${m.title||''}</td><td class="name">${m.name}</td><td></td><td>${fmt(m.stake)}</td><td>${result}</td><td class="${m.pnl>=0?'green':'red'}">${sg(m.pnl)}</td><td>${d}</td></tr>`;}).join("")
+    : '<tr><td colspan="7" class="loading">no missed bets — capital wasn\'t strained</td></tr>';
+  const moh=document.getElementById("missOpenHead"); if(moh) moh.style.display="none";
+  const mot=document.getElementById("missedOpenTbl"); if(mot && mot.closest(".scroll")) mot.closest(".scroll").style.display="none";
+  // allocation
+  document.querySelector("#wallets tbody").innerHTML=(P.wallets||[]).map(w=>
+    `<tr><td class="name"><a href="https://polymarket.com/profile/${w.wallet}" target="_blank">${w.name}</a></td><td>${(100/P.wallets.length).toFixed(0)}%</td><td>${w.bets}</td><td>${fmt(w.invested)}</td><td class="${w.realized>=0?'green':'red'}">${sg(w.realized)}</td></tr>`).join("");
+  document.getElementById("note").innerHTML=`<b>How it works:</b> a ${fmt(bank)} paper account started ${new Date(P.started*1000).toLocaleDateString()}, mirroring each followed wallet's <b>conviction</b> bets (top 20% of their own stake sizes) at $${P.stake|0} per trade. Computed server-side from the winning-wallet-finder cache, so capital recycles at each market's <b>true resolution time</b> (refreshed daily). The <b>Copy P&amp;L</b> column on the sharps table below is the per-wallet copyability signal. <b>Paper money — idealized (no slippage/fees/lag), edge unproven out-of-sample.</b> Built with <a href="https://github.com/jaxperro/winning-wallet-finder" target="_blank">winning-wallet-finder</a>.`;
+}
+
 async function load(){
+  // primary path: render the precomputed portfolio feed (1 request). falls back to the
+  // legacy client-side replay below only if the feed is unreachable.
+  try{ const P = await j(PORTFOLIO_URL); renderPortfolio(P); await renderSharps(); return; }
+  catch(e){ /* feed down -> legacy replay */ }
   document.getElementById("meta").textContent = "replaying live trades from Polymarket…";
   const datas = await Promise.all(WALLETS.map(walletData));
   const info = Object.assign({}, ...datas.map(d=>d.info));
