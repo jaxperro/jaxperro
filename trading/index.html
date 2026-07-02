@@ -112,7 +112,8 @@
       const L=d.lag||{};
       $("botLag").textContent=L.avg_s!=null?Math.round(L.avg_s)+"s":"—";
       $("botSlip").textContent=L.avg_slip_pct!=null?((L.avg_slip_pct*100).toFixed(1)+"% slip · "+(L.n||0)+" copies"):"avg slippage";
-      $("botMeta").textContent=(d.bets||[]).length+" bets placed · $"+(d.stake||50)+" each · free cash gates new bets · "+(d.wallets||[]).join(", ");
+      const sz=d.stake_pct?((d.stake_pct*100).toFixed(0)+"% of equity per bet (now $"+Math.round(d.stake||0)+")"):"$"+(d.stake||50)+" each";
+      $("botMeta").textContent=(d.bets||[]).length+" bets placed · "+sz+(d.event_cap?" · max "+d.event_cap+"/event":"")+" · free cash gates new bets · "+(d.wallets||[]).join(", ");
       const rows=(d.bets||[]).map(b=>{
         const slip=b.slippage_pct==null?"—":((b.slippage_pct>=0?"+":"")+(b.slippage_pct*100).toFixed(1)+"%");
         const pl=b.pnl==null?"—":'<span class="'+(b.pnl>=0?"green":"red")+'">'+sgn(b.pnl)+'</span>';
@@ -130,8 +131,8 @@
   })();
   </script>
 
-  <h2 style="margin-top:36px;color:#5a6b80">↓ Backtest model · fees + lag modeled, hold-to-resolution ↓</h2>
-  <div class="sub">A $1,000 paper account following <b>Kruto2027, shisan888, fortuneking & LSB1</b> — mirroring <b>every one of their high-conviction bets</b> (the top 20% by stake size — their biggest-conviction calls), <b>$50 per trade</b>, backfilled from <b>June 1</b>. Each entry pays the real <b>Polymarket taker fee</b> (0.03 sports rate) and a <b>lag-slippage haircut</b> (~90s detection lag, +0.5% entry price) so the book models what a copier nets, not a zero-cost mirror. Held to resolution; cash recycles as bets settle.</div>
+  <h2 style="margin-top:36px;color:#5a6b80">↓ Backtest model · fees + lag + dynamic sizing, hold-to-resolution ↓</h2>
+  <div class="sub">A $1,000 paper account following <b>Kruto2027, shisan888, fortuneking & LSB1</b> — mirroring <b>every one of their high-conviction bets</b> (the top 20% by stake size), backfilled from <b>June 1</b>. Stakes are <b>dynamic: 4% of current equity per bet</b> (Kelly-style compounding — bets grow with wins, shrink in drawdowns, halve below 80% of the equity peak), with <b>max 2 concurrent bets per game</b> (a match's markets settle together — they're one correlated bet). Each entry pays the real <b>Polymarket taker fee</b> (0.03 sports rate) and a <b>lag-slippage haircut</b> (~90s, +0.5% entry). Held to resolution; cash recycles as bets settle.</div>
 
   <div class="hero">
     <div class="row-actions">
@@ -386,17 +387,21 @@ function renderPortfolio(P){
   // missed (resolved history); hide the legacy open-missed table (cache has resolved only)
   document.getElementById("missHead").textContent=`Missed bets — ${P.missed_count||0} skipped${(P.missed&&P.missed.length)?` · ${sg(P.missed_pnl||0)} would-be`:''}`;
   document.querySelector("#missedTbl tbody").innerHTML=(P.missed&&P.missed.length)? P.missed.map(m=>{
-    const result=m.won?`<span class="green">won · ${fmt(m.stake+m.pnl)}</span>`:`<span class="red">lost · $0</span>`;
+    const result=m.won?`<span class="green">won · ${fmt((m.stake||0)+m.pnl)}</span>`:`<span class="red">lost · $0</span>`;
     const d=m.date?new Date(m.date*1000).toLocaleDateString():'<span class="dim">—</span>';
-    return `<tr><td class="mkt">${m.title||''}</td><td class="name">${m.name}</td><td></td><td>${fmt(m.stake)}</td><td>${result}</td><td class="${m.pnl>=0?'green':'red'}">${sg(m.pnl)}</td><td>${d}</td></tr>`;}).join("")
+    const why=m.capped?' <span class="pill" style="background:rgba(245,196,81,.13);color:var(--amber)">EVENT CAP</span>':'';
+    return `<tr><td class="mkt">${m.title||''}${why}</td><td class="name">${m.name}</td><td></td><td>${fmt(m.stake||0)}</td><td>${result}</td><td class="${m.pnl>=0?'green':'red'}">${sg(m.pnl)}</td><td>${d}</td></tr>`;}).join("")
     : '<tr><td colspan="7" class="loading">no missed bets — capital wasn\'t strained</td></tr>';
   const moh=document.getElementById("missOpenHead"); if(moh) moh.style.display="none";
   const mot=document.getElementById("missedOpenTbl"); if(mot && mot.closest(".scroll")) mot.closest(".scroll").style.display="none";
   // allocation
   document.querySelector("#wallets tbody").innerHTML=(P.wallets||[]).map(w=>
     `<tr><td class="name"><a href="https://polymarket.com/profile/${w.wallet}" target="_blank">${w.name}</a></td><td>${(100/P.wallets.length).toFixed(0)}%</td><td>${w.bets}</td><td>${fmt(w.invested)}</td><td class="${w.realized>=0?'green':'red'}">${sg(w.realized)}</td></tr>`).join("");
+  const sizing = P.stake_pct
+    ? `at <b>${(P.stake_pct*100).toFixed(0)}% of current equity</b> per trade (next stake ${fmt(P.stake||0)}; halves below ${((P.dd_threshold||0.8)*100).toFixed(0)}% of the equity peak; max ${P.event_cap||2} bets per event${P.capped_count?` — ${P.capped_count} skipped by the cap`:''})`
+    : `at $${P.stake|0} per trade`;
   const feeNote = P.fee_rate ? `Every entry pays the real Polymarket <b>taker fee</b> (${P.fee_rate} rate${P.fees_paid?` — ${fmt(P.fees_paid)} paid so far`:''}) and a <b>lag haircut</b> (+${((P.slip||0)*100).toFixed(1)}% entry price, ~${P.lag_est_s||90}s detection lag), so the book models what a copier nets.` : `<b>Idealized — no fees/lag.</b>`;
-  document.getElementById("note").innerHTML=`<b>How it works:</b> a ${fmt(bank)} paper account backfilled from ${new Date(P.started*1000).toLocaleDateString()}, mirroring each followed wallet's <b>conviction</b> bets (top 20% of their own stake sizes) at $${P.stake|0} per trade. ${feeNote} Settled history + realized P&amp;L are computed daily from the winning-wallet-finder cache (capital recycles at each market's <b>true resolution time</b>); <b>open bets are tracked live</b> off the wallets' current positions. The <b>Copy P&amp;L</b> column on the sharps table below is the per-wallet copyability signal. <b>Paper money — edge unproven out-of-sample.</b> Built with <a href="https://github.com/jaxperro/winning-wallet-finder" target="_blank">winning-wallet-finder</a>.`;
+  document.getElementById("note").innerHTML=`<b>How it works:</b> a ${fmt(bank)} paper account backfilled from ${new Date(P.started*1000).toLocaleDateString()}, mirroring each followed wallet's <b>conviction</b> bets (top 20% of their own stake sizes) ${sizing}. ${feeNote} Settled history + realized P&amp;L are computed daily from the winning-wallet-finder cache (capital recycles at each market's <b>true resolution time</b>); <b>open bets are tracked live</b> off the wallets' current positions. The <b>Copy P&amp;L</b> column on the sharps table below is the per-wallet copyability signal. <b>Paper money — edge unproven out-of-sample.</b> Built with <a href="https://github.com/jaxperro/winning-wallet-finder" target="_blank">winning-wallet-finder</a>.`;
 }
 
 // LIVE open bets: the settled backbone (equity/realized/resolved) comes from the daily
