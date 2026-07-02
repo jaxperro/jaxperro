@@ -130,8 +130,8 @@
   })();
   </script>
 
-  <h2 style="margin-top:36px;color:#5a6b80">↓ Backtest model · zero-lag, hold-to-resolution ↓</h2>
-  <div class="sub">A $1,000 paper account following <b>raid3r, 0x6d1A94f4, Kruto2027 & LSB1</b> — mirroring <b>every one of their high-conviction bets</b> (the top 20% by stake size — their biggest-conviction calls), <b>$50 per trade</b> — a live forward test started <b>June 23</b> (see "since" date below), tracked going forward. Each is held to resolution; cash recycles as bets settle. No execution lag. Tracking only.</div>
+  <h2 style="margin-top:36px;color:#5a6b80">↓ Backtest model · fees + lag modeled, hold-to-resolution ↓</h2>
+  <div class="sub">A $1,000 paper account following <b>Kruto2027, shisan888, fortuneking & LSB1</b> — mirroring <b>every one of their high-conviction bets</b> (the top 20% by stake size — their biggest-conviction calls), <b>$50 per trade</b>, backfilled from <b>June 1</b>. Each entry pays the real <b>Polymarket taker fee</b> (0.03 sports rate) and a <b>lag-slippage haircut</b> (~90s detection lag, +0.5% entry price) so the book models what a copier nets, not a zero-cost mirror. Held to resolution; cash recycles as bets settle.</div>
 
   <div class="hero">
     <div class="row-actions">
@@ -206,18 +206,16 @@ const pctl = (arr,q=CONV_PCTILE) => { const s=arr.filter(x=>x>0).sort((a,b)=>a-b
   if(!s.length) return Infinity; const k=(s.length-1)*q, f=Math.floor(k);
   return s[f+1]===undefined ? s[f] : s[f]+(s[f+1]-s[f])*(k-f); };
 
-// follow the highest-copy-P&L combination a $1k book can fund: raid3r + 0x6d1A94f4 +
-// Kruto2027 + LSB1 — the basket that maximized realized P&L in the capital-constrained
-// combo backtest (these wallets resolve fast, so $1k recycles and funds nearly all
-// their conviction bets with minimal misses). Copy-positive holders. NOTE: backtest
-// returns are an idealized, in-sample upper bound (no slippage/fees, perfect fills) —
-// higher variance than the conservative pair; forward performance unproven. Mirror EVERY
-// one of their high-conviction bets (top 20% of each wallet's stake sizes) from June 1.
+// the July 2026 follow set: the top fee-aware copy-positive sharps (Kruto2027,
+// shisan888, fortuneking — selected on fee-adjusted flat-$50 Copy P&L) + LSB1
+// (curated pick). The server-side portfolio.json models taker fees + lag; this
+// list is only the FALLBACK client replay if that feed is unreachable (the
+// fallback itself is fee-blind — treat it as an upper bound).
 const WALLETS = [
-  {name:"raid3r",     wallet:"0xa1a77ea9382bb8c3610f3303b66e093f644aace4", weight:1.0},
-  {name:"0x6d1A94f4", wallet:"0x6d1a94f4bdd53114ec483925d025367db68697fb", weight:1.0},
-  {name:"Kruto2027",  wallet:"0xe8ca3f758c93f44f3ec210542ab78afb7c0bcccb", weight:1.0},
-  {name:"LSB1",       wallet:"0x41558102a796ba971c7567cad41c307e59f8fa41", weight:1.0},
+  {name:"Kruto2027",   wallet:"0xe8ca3f758c93f44f3ec210542ab78afb7c0bcccb", weight:1.0},
+  {name:"shisan888",   wallet:"0xf3488e52ac2d7f0628b04481db5a5b0446f0e543", weight:1.0},
+  {name:"fortuneking", wallet:"0x86c878cde72660ec52f5e6f0f0438b76de8fc867", weight:1.0},
+  {name:"LSB1",        wallet:"0x41558102a796ba971c7567cad41c307e59f8fa41", weight:1.0},
 ];
 const byWallet = Object.fromEntries(WALLETS.map(w=>[w.wallet,w]));
 
@@ -397,7 +395,8 @@ function renderPortfolio(P){
   // allocation
   document.querySelector("#wallets tbody").innerHTML=(P.wallets||[]).map(w=>
     `<tr><td class="name"><a href="https://polymarket.com/profile/${w.wallet}" target="_blank">${w.name}</a></td><td>${(100/P.wallets.length).toFixed(0)}%</td><td>${w.bets}</td><td>${fmt(w.invested)}</td><td class="${w.realized>=0?'green':'red'}">${sg(w.realized)}</td></tr>`).join("");
-  document.getElementById("note").innerHTML=`<b>How it works:</b> a ${fmt(bank)} paper account started ${new Date(P.started*1000).toLocaleDateString()}, mirroring each followed wallet's <b>conviction</b> bets (top 20% of their own stake sizes) at $${P.stake|0} per trade. Settled history + realized P&amp;L are computed daily from the winning-wallet-finder cache (capital recycles at each market's <b>true resolution time</b>); <b>open bets are tracked live</b> off the wallets' current positions. The <b>Copy P&amp;L</b> column on the sharps table below is the per-wallet copyability signal. <b>Paper money — idealized (no slippage/fees/lag), edge unproven out-of-sample.</b> Built with <a href="https://github.com/jaxperro/winning-wallet-finder" target="_blank">winning-wallet-finder</a>.`;
+  const feeNote = P.fee_rate ? `Every entry pays the real Polymarket <b>taker fee</b> (${P.fee_rate} rate${P.fees_paid?` — ${fmt(P.fees_paid)} paid so far`:''}) and a <b>lag haircut</b> (+${((P.slip||0)*100).toFixed(1)}% entry price, ~${P.lag_est_s||90}s detection lag), so the book models what a copier nets.` : `<b>Idealized — no fees/lag.</b>`;
+  document.getElementById("note").innerHTML=`<b>How it works:</b> a ${fmt(bank)} paper account backfilled from ${new Date(P.started*1000).toLocaleDateString()}, mirroring each followed wallet's <b>conviction</b> bets (top 20% of their own stake sizes) at $${P.stake|0} per trade. ${feeNote} Settled history + realized P&amp;L are computed daily from the winning-wallet-finder cache (capital recycles at each market's <b>true resolution time</b>); <b>open bets are tracked live</b> off the wallets' current positions. The <b>Copy P&amp;L</b> column on the sharps table below is the per-wallet copyability signal. <b>Paper money — edge unproven out-of-sample.</b> Built with <a href="https://github.com/jaxperro/winning-wallet-finder" target="_blank">winning-wallet-finder</a>.`;
 }
 
 // LIVE open bets: the settled backbone (equity/realized/resolved) comes from the daily
@@ -668,14 +667,15 @@ async function load(){
   await renderSharps();
 
   document.getElementById("note").innerHTML =
-    `<b>How it works:</b> a $1,000 cash account, started ${new Date(START*1000).toLocaleDateString()}. Replaying every trade `+
+    `<b>How it works (fallback replay — the daily feed was unreachable):</b> a $1,000 cash account, started ${new Date(START*1000).toLocaleDateString()}. Replaying every trade `+
     `any of these four wallets has made since then: when one enters a new market, this account enters too with a stake of `+
     `$${(BANKROLL*PER_POS)|0} — <i>if there's cash</i>. When a market resolves, the bet settles `+
     `(win → payout, loss → $0) and cash frees up. A bet counts as <b>high-conviction</b> only if its stake is in the `+
     `top 20% of that wallet's own bet sizes (a per-wallet cutoff, not a flat dollar amount) — empirically this is where `+
     `the win rate jumps (~74% vs ~51% on all bets). <b>Realized</b> = settled P&L · <b>Invested</b> = open bets marked `+
     `to market · <b>Missed</b> = P&L of trades skipped because capital was fully deployed (the cost of a small bankroll). `+
-    `Weights = z-score × copyability. <b>Paper money — edge unproven out-of-sample.</b> Data sampled (last ~2,000 trades/wallet). `+
+    `<b>This fallback is fee-blind (upper bound)</b> — the primary daily feed models taker fees + lag. `+
+    `<b>Paper money — edge unproven out-of-sample.</b> Data sampled (last ~2,000 trades/wallet). `+
     `Built with <a href="https://github.com/jaxperro/winning-wallet-finder" target="_blank">winning-wallet-finder</a>.`;
 }
 document.getElementById("refresh").onclick=load;
