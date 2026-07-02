@@ -77,11 +77,22 @@
     <div class="meta" id="botMeta">connecting to the live bot feed…</div>
   </div>
 
-  <h2 id="botBetsHead">Live bot — bets placed</h2>
-  <div class="sub" style="margin:-6px 0 10px">The actual fills from the running copy bot — with <b>real detection lag and price slippage</b> (their entry price vs. what the bot actually paid). This is the real-world version of the idealized backtest below.</div>
+  <h2 id="botBetsHead">Live bot — open bets</h2>
+  <div class="sub" style="margin:-6px 0 10px">The actual fills from the running copy bot — with <b>real detection lag and price slippage</b> (their entry price vs. what the bot actually paid). This is the real-world version of the modeled backtest below.</div>
   <div class="scroll"><table id="botBets"><thead><tr>
     <th>Placed</th><th>Wallet</th><th>Market</th><th>Their&nbsp;px</th><th>Our&nbsp;px</th><th>Slip</th><th>Cost</th><th>Status</th><th>P&amp;L</th>
   </tr></thead><tbody><tr><td colspan="9" class="loading">loading live bot feed…</td></tr></tbody></table></div>
+
+  <h2 id="botResHead">Live bot — resolved bets</h2>
+  <div class="scroll"><table id="botResolved"><thead><tr>
+    <th>Placed</th><th>Wallet</th><th>Market</th><th>Their&nbsp;px</th><th>Our&nbsp;px</th><th>Slip</th><th>Cost</th><th>Status</th><th>P&amp;L</th>
+  </tr></thead><tbody><tr><td colspan="9" class="loading">loading…</td></tr></tbody></table></div>
+
+  <h2 id="botMissHead">Live bot — missed bets</h2>
+  <div class="sub" style="margin:-6px 0 10px">Bets the bot <b>would have copied but couldn't take</b> — free cash was deployed, the per-event cap was full, or the price drifted past the 5% guard before it could fill. Missed P&amp;L = what the skipped stake would have returned (fees included), settled when the market resolves.</div>
+  <div class="scroll"><table id="botMissed"><thead><tr>
+    <th>Time</th><th>Wallet</th><th>Market</th><th>Px</th><th>Stake</th><th>Reason</th><th>Result</th><th>Missed&nbsp;P&amp;L</th>
+  </tr></thead><tbody><tr><td colspan="8" class="loading">loading…</td></tr></tbody></table></div>
 
   <script>
   (function(){
@@ -95,7 +106,9 @@
                 won:'<span class="pill buy">WON</span>',lost:'<span class="pill sell">LOST</span>',
                 closed:'<span class="pill" style="background:rgba(139,155,176,.15);color:var(--dim)">SOLD</span>'};
     function offline(msg){const st=$("botStatus");st.textContent="OFFLINE";st.className="pill sell";$("botMeta").textContent=msg;
-      $("botBets").querySelector("tbody").innerHTML='<tr><td colspan="9" class="loading">'+msg+'</td></tr>';}
+      $("botBets").querySelector("tbody").innerHTML='<tr><td colspan="9" class="loading">'+msg+'</td></tr>';
+      $("botResolved").querySelector("tbody").innerHTML='<tr><td colspan="9" class="loading">—</td></tr>';
+      $("botMissed").querySelector("tbody").innerHTML='<tr><td colspan="8" class="loading">—</td></tr>';}
     function render(d){
       const age=Date.now()/1000-(d.updated||0);
       const st=$("botStatus");
@@ -114,7 +127,7 @@
       $("botSlip").textContent=L.avg_slip_pct!=null?((L.avg_slip_pct*100).toFixed(1)+"% slip · "+(L.n||0)+" copies"):"avg slippage";
       const sz=d.stake_pct?((d.stake_pct*100).toFixed(0)+"% of equity per bet (now $"+Math.round(d.stake||0)+")"):"$"+(d.stake||50)+" each";
       $("botMeta").textContent=(d.bets||[]).length+" bets placed · "+sz+(d.event_cap?" · max "+d.event_cap+"/event":"")+" · free cash gates new bets · "+(d.wallets||[]).join(", ");
-      const rows=(d.bets||[]).map(b=>{
+      const betRow=b=>{
         const slip=b.slippage_pct==null?"—":((b.slippage_pct>=0?"+":"")+(b.slippage_pct*100).toFixed(1)+"%");
         const pl=b.pnl==null?"—":'<span class="'+(b.pnl>=0?"green":"red")+'">'+sgn(b.pnl)+'</span>';
         return '<tr><td>'+timeStr(b.opened)+'</td><td class="name">'+(b.name||"")+'</td>'
@@ -122,8 +135,27 @@
           +'<td>'+Math.round((b.their_price||0)*100)+'¢</td><td>'+Math.round((b.my_price||0)*100)+'¢</td>'
           +'<td class="'+((b.slippage_pct||0)>0?"red":"green")+'">'+slip+'</td>'
           +'<td>'+money(b.cost||0)+'</td><td>'+(STAT[b.status]||b.status)+'</td><td>'+pl+'</td></tr>';
-      }).join("");
-      $("botBets").querySelector("tbody").innerHTML=rows||'<tr><td colspan="9" class="loading">no bets placed yet — waiting for a new conviction trade from the wallets</td></tr>';
+      };
+      const openBets=(d.bets||[]).filter(b=>b.status==="open"),
+            resBets=(d.bets||[]).filter(b=>b.status!=="open");
+      $("botBetsHead").textContent=`Live bot — open bets (${openBets.length})`;
+      $("botBets").querySelector("tbody").innerHTML=openBets.map(betRow).join("")
+        ||'<tr><td colspan="9" class="loading">no open bets — waiting for a new conviction trade from the wallets</td></tr>';
+      const rw=resBets.filter(b=>b.status==="won").length, rl=resBets.filter(b=>b.status==="lost").length;
+      $("botResHead").textContent=`Live bot — resolved bets (${resBets.length}${resBets.length?` · ${rw}W / ${rl}L`:''})`;
+      $("botResolved").querySelector("tbody").innerHTML=resBets.map(betRow).join("")
+        ||'<tr><td colspan="9" class="loading">none settled yet</td></tr>';
+      const missed=d.missed||[];
+      const mp=d.missed_pnl||0;
+      $("botMissHead").textContent=`Live bot — missed bets (${missed.length}${missed.length?` · ${sgn(mp)} would-be`:''})`;
+      $("botMissed").querySelector("tbody").innerHTML=missed.map(m=>{
+        const pl=m.pnl==null?'<span class="dim">—</span>':'<span class="'+(m.pnl>=0?"green":"red")+'">'+sgn(m.pnl)+'</span>';
+        const res=m.status==="open"?'<span class="pill" style="background:rgba(91,176,255,.13);color:var(--accent)">LIVE</span>':(STAT[m.status]||m.status);
+        return '<tr><td>'+timeStr(m.ts)+'</td><td class="name">'+(m.name||"")+'</td>'
+          +'<td class="mkt">'+(m.outcome?m.outcome+" · ":"")+(m.title||"")+'</td>'
+          +'<td>'+Math.round((m.price||0)*100)+'¢</td><td>'+money(m.stake||0)+'</td>'
+          +'<td class="dim">'+(m.reason||"")+'</td><td>'+res+'</td><td>'+pl+'</td></tr>';
+      }).join("")||'<tr><td colspan="8" class="loading">none — the bot has taken every qualifying bet so far</td></tr>';
     }
     function load(){fetch(FEED,{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();}).then(render)
       .catch(()=>offline("live bot feed unavailable — the bot isn't publishing yet (run copybot.py --poll)"));}
