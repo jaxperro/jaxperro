@@ -90,7 +90,7 @@
   </tr></thead><tbody><tr><td colspan="10" class="loading">loading…</td></tr></tbody></table></div>
 
   <h2 id="botMissHead">Live bot — missed bets</h2>
-  <div class="sub" style="margin:-6px 0 10px">Bets the bot <b>would have copied but couldn't take</b> — free cash was deployed, or the price drifted past the 5% guard before it could fill. Missed P&amp;L = what the skipped stake would have returned (fees included), settled when the market resolves.</div>
+  <div class="sub" style="margin:-6px 0 10px">Bets the bot <b>would have copied but couldn't take</b> — free cash was deployed, or the price <b>ran up</b> more than 5% past the wallet's fill before the bot could act (a <i>better</i> price is never blocked, by rule). Missed P&amp;L = what the skipped stake would have returned (fees included), settled when the market resolves.</div>
   <div class="scroll"><table id="botMissed"><thead><tr>
     <th>Time</th><th>Wallet</th><th>Market</th><th>Px</th><th>Stake</th><th>Reason</th><th>Result</th><th>Missed&nbsp;P&amp;L</th>
   </tr></thead><tbody><tr><td colspan="8" class="loading">loading…</td></tr></tbody></table></div>
@@ -167,7 +167,7 @@
   </script>
 
   <h2 style="margin-top:36px;color:#5a6b80">↓ Backtest model · fees + lag + dynamic sizing, hold-to-resolution ↓</h2>
-  <div class="sub">A $1,000 paper account following <b>Kruto2027, shisan888, fortuneking & LSB1</b> — mirroring <b>every one of their high-conviction bets</b> (the top 20% by stake size), backfilled from <b>June 1</b>. Stakes are <b>dynamic: 4% of current equity per bet</b> (Kelly-style compounding — bets grow with wins, shrink in drawdowns, halve below 80% of the equity peak). Each entry pays the real <b>Polymarket taker fee</b> (0.03 sports rate) and a <b>lag-slippage haircut</b> (~90s, +0.5% entry). Held to resolution; cash recycles as bets settle.</div>
+  <div class="sub">A $1,000 paper account following <b>Kruto2027, shisan888, fortuneking & LSB1</b> — mirroring their <b>high-conviction bets</b> (the top 20% by stake size, skipping entries above <b>95¢</b> where slippage + fees eat the payout), backfilled from <b>June 1</b>. Stakes are <b>dynamic: 4% of current equity per bet</b> (Kelly-style compounding — bets grow with wins, shrink in drawdowns, halve below 80% of the equity peak). Each entry pays the real <b>Polymarket taker fee</b> (0.03 sports rate) and a <b>lag-slippage haircut</b> (~90s, +0.5% entry). Held to resolution; cash recycles as bets settle.</div>
 
   <div class="hero">
     <div class="row-actions">
@@ -432,7 +432,8 @@ function renderPortfolio(P){
   // allocation
   document.querySelector("#wallets tbody").innerHTML=(P.wallets||[]).map(w=>
     `<tr><td class="name"><a href="https://polymarket.com/profile/${w.wallet}" target="_blank">${w.name}</a></td><td>${(100/P.wallets.length).toFixed(0)}%</td><td>${w.bets}</td><td>${fmt(w.invested)}</td><td class="${w.realized>=0?'green':'red'}">${sg(w.realized)}</td></tr>`).join("");
-  const capTxt = P.event_cap ? `; max ${P.event_cap} bets per event${P.capped_count?` — ${P.capped_count} skipped by the cap`:''}` : '';
+  const capTxt = (P.event_cap ? `; max ${P.event_cap} bets per event${P.capped_count?` — ${P.capped_count} skipped by the cap`:''}` : '')
+    + (P.max_entry && P.max_entry < 1 ? `; entries above ${Math.round(P.max_entry*100)}¢ skipped` : '');
   const sizing = P.stake_pct
     ? `at <b>${(P.stake_pct*100).toFixed(0)}% of current equity</b> per trade (next stake ${fmt(P.stake||0)}; halves below ${((P.dd_threshold||0.8)*100).toFixed(0)}% of the equity peak${capTxt})`
     : `at $${P.stake|0} per trade`;
