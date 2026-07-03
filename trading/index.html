@@ -511,11 +511,14 @@ async function load(){
 
   // resolve a market once via the CLOB (authoritative end date + winner prices),
   // cached. defined before the replay so the pre-pass can use it.
+  // NB: the CLOB reports winner=false on EVERY token of an UNRESOLVED market —
+  // a market is resolved only once some token's winner is true.
   const mktCache={};
   const marketInfo = async cond => { if(!cond) return null;
     if(!(cond in mktCache)){ try{ const m=await j(`https://clob.polymarket.com/markets/${cond}`);
-      const prices={}; let resolved=false;
-      for(const t of (m&&m.tokens)||[]){ if(t.winner===true||t.winner===false) resolved=true; prices[t.outcome]= t.winner===true?1 : t.winner===false?0 : t.price; }
+      const toks=(m&&m.tokens)||[]; const resolved=toks.some(t=>t.winner===true);
+      const prices={};
+      for(const t of toks){ prices[t.outcome]= t.winner===true?1 : (resolved?0:t.price); }
       mktCache[cond]={end:(m&&m.end_date_iso)||null, prices, resolved}; }catch(e){ mktCache[cond]={end:null,prices:{},resolved:false}; } }
     return mktCache[cond]; };
 
