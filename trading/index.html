@@ -95,6 +95,11 @@
     <th>Time</th><th>Wallet</th><th>Market</th><th>Px</th><th>Stake</th><th>Reason</th><th>Result</th><th>Missed&nbsp;P&amp;L</th>
   </tr></thead><tbody><tr><td colspan="8" class="loading">loading…</td></tr></tbody></table></div>
 
+  <h2 id="botAllocHead">Live bot — allocation by wallet</h2>
+  <div class="scroll"><table id="botAlloc"><thead><tr>
+    <th>Wallet</th><th>Bets</th><th>Win&nbsp;/&nbsp;Loss</th><th>Invested</th><th>Realized</th>
+  </tr></thead><tbody><tr><td colspan="5" class="loading">loading…</td></tr></tbody></table></div>
+
   <script>
   (function(){
     const FEED="https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/live/copybot_live.json";
@@ -109,7 +114,8 @@
     function offline(msg){const st=$("botStatus");st.textContent="OFFLINE";st.className="pill sell";$("botMeta").textContent=msg;
       $("botBets").querySelector("tbody").innerHTML='<tr><td colspan="10" class="loading">'+msg+'</td></tr>';
       $("botResolved").querySelector("tbody").innerHTML='<tr><td colspan="10" class="loading">—</td></tr>';
-      $("botMissed").querySelector("tbody").innerHTML='<tr><td colspan="8" class="loading">—</td></tr>';}
+      $("botMissed").querySelector("tbody").innerHTML='<tr><td colspan="8" class="loading">—</td></tr>';
+      $("botAlloc").querySelector("tbody").innerHTML='<tr><td colspan="5" class="loading">—</td></tr>';}
     function render(d){
       const age=Date.now()/1000-(d.updated||0);
       const st=$("botStatus");
@@ -159,6 +165,22 @@
           +'<td>'+Math.round((m.price||0)*100)+'¢</td><td>'+money(m.stake||0)+'</td>'
           +'<td class="dim">'+(m.reason||"")+'</td><td>'+res+'</td><td>'+pl+'</td></tr>';
       }).join("")||'<tr><td colspan="8" class="loading">none — the bot has taken every qualifying bet so far</td></tr>';
+      // per-wallet allocation, aggregated from the placed bets in the feed
+      const agg={}; (d.wallets||[]).forEach(n=>agg[n]={addr:null,bets:0,w:0,l:0,inv:0,real:0});
+      for(const b of d.bets||[]){
+        const a=agg[b.name]||(agg[b.name]={addr:null,bets:0,w:0,l:0,inv:0,real:0});
+        a.addr=a.addr||b.wallet; a.bets++;
+        if(b.status==="open") a.inv+=b.cost||0;
+        else if(b.status==="won"){a.w++; a.real+=b.pnl||0;}
+        else if(b.status==="lost"){a.l++; a.real+=b.pnl||0;}
+        else if(b.pnl!=null) a.real+=b.pnl;                 // mirror-sold with recorded P&L
+      }
+      $("botAlloc").querySelector("tbody").innerHTML=Object.entries(agg).map(([n,a])=>{
+        const nm=a.addr?`<a href="https://polymarket.com/profile/${a.addr}" target="_blank">${n}</a>`:n;
+        return `<tr><td class="name">${nm}</td><td>${a.bets}</td>`
+          +`<td>${(a.w||a.l)?`${a.w}–${a.l}`:'<span class="dim">—</span>'}</td>`
+          +`<td>${money(a.inv)}</td><td class="${a.real>=0?'green':'red'}">${sgn(a.real)}</td></tr>`;
+      }).join("")||'<tr><td colspan="5" class="loading">no bets yet</td></tr>';
     }
     function load(){fetch(FEED,{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();}).then(render)
       .catch(()=>offline("live bot feed unavailable — the bot isn't publishing yet (run copybot.py --poll)"));}
@@ -212,7 +234,7 @@
 
   <h2>Allocation by wallet</h2>
   <div class="scroll"><table id="wallets"><thead><tr>
-    <th>Wallet</th><th>Weight</th><th>Bets in</th><th>Invested</th><th>Realized</th>
+    <th>Wallet</th><th>Bets</th><th>Win&nbsp;/&nbsp;Loss</th><th>Invested</th><th>Realized</th>
   </tr></thead><tbody></tbody></table></div>
 
   <h2 id="sharpsHead">Sharp wallets — validated copyable</h2>
@@ -431,8 +453,9 @@ function renderPortfolio(P){
   const moh=document.getElementById("missOpenHead"); if(moh) moh.style.display="none";
   const mot=document.getElementById("missedOpenTbl"); if(mot && mot.closest(".scroll")) mot.closest(".scroll").style.display="none";
   // allocation
-  document.querySelector("#wallets tbody").innerHTML=(P.wallets||[]).map(w=>
-    `<tr><td class="name"><a href="https://polymarket.com/profile/${w.wallet}" target="_blank">${w.name}</a></td><td>${(100/P.wallets.length).toFixed(0)}%</td><td>${w.bets}</td><td>${fmt(w.invested)}</td><td class="${w.realized>=0?'green':'red'}">${sg(w.realized)}</td></tr>`).join("");
+  document.querySelector("#wallets tbody").innerHTML=(P.wallets||[]).map(w=>{
+    const wl=(w.won!=null&&(w.won||w.lost))?`${w.won}–${w.lost}`:'<span class="dim">—</span>';
+    return `<tr><td class="name"><a href="https://polymarket.com/profile/${w.wallet}" target="_blank">${w.name}</a></td><td>${w.bets}</td><td>${wl}</td><td>${fmt(w.invested)}</td><td class="${w.realized>=0?'green':'red'}">${sg(w.realized)}</td></tr>`;}).join("");
   const capTxt = (P.event_cap ? `; max ${P.event_cap} bets per event${P.capped_count?` — ${P.capped_count} skipped by the cap`:''}` : '')
     + (P.max_entry && P.max_entry < 1 ? `; entries above ${Math.round(P.max_entry*100)}¢ skipped` : '');
   const sizing = P.stake_pct
@@ -698,11 +721,12 @@ async function load(){
       <td>${d}</td></tr>`;}).join("")
     : '<tr><td colspan="7" class="loading">no missed bets have resolved yet</td></tr>';
 
-  // per-wallet
-  const maxW=Math.max(...WALLETS.map(w=>w.weight));
+  // per-wallet (win/loss from the settled log; sold exits excluded from the record)
   document.querySelector("#wallets tbody").innerHTML = WALLETS.map(w=>{const p=perW[w.wallet];
+    const wn=settled.filter(s=>s.name===w.name&&!s.sold&&s.res>=0.5).length,
+          ls=settled.filter(s=>s.name===w.name&&!s.sold&&s.res<0.5).length;
     return `<tr><td class="name"><a href="https://polymarket.com/profile/${w.wallet}" target="_blank">${w.name}</a></td>
-      <td>${(w.weight*100).toFixed(1)}%</td><td>${p.bets}</td>
+      <td>${p.bets}</td><td>${(wn||ls)?`${wn}–${ls}`:'<span class="dim">—</span>'}</td>
       <td>${fmt(p.invested)}</td>
       <td class="${p.realized>=0?'green':'red'}">${sg(p.realized)}</td></tr>`;}).join("");
 
