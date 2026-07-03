@@ -190,7 +190,7 @@
   </script>
 
   <h2 style="margin-top:36px;color:#5a6b80">↓ Backtest model · fees + lag + dynamic sizing, hold-to-resolution ↓</h2>
-  <div class="sub">A $1,000 paper account following <b>Kruto2027, shisan888, fortuneking & LSB1</b> — mirroring their <b>high-conviction bets</b> (the top 20% by stake size, skipping entries above <b>95¢</b> where slippage + fees eat the payout), backfilled from <b>June 1</b>. Stakes are <b>dynamic: 4% of current equity per bet</b> (Kelly-style compounding — bets grow with wins, shrink in drawdowns, halve below 80% of the equity peak). Each entry pays the real <b>Polymarket taker fee</b> (0.03 sports rate) and a <b>lag-slippage haircut</b> (~90s, +0.5% entry). Held to resolution; cash recycles as bets settle.</div>
+  <div class="sub">A $1,000 paper account following <b>Kruto2027, shisan888, fortuneking, LSB1 & imwalkinghere</b> — mirroring their <b>high-conviction bets</b> (the top 20% by stake size, skipping entries above <b>95¢</b> where slippage + fees eat the payout), backfilled from <b>June 1</b>. Stakes are <b>dynamic: 4% of current equity per bet</b> (Kelly-style compounding — bets grow with wins, shrink in drawdowns, halve below 80% of the equity peak). Each entry pays the real <b>Polymarket taker fee</b> (0.03 sports rate) and a <b>lag-slippage haircut</b> (~90s, +0.5% entry). Held to resolution; cash recycles as bets settle.</div>
 
   <div class="hero">
     <div class="row-actions">
@@ -271,10 +271,11 @@ const pctl = (arr,q=CONV_PCTILE) => { const s=arr.filter(x=>x>0).sort((a,b)=>a-b
 // list is only the FALLBACK client replay if that feed is unreachable (the
 // fallback itself is fee-blind — treat it as an upper bound).
 const WALLETS = [
-  {name:"Kruto2027",   wallet:"0xe8ca3f758c93f44f3ec210542ab78afb7c0bcccb", weight:1.0},
-  {name:"shisan888",   wallet:"0xf3488e52ac2d7f0628b04481db5a5b0446f0e543", weight:1.0},
-  {name:"fortuneking", wallet:"0x86c878cde72660ec52f5e6f0f0438b76de8fc867", weight:1.0},
-  {name:"LSB1",        wallet:"0x41558102a796ba971c7567cad41c307e59f8fa41", weight:1.0},
+  {name:"Kruto2027",     wallet:"0xe8ca3f758c93f44f3ec210542ab78afb7c0bcccb", weight:1.0},
+  {name:"shisan888",     wallet:"0xf3488e52ac2d7f0628b04481db5a5b0446f0e543", weight:1.0},
+  {name:"fortuneking",   wallet:"0x86c878cde72660ec52f5e6f0f0438b76de8fc867", weight:1.0},
+  {name:"LSB1",          wallet:"0x41558102a796ba971c7567cad41c307e59f8fa41", weight:1.0},
+  {name:"imwalkinghere", wallet:"0xd96750bf8d941a8186e592b0ae6e096da66aa266", weight:1.0},
 ];
 const byWallet = Object.fromEntries(WALLETS.map(w=>[w.wallet,w]));
 
