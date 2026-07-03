@@ -69,7 +69,7 @@
       <div style="text-align:right"><div class="ssub" id="botUpd"></div></div>
     </div>
     <div class="splits">
-      <div class="split"><div class="slabel">💵 Free cash</div><div class="sval" id="botCash">—</div><div class="ssub">of $1,000 book</div></div>
+      <div class="split"><div class="slabel">💵 Free cash</div><div class="sval" id="botCash">—</div><div class="ssub" id="botCashSub">of $1,000 book</div></div>
       <div class="split"><div class="slabel">📊 Deployed</div><div class="sval" id="botDeployed">—</div><div class="ssub" id="botOpen">open bets</div></div>
       <div class="split"><div class="slabel">🏦 Realized</div><div class="sval" id="botRealized">—</div><div class="ssub">settled P&amp;L</div></div>
       <div class="split"><div class="slabel">⏱️ Exec lag</div><div class="sval" id="botLag">—</div><div class="ssub" id="botSlip">avg slippage</div></div>
@@ -122,10 +122,11 @@
       st.textContent=d.mode==="live"?"LIVE · REAL $":"PAPER";
       st.className="pill buy";
       $("botUpd").textContent=(d.bets&&d.bets.length?"last bet activity ":"running · idle ")+ageStr(age)+" ago";
-      const total=(d.cash||0)+(d.deployed||0), pnl=d.realized||0;
+      const total=(d.cash||0)+(d.deployed||0)+(d.reserve||0), pnl=d.realized||0;
       $("botEquity").textContent=money(total);
       $("botPnl").innerHTML='<span class="'+(pnl>=0?"green":"red")+'">'+sgn(pnl)+' realized P&amp;L</span>';
       $("botCash").textContent=money(d.cash||0);
+      $("botCashSub").textContent=d.reserve?("+ "+money(d.reserve)+" banked (never bet)"):"of $1,000 book";
       $("botDeployed").textContent=money(d.deployed||0);
       $("botOpen").textContent=(d.open_count||0)+" open bets";
       const re=$("botRealized");re.textContent=sgn(pnl);re.className="sval "+(pnl>=0?"green":"red");
@@ -190,7 +191,7 @@
   </script>
 
   <h2 style="margin-top:36px;color:#5a6b80">↓ Backtest model · fees + lag + dynamic sizing, hold-to-resolution ↓</h2>
-  <div class="sub">A $1,000 paper account following <b>Kruto2027, shisan888, fortuneking, LSB1 & imwalkinghere</b> — mirroring their <b>high-conviction bets</b> (the top 20% by stake size, skipping entries above <b>95¢</b> where slippage + fees eat the payout), backfilled from <b>June 1</b>. Stakes are <b>dynamic: 4% of current equity per bet</b> (Kelly-style compounding — bets grow with wins, shrink in drawdowns, halve below 80% of the equity peak). Each entry pays the real <b>Polymarket taker fee</b> (0.03 sports rate) and a <b>lag-slippage haircut</b> (~90s, +0.5% entry). Held to resolution; cash recycles as bets settle.</div>
+  <div class="sub">A $1,000 paper account following <b>Kruto2027, shisan888, fortuneking, LSB1 & imwalkinghere</b> — mirroring their <b>high-conviction bets</b> (the top 20% by stake size, skipping entries above <b>95¢</b> where slippage + fees eat the payout), backfilled from <b>June 1</b>. Stakes are <b>dynamic: 4% of current equity per bet</b> (Kelly-style compounding — bets grow with wins, shrink in drawdowns, halve below 80% of the equity peak), <b>pinned at $250</b>: once the book outgrows that stake level, surplus profit is <b>swept to a banked reserve</b> that never bets — a profit ratchet that also keeps fills inside realistic order-book depth. Each entry pays the real <b>Polymarket taker fee</b> (0.03 sports rate) and a <b>lag-slippage haircut</b> (~90s, +0.5% entry). Held to resolution; cash recycles as bets settle.</div>
 
   <div class="hero">
     <div class="row-actions">
@@ -422,6 +423,8 @@ function renderPortfolio(P){
   const pe=document.getElementById("pnl"); pe.className="pnl "+(P.pnl>=0?"green":"red");
   pe.textContent=`${sg(P.pnl)} (${pct(P.pnl/bank*100)}) on ${fmt(bank)}`;
   document.getElementById("liquid").textContent=fmt(P.liquid);
+  const lqs=document.querySelector("#liquid + .ssub");
+  if(lqs) lqs.textContent=P.reserve?`cash to deploy · ${fmt(P.reserve)} banked`:"cash to deploy";
   document.getElementById("invested").textContent=fmt(P.invested);
   document.getElementById("investedSub").innerHTML=`${P.open_count} open · <span class="${(P.unreal||0)>=0?'green':'red'}">${sg(P.unreal||0)} unreal.</span>`;
   const re=document.getElementById("realized"); re.textContent=sg(P.realized); re.className="sval "+(P.realized>=0?"green":"red");
@@ -461,7 +464,8 @@ function renderPortfolio(P){
     const wl=nn?`${w.won}–${w.lost}`:'<span class="dim">—</span>';
     return `<tr><td class="name"><a href="https://polymarket.com/profile/${w.wallet}" target="_blank">${w.name}</a></td><td>${w.bets}</td><td>${wp}</td><td>${wl}</td><td>${fmt(w.invested)}</td><td class="${w.realized>=0?'green':'red'}">${sg(w.realized)}</td></tr>`;}).join("");
   const capTxt = (P.event_cap ? `; max ${P.event_cap} bets per event${P.capped_count?` — ${P.capped_count} skipped by the cap`:''}` : '')
-    + (P.max_entry && P.max_entry < 1 ? `; entries above ${Math.round(P.max_entry*100)}¢ skipped` : '');
+    + (P.max_entry && P.max_entry < 1 ? `; entries above ${Math.round(P.max_entry*100)}¢ skipped` : '')
+    + (P.reserve ? `; ${fmt(P.reserve)} of profit banked above the ${fmt(P.stake_cap||250)}-stake level` : '');
   const sizing = P.stake_pct
     ? `at <b>${(P.stake_pct*100).toFixed(0)}% of current equity</b> per trade (next stake ${fmt(P.stake||0)}; halves below ${((P.dd_threshold||0.8)*100).toFixed(0)}% of the equity peak${capTxt})`
     : `at $${P.stake|0} per trade`;
