@@ -6,6 +6,33 @@ Interactive Three.js experiment where the camera orbits a rainbow corkscrew of p
 
 `world/` is a second page served at [jaxperro.com/world](https://jaxperro.com/world): an infinite shader ocean with a boat you drive (WASD or touch joystick) and tappable islands that represent portfolio projects. It reuses this site's popup + Rive cat modules. **Developer guide — every config variable and the page logic — lives in [world/README.md](world/README.md).**
 
+### /trading & /trading2 — Polymarket dashboards
+
+Two static, single-file dashboards (no build step — edit the HTML, push, done):
+
+- **[`trading/index.html`](trading/index.html)** → [jaxperro.com/trading](https://jaxperro.com/trading) —
+  the winning-wallet-finder dashboard: live copy-bot book (open/resolved/missed
+  bets, per-wallet allocation), the fee-and-lag-modeled backtest book, and the
+  validated-sharps table. **All data comes from three JSON feeds in the
+  [winning-wallet-finder](https://github.com/jaxperro/winning-wallet-finder)
+  repo via raw.githubusercontent** (`copybot_live.json`, `portfolio.json`,
+  `watch_sharps.json`) — this page is only a renderer, with a fee-blind
+  client-side replay as fallback. Selection/execution logic lives (and is
+  documented) in that repo, not here.
+- **[`trading2/index.html`](trading2/index.html)** → jaxperro.com/trading2 —
+  the "Mop-Up Yield" favorites paper book. Its state (`trading2/book.json`) is
+  maintained by the [`trading2.yml`](.github/workflows/trading2.yml) Actions
+  cron in **this** repo (every 3h; commits only on meaningful book changes).
+
+**⚠ Pages deploy quota — batch your pushes.** Every push to this repo triggers
+a GitHub Pages deploy (`[skip ci]` does **not** skip Pages), and Pages
+soft-limits ~**10 deploys/hour**; past that, deployments fail with a generic
+"try again later" until the window rolls (builds still succeed — re-run the
+failed "pages build and deployment" run once the hour clears). The trading2
+cron is throttled and change-gated for this reason; when iterating on the
+dashboards, batch several edits into one commit/push instead of pushing each
+tweak.
+
 ### Project Structure
 
 - `index.html` – minimal entry point that links shared styles and `scripts/main.js`.
