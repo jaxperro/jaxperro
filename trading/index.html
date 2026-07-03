@@ -422,7 +422,8 @@ function renderPortfolio(P){
   // missed (resolved history); hide the legacy open-missed table (cache has resolved only)
   document.getElementById("missHead").textContent=`Missed bets — ${P.missed_count||0} skipped${(P.missed&&P.missed.length)?` · ${sg(P.missed_pnl||0)} would-be`:''}`;
   document.querySelector("#missedTbl tbody").innerHTML=(P.missed&&P.missed.length)? P.missed.map(m=>{
-    const result=m.won?`<span class="green">won · ${fmt((m.stake||0)+m.pnl)}</span>`:`<span class="red">lost · $0</span>`;
+    const result=m.won==null?'<span class="pill" style="background:rgba(91,176,255,.13);color:var(--accent)">LIVE</span>'
+      :(m.won?`<span class="green">won · ${fmt((m.stake||0)+m.pnl)}</span>`:`<span class="red">lost · $0</span>`);
     const d=m.date?new Date(m.date*1000).toLocaleDateString():'<span class="dim">—</span>';
     const why=m.capped?' <span class="pill" style="background:rgba(245,196,81,.13);color:var(--amber)">EVENT CAP</span>':'';
     return `<tr><td class="mkt">${m.title||''}${why}</td><td class="name">${m.name}</td><td></td><td>${fmt(m.stake||0)}</td><td>${result}</td><td class="${m.pnl>=0?'green':'red'}">${sg(m.pnl)}</td><td>${d}</td></tr>`;}).join("")
@@ -441,12 +442,18 @@ function renderPortfolio(P){
   document.getElementById("note").innerHTML=`<b>How it works:</b> a ${fmt(bank)} paper account backfilled from ${new Date(P.started*1000).toLocaleDateString()}, mirroring each followed wallet's <b>conviction</b> bets (top 20% of their own stake sizes) ${sizing}. ${feeNote} Settled history + realized P&amp;L are computed daily from the winning-wallet-finder cache (capital recycles at each market's <b>true resolution time</b>); <b>open bets are tracked live</b> off the wallets' current positions. The <b>Copy P&amp;L</b> column on the sharps table below is the per-wallet copyability signal. <b>Paper money — edge unproven out-of-sample.</b> Built with <a href="https://github.com/jaxperro/winning-wallet-finder" target="_blank">winning-wallet-finder</a>.`;
 }
 
-// LIVE open bets: the settled backbone (equity/realized/resolved) comes from the daily
-// feed, but the Current Bets panel is refreshed every reload off the 4 wallets' actual
-// current positions — so open bets and their settling status update in ~real time.
+// LIVE open bets: refreshes ONLY the Current Bets table off the wallets' actual
+// live positions (marks/settling status in ~real time). The hero numbers stay
+// from the daily feed — with DYNAMIC stakes, each bet's true stake lives in the
+// feed's rows; a flat recompute here would misprice every position (and used to
+// silently overwrite the headline equity with wrong math).
 async function liveCurrentBets(P){
-  const bank=P.bank||1000, stake=P.stake||50, maxN=Math.floor(bank/stake);
   const thr=Object.fromEntries((P.wallets||[]).map(w=>[w.wallet.toLowerCase(), w.conv_thr||1e12]));
+  const maxEntry=P.max_entry||1;
+  // per-bet stakes from the feed, matched by market title+outcome; new intraday
+  // positions (not yet in the feed) estimate at the book's next-stake size.
+  const stakeOf=(title,outcome)=>{const r=(P.current||[]).find(c=>c.title===title&&(c.outcome||'')===(outcome||''));
+    return r?r.stake:(P.stake||50);};
   let open=[];
   await Promise.all((P.wallets||[]).map(async w=>{
     let ps=[]; try{ ps=await j(`${DATA}/positions?user=${w.wallet}&limit=500&sizeThreshold=0`);}catch(e){return;}
@@ -454,24 +461,14 @@ async function liveCurrentBets(P){
     for(const p of ps||[]){ const cp=p.curPrice||0;
       if(cp<=0.001||cp>=0.999) continue;                                  // resolved -> not open
       if((p.initialValue||0) < (thr[w.wallet.toLowerCase()]||1e12)) continue;  // conviction only
+      if((p.avgPrice||0) > maxEntry) continue;                            // entry-cap parity
       if(p.conditionId && seen.has(p.conditionId)) continue; if(p.conditionId) seen.add(p.conditionId);
-      const ap=p.avgPrice||0.5, val=(stake/ap)*cp;
+      const ap=p.avgPrice||0.5, stake=stakeOf(p.title||'',p.outcome||''), val=(stake/ap)*cp;
       open.push({title:p.title||'',name:w.name,outcome:p.outcome||'',stake,val,pnl:val-stake,end:p.endDate}); }
   }));
   open.sort((a,b)=>(ep(a.end)||Infinity)-(ep(b.end)||Infinity));
-  if(open.length>maxN) open=open.slice(0,maxN);          // $1k can hold ~20 at $50
-  const n=open.length, invested=open.reduce((s,b)=>s+b.val,0);
-  const liquid=bank+(P.realized||0)-stake*n, equity=liquid+invested, unreal=invested-stake*n, pl=equity-bank;
-  document.getElementById("equity").textContent=fmt(equity);
-  const pe=document.getElementById("pnl"); pe.className="pnl "+(pl>=0?"green":"red");
-  pe.textContent=`${sg(pl)} (${pct(pl/bank*100)}) on ${fmt(bank)}`;
-  document.getElementById("liquid").textContent=fmt(liquid);
-  document.getElementById("invested").textContent=fmt(invested);
-  document.getElementById("investedSub").innerHTML=`${n} open · <span class="${unreal>=0?'green':'red'}">${sg(unreal)} unreal.</span>`;
-  document.getElementById("deployfill").style.width=Math.max(0,Math.min(100,stake*n/bank*100))+"%";
-  document.getElementById("meta").innerHTML=`since ${new Date(P.started*1000).toLocaleDateString()} · settled history refreshed daily · open bets live · updated ${new Date().toLocaleTimeString()}`;
-  const now=Date.now()/1000;
-  document.getElementById("curHead").textContent=`Current bets — ${n} open, ${fmt(invested)} at work (live)`;
+  const now=Date.now()/1000, n=open.length, invested=open.reduce((s,b)=>s+b.val,0);
+  document.getElementById("curHead").textContent=`Current bets — ${n} open, ${fmt(invested)} marked live`;
   document.querySelector("#current tbody").innerHTML = n? open.map(c=>{
     const e=ep(c.end), days=e?Math.round((e-now)/86400):null;
     const when=!e?'<span class="dim">no date</span>':(e<now?'<span class="amber">settling…</span>':(days<=0?'today':`in ${days}d`));
@@ -545,6 +542,7 @@ async function load(){
     const a=ev.asset, stake=ev.weight*BANKROLL*PER_POS;
     if(ev.side==="BUY"){
       if((mktTotal[ev.wallet][a]||0) < convThr[ev.wallet]) continue;  // conviction = their TOTAL stake in this market is top 20%
+      if((ev.price||0) > 0.95) continue;                              // entry cap, matching the model
       if(open[a] || entered.has(a)) continue;
       if(resAt(a) && resAt(a)<=ev.timestamp) continue;        // already over
       entered.add(a);
