@@ -121,19 +121,16 @@
   </div>
 
   <h2 id="botBetsHead">Live bot — open bets</h2>
-  <div class="sub info" style="margin:-6px 0 10px">The actual fills from the running copy bot — with <b>real detection lag and price slippage</b> (their entry price vs. what the bot actually paid). This is the real-world version of the modeled backtest below.</div>
   <div class="scroll"><table id="botBets"><thead><tr>
     <th class="wcol" title="the followed wallet whose trade this copies — 🐋 = whale class (all trades, 12% stakes)">Wallet</th><th title="when the bot placed the copy (hover a row time for the exact timestamp)">Placed</th><th title="market + outcome copied">Market</th><th title="the wallet's own fill price">Their&nbsp;px</th><th title="the bot's fill price ~60s later">Our&nbsp;px</th><th title="(our px − their px) ÷ their px — negative means we got a BETTER price">Slip</th><th title="stake paid at entry, excluding the fee">Cost</th><th title="Polymarket taker fee: shares × 3% × p × (1−p), charged on entry and on mirror-sells">Fee</th><th title="OPEN = still held · WON/LOST = held to resolution · SOLD = mirror-exited when the wallet sold">Status</th><th title="net of all fees: won = payout − cost − fee · lost = −(cost+fee) · sold = exit proceeds − cost − fees">P&amp;L</th>
   </tr></thead><tbody><tr><td colspan="10" class="loading">loading live bot feed…</td></tr></tbody></table></div>
 
   <h2 id="botResHead">Live bot — resolved bets</h2>
-  <div class="sub info" style="margin:-6px 0 10px">P&amp;L is <b>net of the entry taker fee</b>: won = payout − cost − fee, lost = −(cost + fee) — so P&amp;L and Cost differ by exactly the Fee column.</div>
   <div class="scroll"><table id="botResolved"><thead><tr>
     <th class="wcol" title="the followed wallet whose trade this copied — grey = no longer followed">Wallet</th><th title="when the bot placed the copy">Placed</th><th title="market + outcome copied">Market</th><th title="the wallet's own fill price">Their&nbsp;px</th><th title="the bot's fill price ~60s later">Our&nbsp;px</th><th title="(our px − their px) ÷ their px — negative means we got a BETTER price">Slip</th><th title="stake paid at entry, excluding the fee">Cost</th><th title="Polymarket taker fee: shares × 3% × p × (1−p)">Fee</th><th title="WON/LOST = held to resolution · SOLD = mirror-exited when the wallet sold">Status</th><th title="net of all fees: won = payout − cost − fee · lost = −(cost+fee) · sold = exit proceeds − cost − fees">P&amp;L</th>
   </tr></thead><tbody><tr><td colspan="10" class="loading">loading…</td></tr></tbody></table></div>
 
   <h2 id="botMissHead">Live bot — missed bets</h2>
-  <div class="sub info" style="margin:-6px 0 10px">Bets the bot <b>would have copied but couldn't take</b> — free cash was deployed, or the price <b>ran up</b> more than 5% past the wallet's fill before the bot could act (a <i>better</i> price is never blocked, by rule). Missed P&amp;L = what the skipped stake would have returned (fees included), settled when the market resolves.</div>
   <div class="scroll"><table id="botMissed"><thead><tr>
     <th class="wcol" title="the wallet whose bet couldn't be copied">Wallet</th><th title="when the wallet's bet was seen">Time</th><th title="market the bet was in">Market</th><th title="the wallet's fill price">Px</th><th title="the stake the bot would have used">Stake</th><th title="why the copy was skipped: cash deployed, or price ran &gt;5% past their fill">Reason</th><th title="how the market resolved (LIVE = still open)">Result</th><th title="what the skipped stake would have returned, fees included">Missed&nbsp;P&amp;L</th>
   </tr></thead><tbody><tr><td colspan="8" class="loading">loading…</td></tr></tbody></table></div>
@@ -269,7 +266,6 @@
   </div>
 
   <h2 id="curHead">Current bets — what you're in & when they settle</h2>
-  <div class="sub info" style="margin:-6px 0 10px">P&amp;L here is <b>unrealized</b> — the live market value vs. what you put in. It only becomes <b>Realized</b> when the bet settles on its date.</div>
   <div class="scroll"><table id="current"><thead><tr>
     <th class="wcol" title="the wallet being mirrored — 🐋 = whale class (every bet, 12% stakes)">Wallet</th><th title="market + outcome">Market</th><th title="outcome side held">Side</th><th title="stake at entry (class % of equity at the time)">Bought in</th><th title="current market value of the position">Value now</th><th title="unrealized: value now − stake (becomes Realized at settlement)">P&amp;L</th><th title="when the market resolves">Settles</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
@@ -280,13 +276,11 @@
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
 
   <h2 id="missOpenHead">Missed bets (open) — couldn't afford</h2>
-  <div class="sub info" style="margin:-6px 0 10px">Bets the wallets made that we skipped because the $1,000 was fully deployed — these markets are still live. Missed P&amp;L is unrealized: the position's value now vs. what we'd have paid.</div>
   <div class="scroll"><table id="missedOpenTbl"><thead><tr>
     <th class="wcol">Wallet</th><th>Market</th><th>Side</th><th>Bought in</th><th>Value now</th><th>Missed P&amp;L</th><th>Settles</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
 
   <h2 id="missHead">Missed bets (resolved) — couldn't afford</h2>
-  <div class="sub info" style="margin:-6px 0 10px">Skipped bets whose markets have since resolved — how they turned out. Missed P&amp;L = what we'd have made (or dodged).</div>
   <div class="scroll"><table id="missedTbl"><thead><tr>
     <th class="wcol" title="whose bet the replay couldn't afford">Wallet</th><th title="market + outcome">Market</th><th>Side</th><th title="stake the replay would have used">Bought in</th><th title="how the market resolved (LIVE = still open)">Returned</th><th title="what the skipped stake would have made or dodged">Missed P&amp;L</th><th title="resolution date">Date</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
