@@ -152,7 +152,8 @@
     const relTd=ts=>!ts?'<td>—</td>':'<td title="'+timeStr(ts)+'">'+ageStr(Date.now()/1000-ts)+' ago</td>';
     const STAT={open:'<span class="pill" style="background:rgba(91,176,255,.13);color:var(--accent)">OPEN</span>',
                 won:'<span class="pill buy">WON</span>',lost:'<span class="pill sell">LOST</span>',
-                closed:'<span class="pill" style="background:rgba(139,155,176,.15);color:var(--dim)">SOLD</span>'};
+                closed:'<span class="pill" style="background:rgba(139,155,176,.15);color:var(--dim)">SOLD</span>',
+                refund:'<span class="pill" style="background:rgba(245,196,81,.15);color:var(--amber)">REFUND 50/50</span>'};
     function offline(msg){const st=$("botStatus");st.textContent="OFFLINE";st.className="pill sell";$("botMeta").textContent=msg;
       $("botBets").querySelector("tbody").innerHTML='<tr><td colspan="10" class="loading">'+msg+'</td></tr>';
       $("botResolved").querySelector("tbody").innerHTML='<tr><td colspan="10" class="loading">—</td></tr>';
