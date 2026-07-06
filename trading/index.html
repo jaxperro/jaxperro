@@ -299,10 +299,10 @@
     <span class="schip">validated copyable · refreshed daily</span></div>
   <div class="secbody">
   <h2 id="sharpsHead">Sharp wallets — validated copyable</h2>
-  <div class="sub info" style="margin:-6px 0 10px">The repeatable find: wallets whose <b>large bets win on genuinely-uncertain markets</b>, validated forward and then filtered to the ones that are actually <b>profitable to copy</b> — copy-positive with a real hold-to-resolution edge (win a clear majority of held conviction bets), not scalpers or last-minute snipers. The list and all stats (win %, record, P&L, lead) come from the winning-wallet-finder pipeline, refreshed daily. <b>Copy P&amp;L</b> is the key number — what a flat-$50 copy of their conviction bets would have actually made since June 1 (mirroring their exits, settling held bets at true resolution). It cuts through high win rates that don't survive copying: a scalper can show ~100% conviction win % yet a negative Copy P&L. Conviction win %/record/P&L cover all of each wallet's top-20%-stake bets (a position stat); realized P&L is over their last 500 resolved bets. Click a name for their Polymarket profile.</div>
+  <div class="sub info" style="margin:-6px 0 10px">The repeatable find: wallets whose <b>large bets win on genuinely-uncertain markets</b>, validated forward on trusted data and filtered to the ones that are actually <b>copyable</b> — copy-positive, a real trailing hold-to-resolution record, not last-minute snipers. Refreshed daily by the winning-wallet-finder pipeline. <b>Two kinds of P&amp;L here:</b> the Conv / All-Time P&amp;L columns price every entry <i>held to resolution</i> at the wallet's own stakes — a <b>copy ceiling</b>, since the bot copies entries and holds. <b>PM P&amp;L</b> is the wallet's <i>actual</i> account result as Polymarket reports it (all cash flows, including early exits). Roughly equal → a true holder; a huge gap → a scalper whose entries resolve well but who never holds them (fills may not be reproducible — watch their measured slippage in the live book). Click a name for their Polymarket profile; hover any column header for definitions.</div>
   <div class="scroll"><table id="sharps"><thead><tr>
-    <th data-k="name" class="wcol" title="click for their Polymarket profile · click any header to sort">Wallet</th><th data-k="win30" title="share of their conviction bets (top-20% by stake) resolved in the last 30 days that won">30&nbsp;Day&nbsp;Win&nbsp;%</th><th data-k="rec30" title="their conviction bets resolved in the last 30 days: won–lost">30&nbsp;Day&nbsp;Conv&nbsp;Record</th><th data-k="pnl30" title="the wallet's OWN profit on those bets (their stakes, not a copy)">30d&nbsp;Conv&nbsp;P&amp;L</th><th data-k="winAll" title="every resolved bet ever cached for this wallet, any size — outcomes verified post-resolution (trusted rows)">All&nbsp;Time&nbsp;Win&nbsp;%</th><th data-k="recAll" title="every resolved bet ever cached, any size: won–lost">All&nbsp;Time&nbsp;Record</th><th data-k="pnlAll" title="the wallet's own P&amp;L across every resolved bet ever cached">All&nbsp;Time&nbsp;P&amp;L</th><th data-k="lifeWin" title="all their conviction bets over the cached history (~180d+)">Life&nbsp;Conv&nbsp;Win&nbsp;%</th><th data-k="recLife" title="lifetime conviction bets: won–lost">Life&nbsp;Conv&nbsp;Record</th><th data-k="convPnl" title="their own P&amp;L on lifetime conviction bets">Life&nbsp;Conv&nbsp;P&amp;L</th><th data-k="avgBet" title="average conviction stake — how big they bet when they mean it">Avg&nbsp;bet</th><th data-k="lead" title="median time between their entry and market resolution — long lead = copyable">Avg&nbsp;lead</th><th data-k="last" title="time since their last conviction-size entry">Last&nbsp;conv&nbsp;bet</th>
-  </tr></thead><tbody><tr><td colspan="13" class="loading">loading…</td></tr></tbody></table></div>
+    <th data-k="name" class="wcol" title="click for their Polymarket profile · click any header to sort">Wallet</th><th data-k="win30" title="share of their conviction bets (top-20% by stake) resolved in the last 30 days that won">30&nbsp;Day&nbsp;Win&nbsp;%</th><th data-k="rec30" title="their conviction bets resolved in the last 30 days: won–lost">30&nbsp;Day&nbsp;Conv&nbsp;Record</th><th data-k="pnl30" title="hold-to-resolution value of those entries at their stakes — a copy ceiling, not their cash result">30d&nbsp;Conv&nbsp;P&amp;L</th><th data-k="lifeWin" title="all their conviction bets over the cached history (~180d+)">Life&nbsp;Conv&nbsp;Win&nbsp;%</th><th data-k="recLife" title="lifetime conviction bets: won–lost">Life&nbsp;Conv&nbsp;Record</th><th data-k="convPnl" title="hold-to-resolution value of lifetime conviction entries — a copy ceiling">Life&nbsp;Conv&nbsp;P&amp;L</th><th data-k="winAll" title="every resolved bet ever cached for this wallet, any size — outcomes verified post-resolution (trusted rows)">All&nbsp;Time&nbsp;Win&nbsp;%</th><th data-k="recAll" title="every resolved bet ever cached, any size: won–lost">All&nbsp;Time&nbsp;Record</th><th data-k="pnlAll" title="hold-to-resolution value of every entry ever cached — the copy ceiling">All&nbsp;Time&nbsp;P&amp;L</th><th data-k="pmPnl" title="the wallet's ACTUAL all-time account P&amp;L as Polymarket reports it (cash flows incl. early sells). Compare with All Time P&amp;L: ~equal = true holder; a huge gap = scalper whose entries resolve well but who never holds (ArbTrader: +$8.6k real vs +$462k held)">PM&nbsp;P&amp;L</th><th data-k="avgBet" title="average conviction stake — how big they bet when they mean it">Avg&nbsp;bet</th><th data-k="lead" title="median time between their entry and market resolution — long lead = copyable">Avg&nbsp;lead</th><th data-k="last" title="time since their last conviction-size entry">Last&nbsp;conv&nbsp;bet</th>
+  </tr></thead><tbody><tr><td colspan="14" class="loading">loading…</td></tr></tbody></table></div>
   </div></section>
 </div>
 
@@ -360,6 +360,7 @@ async function getSharps(){
             convPnl: s.conv_pnl||0, pnl: s.realized_pnl||0, avgBet: s.avg_bet||0,
             copyPnl: s.copy_pnl||0,
             wonAll: s.all_won||0, lostAll: s.all_lost||0, pnlAll: s.all_pnl||0,
+            pmPnl: (s.pm_pnl==null? null : s.pm_pnl),
             last: s.last_conv_bet||0, lastAny: s.last_trade||0}; });
   return SHARPS_CACHE;
 }
@@ -408,6 +409,7 @@ const SK = {
   winAll:  r=>{ const n=r.wonAll+r.lostAll; return n? r.wonAll/n : -1; },
   recAll:  r=> r.wonAll+r.lostAll,
   pnlAll:  r=> r.pnlAll,
+  pmPnl:   r=> r.pmPnl==null? -Infinity : r.pmPnl,
   win30:   r=>{ const n=r.won30+r.lost30; return n? r.won30/n : -1; },
   rec30:   r=> r.won30+r.lost30,
   pnl30:   r=> r.pnl30,
@@ -447,23 +449,24 @@ function drawSharps(){
       <td>${wr30}</td>
       <td>${n30? r.won30+'–'+r.lost30 : '<span class="dim">—</span>'}</td>
       <td class="${n30? (r.pnl30>=0?'green':'red') : 'dim'}"><b>${n30? sg(r.pnl30) : '—'}</b></td>
-      <td>${wrAll}</td>
-      <td>${nAll? r.wonAll+'–'+r.lostAll : '<span class="dim">—</span>'}</td>
-      <td class="${nAll? (r.pnlAll>=0?'green':'red') : 'dim'}">${nAll? sg(r.pnlAll) : '—'}</td>
       <td>${wr}</td>
       <td>${n? r.won+'–'+r.lost : '<span class="dim">—</span>'}</td>
       <td class="${n? (r.convPnl>=0?'green':'red') : 'dim'}">${n? sg(r.convPnl) : '—'}</td>
+      <td>${wrAll}</td>
+      <td>${nAll? r.wonAll+'–'+r.lostAll : '<span class="dim">—</span>'}</td>
+      <td class="${nAll? (r.pnlAll>=0?'green':'red') : 'dim'}">${nAll? sg(r.pnlAll) : '—'}</td>
+      <td class="${r.pmPnl==null? 'dim' : (r.pmPnl>=0?'green':'red')}">${r.pmPnl==null? '—' : sg(r.pmPnl)}</td>
       <td class="dim">${r.avgBet? fmt(r.avgBet) : '—'}</td>
       <td class="dim">${r.lead<1? Math.round(r.lead*24)+'h' : r.lead.toFixed(1)+'d'}</td>
       <td class="dim">${ago(r.last)}</td></tr>`;
-  }).join("") || '<tr><td colspan="13" class="loading">no data</td></tr>';
+  }).join("") || '<tr><td colspan="14" class="loading">no data</td></tr>';
 }
 
 async function renderSharps(){
   let rows;
   try{ rows = await getSharps(); }
   catch(e){ document.querySelector("#sharps tbody").innerHTML =
-      '<tr><td colspan="13" class="loading">couldn\'t load the sharp-wallet feed</td></tr>'; return; }
+      '<tr><td colspan="14" class="loading">couldn\'t load the sharp-wallet feed</td></tr>'; return; }
   const monthAgo = Date.now()/1000 - 30*86400;
   _sharpRows = rows.filter(r=> r.lastAny && r.lastAny >= monthAgo);   // drop wallets inactive >1 month
   const head = document.getElementById("sharpsHead");
