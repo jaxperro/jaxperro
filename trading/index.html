@@ -190,8 +190,8 @@
   })();
   </script>
 
-  <h2 style="margin-top:36px;color:#5a6b80">↓ Backtest model · fees + lag + dynamic sizing, hold-to-resolution ↓</h2>
-  <div class="sub">A $1,000 paper account following <b>Kruto2027, shisan888, fortuneking, LSB1 & imwalkinghere</b> — mirroring their <b>high-conviction bets</b> (the top 20% by stake size, skipping entries above <b>95¢</b> where slippage + fees eat the payout), backfilled from <b>June 1</b>. Stakes are <b>dynamic: 4% of current equity per bet</b> (Kelly-style compounding — bets grow with wins, shrink in drawdowns, halve below 80% of the equity peak), <b>pinned at $250</b>: once the book outgrows that stake level, surplus profit is <b>swept to a banked reserve</b> that never bets — a profit ratchet that also keeps fills inside realistic order-book depth. Each entry pays the real <b>Polymarket taker fee</b> (0.03 sports rate) and a <b>lag-slippage haircut</b> (~90s, +0.5% entry). Held to resolution; cash recycles as bets settle.</div>
+  <h2 style="margin-top:36px;color:#5a6b80">↓ Backtest model · rolling replay · fees + lag + dynamic sizing, hold-to-resolution ↓</h2>
+  <div class="sub">A $1,000 paper account replaying a <b>rolling window</b> — "what if I'd started following these wallets 30 days ago" — over the wallet set in <code>live/backtest.json</code> (interchangeable: any wallet can be added or removed; currently the copy bot's follow set). <b>Volume-class</b> wallets mirror <b>high-conviction bets</b> (top 20% by stake, threshold from pre-window history); <b>whale-class</b> wallets mirror <b>every bet</b>. Entries above <b>95¢</b> are skipped (slippage + fees eat the payout). Stakes are <b>dynamic: 4% of current equity per bet</b> (Kelly-style compounding — bets grow with wins, shrink in drawdowns, halve below 80% of the equity peak), <b>pinned at $250</b>: once the book outgrows that stake level, surplus profit is <b>swept to a banked reserve</b> that never bets — a profit ratchet that also keeps fills inside realistic order-book depth. Each entry pays the real <b>Polymarket taker fee</b> (0.03 sports rate) and a <b>lag-slippage haircut</b> (~90s, +0.5% entry). Held to resolution; cash recycles as bets settle.</div>
 
   <div class="hero">
     <div class="row-actions">
@@ -431,7 +431,7 @@ function renderPortfolio(P){
   const me=document.getElementById("missed"); me.textContent=sg(P.missed_pnl||0); me.className="sval "+((P.missed_pnl||0)>=0?"amber":"red");
   document.getElementById("missedSub").textContent=`${P.missed_count||0} trades skipped`;
   document.getElementById("deployfill").style.width=Math.max(0,Math.min(100,P.invested/bank*100))+"%";
-  document.getElementById("meta").innerHTML=`since ${new Date(P.started*1000).toLocaleDateString()} · refreshed daily · updated ${new Date(P.updated*1000).toLocaleString()}`;
+  document.getElementById("meta").innerHTML=`rolling ${P.days||30}-day replay · from ${new Date(P.started*1000).toLocaleDateString()} · refreshed daily · updated ${new Date(P.updated*1000).toLocaleString()}`;
   // current bets
   document.getElementById("curHead").textContent=`Current bets — ${P.open_count} open, ${fmt(P.invested)} at work`;
   document.querySelector("#current tbody").innerHTML=(P.current&&P.current.length)? P.current.map(c=>{
@@ -466,11 +466,13 @@ function renderPortfolio(P){
   const capTxt = (P.event_cap ? `; max ${P.event_cap} bets per event${P.capped_count?` — ${P.capped_count} skipped by the cap`:''}` : '')
     + (P.max_entry && P.max_entry < 1 ? `; entries above ${Math.round(P.max_entry*100)}¢ skipped` : '')
     + (P.reserve ? `; ${fmt(P.reserve)} of profit banked above the ${fmt(P.stake_cap||250)}-stake level` : '');
-  const sizing = P.stake_pct
+  const sizing = P.class_pct
+    ? `at <b>${(P.class_pct.volume*100).toFixed(0)}% of current equity</b> per volume trade and <b>${(P.class_pct.whale*100).toFixed(0)}%</b> per whale trade (next base stake ${fmt(P.stake||0)}; halves below ${((P.dd_threshold||0.8)*100).toFixed(0)}% of the equity peak${capTxt})`
+    : P.stake_pct
     ? `at <b>${(P.stake_pct*100).toFixed(0)}% of current equity</b> per trade (next stake ${fmt(P.stake||0)}; halves below ${((P.dd_threshold||0.8)*100).toFixed(0)}% of the equity peak${capTxt})`
     : `at $${P.stake|0} per trade`;
   const feeNote = P.fee_rate ? `Every entry pays the real Polymarket <b>taker fee</b> (${P.fee_rate} rate${P.fees_paid?` — ${fmt(P.fees_paid)} paid so far`:''}) and a <b>lag haircut</b> (+${((P.slip||0)*100).toFixed(1)}% entry price, ~${P.lag_est_s||90}s detection lag), so the book models what a copier nets.` : `<b>Idealized — no fees/lag.</b>`;
-  document.getElementById("note").innerHTML=`<b>How it works:</b> a ${fmt(bank)} paper account backfilled from ${new Date(P.started*1000).toLocaleDateString()}, mirroring each followed wallet's <b>conviction</b> bets (top 20% of their own stake sizes) ${sizing}. ${feeNote} Settled history + realized P&amp;L are computed daily from the winning-wallet-finder cache (capital recycles at each market's <b>true resolution time</b>); <b>open bets are tracked live</b> off the wallets' current positions. The <b>Copy P&amp;L</b> column on the sharps table below is the per-wallet copyability signal. <b>Paper money — edge unproven out-of-sample.</b> Built with <a href="https://github.com/jaxperro/winning-wallet-finder" target="_blank">winning-wallet-finder</a>.`;
+  document.getElementById("note").innerHTML=`<b>How it works:</b> a ${fmt(bank)} paper account replaying a rolling ${P.days||30}-day window from ${new Date(P.started*1000).toLocaleDateString()}, mirroring each volume-class wallet's <b>conviction</b> bets (top 20% of their own stake sizes) and <b>every</b> whale-class bet ${sizing}. ${feeNote} Settled history + realized P&amp;L are computed daily from the winning-wallet-finder cache (capital recycles at each market's <b>true resolution time</b>); <b>open bets are tracked live</b> off the wallets' current positions. The <b>Copy P&amp;L</b> column on the sharps table below is the per-wallet copyability signal. <b>Paper money — edge unproven out-of-sample.</b> Built with <a href="https://github.com/jaxperro/winning-wallet-finder" target="_blank">winning-wallet-finder</a>.`;
 }
 
 // LIVE open bets: refreshes ONLY the Current Bets table off the wallets' actual
