@@ -170,7 +170,7 @@
         const ss=$("sbBotSub"); if(ss) ss.textContent=sgn(pnl)+" realized · "+(d.open_count||0)+" open";}
       $("botPnl").innerHTML='<span class="'+(pnl>=0?"green":"red")+'">'+sgn(pnl)+' realized P&amp;L</span>';
       $("botCash").textContent=money(d.cash||0);
-      $("botCashSub").textContent=d.reserve?("+ "+money(d.reserve)+" banked (never bet)"):"of $1,000 book";
+      $("botCashSub").textContent="of $1,000 book";
       $("botDeployed").textContent=money(d.deployed||0);
       $("botOpen").textContent=(d.open_count||0)+" open bets";
       const re=$("botRealized");re.textContent=sgn(pnl);re.className="sval "+(pnl>=0?"green":"red");
@@ -494,7 +494,7 @@ function renderPortfolio(P){
   pe.textContent=`${sg(P.pnl)} (${pct(P.pnl/bank*100)}) on ${fmt(bank)}`;
   document.getElementById("liquid").textContent=fmt(P.liquid);
   const lqs=document.querySelector("#liquid + .ssub");
-  if(lqs) lqs.textContent=P.reserve?`cash to deploy · ${fmt(P.reserve)} banked`:"cash to deploy";
+  if(lqs) lqs.textContent="cash to deploy";
   document.getElementById("invested").textContent=fmt(P.invested);
   document.getElementById("investedSub").innerHTML=`${P.open_count} open · <span class="${(P.unreal||0)>=0?'green':'red'}">${sg(P.unreal||0)} unreal.</span>`;
   const re=document.getElementById("realized"); re.textContent=sg(P.realized); re.className="sval "+(P.realized>=0?"green":"red");
@@ -534,7 +534,7 @@ function renderPortfolio(P){
     return `<tr><td class="name"><a href="https://polymarket.com/profile/${w.wallet}" target="_blank">${w.name}</a>${btWhale(w.name)}</td><td>${w.bets}</td><td>${wp}</td><td>${wl}</td><td>${fmt(w.invested)}</td><td class="${w.realized>=0?'green':'red'}">${sg(w.realized)}</td></tr>`;}).join("");
   const capTxt = (P.event_cap ? `; max ${P.event_cap} bets per event${P.capped_count?` — ${P.capped_count} skipped by the cap`:''}` : '')
     + (P.max_entry && P.max_entry < 1 ? `; entries above ${Math.round(P.max_entry*100)}¢ skipped` : '')
-    + (P.reserve ? `; ${fmt(P.reserve)} of profit banked above the ${fmt(P.stake_cap||250)}-stake level` : '');
+    + '';
   const sizing = P.class_pct
     ? `at <b>${(P.class_pct.volume*100).toFixed(0)}% of current equity</b> per volume trade and <b>${(P.class_pct.whale*100).toFixed(0)}%</b> per whale trade (next base stake ${fmt(P.stake||0)}; halves below ${((P.dd_threshold||0.8)*100).toFixed(0)}% of the equity peak${capTxt})`
     : P.stake_pct
