@@ -73,7 +73,8 @@
   tr.rwon td:first-child{box-shadow:inset 3px 0 0 var(--green)}
   tr.rlost td:first-child{box-shadow:inset 3px 0 0 var(--red)}
   tr.rsold td:first-child{box-shadow:inset 3px 0 0 #5a6b80}
-  .infobtn{display:inline-block;margin:-14px 0 8px;width:17px;height:17px;line-height:16px;text-align:center;
+  h2.hasinfo{display:inline-block;margin-right:2px}
+  .infobtn{display:inline-block;margin-left:7px;vertical-align:1px;width:17px;height:17px;line-height:16px;text-align:center;
            border:1px solid var(--border);border-radius:50%;color:var(--dim);font-size:11px;
            cursor:pointer;font-weight:600;font-style:normal}
   .infobtn:hover{color:var(--text);border-color:#2c3e57}
@@ -138,6 +139,7 @@
   </tr></thead><tbody><tr><td colspan="8" class="loading">loading…</td></tr></tbody></table></div>
 
   <h2 id="botAllocHead">Live bot — allocation by wallet</h2>
+  <div class="sub info" style="margin:-6px 0 10px">Aggregated from every copy the bot has placed. <b>Invested</b> = cost basis of currently-open copies; <b>Realized</b> = settled P&amp;L net of all fees, <i>including</i> mirror-sold exits (a sold exit adds to Realized but isn't counted as a W or L). Greyed wallets are no longer followed — their historical bets stay in the book.</div>
   <div class="scroll"><table id="botAlloc"><thead><tr>
     <th class="wcol" title="grey = no longer followed (historical bets remain in the book)">Wallet</th><th title="copies placed by the bot for this wallet">Bets</th><th title="share of this wallet's settled copies that won">Win&nbsp;%</th><th title="settled copies: won–lost (sold exits not counted as W or L)">Win&nbsp;/&nbsp;Loss</th><th title="cost basis of currently-open copies">Invested</th><th title="settled P&amp;L net of fees, including mirror-sold exits">Realized</th>
   </tr></thead><tbody><tr><td colspan="6" class="loading">loading…</td></tr></tbody></table></div>
@@ -290,6 +292,7 @@
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
 
   <h2>Allocation by wallet</h2>
+  <div class="sub info" style="margin:-6px 0 10px">Aggregated from the bets the replay placed in the current rolling window. 🐋 <b>whale</b>-class wallets mirror <b>every</b> bet at 12% of equity; the rest mirror conviction bets (top-20% by stake) at 4%. <b>Invested</b> = current value of open replayed positions; <b>Realized</b> = settled P&amp;L net of entry fees.</div>
   <div class="scroll"><table id="wallets"><thead><tr>
     <th class="wcol" title="🐋 = whale class (every bet at 12%) · others mirror conviction bets at 4%">Wallet</th><th title="bets the replay placed for this wallet">Bets</th><th title="share of settled replayed bets that won">Win&nbsp;%</th><th title="settled replayed bets: won–lost">Win&nbsp;/&nbsp;Loss</th><th title="current value of open replayed positions">Invested</th><th title="settled P&amp;L net of entry fees">Realized</th>
   </tr></thead><tbody></tbody></table></div>
@@ -841,12 +844,17 @@ document.querySelectorAll(".sec").forEach(s=>{
   try{if(localStorage.getItem("sec:"+s.id)==="1")s.classList.add("closed")}catch(e){}});
 // explainer paragraphs hide behind an ⓘ next to the preceding heading
 document.querySelectorAll(".sub.info").forEach(sub=>{
-  // insert the toggle BETWEEN heading and text — table renderers rewrite the
-  // headings' textContent every refresh, which would wipe a button inside them
+  // the i sits at the END of the heading line. It must stay a SIBLING of the
+  // h2 (inline-block) — renderers rewrite heading textContent every refresh,
+  // which wipes children but not siblings.
   const btn = document.createElement("i");
   btn.className = "infobtn"; btn.textContent = "i"; btn.title = "what is this?";
   btn.onclick = e => { e.stopPropagation(); sub.classList.toggle("show"); };
-  sub.parentNode.insertBefore(btn, sub);
+  const h = sub.previousElementSibling;
+  if(h && /^H\d$/.test(h.tagName)){ h.classList.add("hasinfo"); h.after(btn); }
+  else if(h && h.classList && h.classList.contains("sechead")){
+    h.insertBefore(btn, h.querySelector(".schip")); }
+  else sub.parentNode.insertBefore(btn, sub);
 });
 </script>
 </body>
