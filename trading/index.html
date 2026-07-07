@@ -73,6 +73,7 @@
   tr.rwon td:first-child{box-shadow:inset 3px 0 0 var(--green)}
   tr.rlost td:first-child{box-shadow:inset 3px 0 0 var(--red)}
   tr.rsold td:first-child{box-shadow:inset 3px 0 0 #5a6b80}
+  tr.rref td:first-child{box-shadow:inset 3px 0 0 var(--amber)}
   h2.hasinfo{display:inline-block;margin-right:2px}
   .infobtn{display:inline-block;margin-left:7px;vertical-align:1px;width:17px;height:17px;line-height:16px;text-align:center;
            border:1px solid var(--border);border-radius:50%;color:var(--dim);font-size:11px;
@@ -514,16 +515,23 @@ function renderPortfolio(P){
     return `<tr><td class="name">${c.name}${btWhale(c.name)}</td><td class="mkt">${c.title||''}</td><td>${c.outcome||''}</td><td>${fmt(c.stake)}</td><td>${fmt(c.val)}</td><td class="${c.pnl>=0?'green':'red'}">${sg(c.pnl)}</td><td>${when}</td></tr>`;}).join("")
     : '<tr><td colspan="7" class="loading">no open bets right now — all cash is liquid</td></tr>';
   // resolved bets
-  document.getElementById("resHead").textContent=`Resolved bets — ${P.resolved_count} settled (${P.wins}W / ${P.losses}L)`;
+  document.getElementById("resHead").textContent=`Resolved bets — ${P.resolved_count} settled (${P.wins}W / ${P.losses}L${P.refunds?` / ${P.refunds}R`:''})`;
   document.querySelector("#resolved tbody").innerHTML=(P.resolved&&P.resolved.length)? P.resolved.map(s=>{
-    const result=s.won?`<span class="green">won · ${fmt(s.stake+s.pnl)}</span>`:`<span class="red">lost · $0</span>`;
-    return `<tr class="${s.won?'rwon':'rlost'}"><td class="name">${s.name}${btWhale(s.name)}</td><td class="mkt">${s.title||''}</td><td></td><td>${fmt(s.stake)}</td><td>${result}</td><td class="${s.pnl>=0?'green':'red'}">${sg(s.pnl)}</td><td>${relD(s.date)}</td></tr>`;}).join("")
+    const st=s.status||(s.won?'won':'lost');
+    // refund = 50/50 scratch: pays $0.50/share, so it's not a win yet can be
+    // P&L-positive (entries below 50¢) — never render it as a red "lost"
+    const result=st==='refund'?`<span class="amber">refund · ${fmt(s.stake+s.pnl)}</span>`
+      :st==='won'?`<span class="green">won · ${fmt(s.stake+s.pnl)}</span>`:`<span class="red">lost · $0</span>`;
+    const cls=st==='refund'?'rref':st==='won'?'rwon':'rlost';
+    return `<tr class="${cls}"><td class="name">${s.name}${btWhale(s.name)}</td><td class="mkt">${s.title||''}</td><td></td><td>${fmt(s.stake)}</td><td>${result}</td><td class="${s.pnl>=0?'green':'red'}">${sg(s.pnl)}</td><td>${relD(s.date)}</td></tr>`;}).join("")
     : '<tr><td colspan="7" class="loading">none yet</td></tr>';
   // missed (resolved history); hide the legacy open-missed table (cache has resolved only)
   document.getElementById("missHead").textContent=`Missed bets — ${P.missed_count||0} skipped${(P.missed&&P.missed.length)?` · ${sg(P.missed_pnl||0)} would-be`:''}`;
   document.querySelector("#missedTbl tbody").innerHTML=(P.missed&&P.missed.length)? P.missed.map(m=>{
-    const result=m.won==null?'<span class="pill" style="background:rgba(91,176,255,.13);color:var(--accent)">LIVE</span>'
-      :(m.won?`<span class="green">won · ${fmt((m.stake||0)+m.pnl)}</span>`:`<span class="red">lost · $0</span>`);
+    const mst=m.status||(m.won==null?null:(m.won?'won':'lost'));
+    const result=mst==null?'<span class="pill" style="background:rgba(91,176,255,.13);color:var(--accent)">LIVE</span>'
+      :mst==='refund'?`<span class="amber">refund · ${fmt((m.stake||0)+m.pnl)}</span>`
+      :(mst==='won'?`<span class="green">won · ${fmt((m.stake||0)+m.pnl)}</span>`:`<span class="red">lost · $0</span>`);
     const d=m.date?new Date(m.date*1000).toLocaleDateString():'<span class="dim">—</span>';
     const why=m.capped?' <span class="pill" style="background:rgba(245,196,81,.13);color:var(--amber)">EVENT CAP</span>':'';
     return `<tr><td class="name">${m.name}${btWhale(m.name)}</td><td class="mkt">${m.title||''}${why}</td><td></td><td>${fmt(m.stake||0)}</td><td>${result}</td><td class="${m.pnl>=0?'green':'red'}">${sg(m.pnl)}</td><td>${relD(m.date)}</td></tr>`;}).join("")
