@@ -123,12 +123,12 @@
 
   <h2 id="botBetsHead">Live bot — open bets</h2>
   <div class="scroll"><table id="botBets"><thead><tr>
-    <th class="wcol" title="the followed wallet whose trade this copies — 🐋 = whale class (all trades, 12% stakes)">Wallet</th><th title="when the bot placed the copy (hover a row time for the exact timestamp)">Placed</th><th title="market + outcome copied">Market</th><th title="the wallet's own fill price">Their&nbsp;px</th><th title="the bot's fill price ~60s later">Our&nbsp;px</th><th title="(our px − their px) ÷ their px — negative means we got a BETTER price">Slip</th><th title="stake paid at entry, excluding the fee">Cost</th><th title="Polymarket taker fee: shares × 3% × p × (1−p), charged on entry and on mirror-sells">Fee</th><th title="OPEN = still held · WON/LOST = held to resolution · SOLD = mirror-exited when the wallet sold">Status</th><th title="net of all fees: won = payout − cost − fee · lost = −(cost+fee) · sold = exit proceeds − cost − fees">P&amp;L</th>
+    <th class="wcol" title="the followed wallet whose trade this copies">Wallet</th><th title="when the bot placed the copy (hover a row time for the exact timestamp)">Placed</th><th title="market + outcome copied">Market</th><th title="the wallet's own fill price">Their&nbsp;Entry</th><th title="the bot's fill price ~60s later">Our&nbsp;Entry</th><th title="(our px − their px) ÷ their px — negative means we got a BETTER price">Slip</th><th title="stake paid at entry, excluding the fee">Stake</th><th title="Polymarket taker fee: shares × 3% × p × (1−p), charged on entry and on mirror-sells">Fee</th><th title="OPEN = still held · WON/LOST = held to resolution · SOLD = mirror-exited when the wallet sold">Result</th><th title="net of all fees: won = payout − cost − fee · lost = −(cost+fee) · sold = exit proceeds − cost − fees">P&amp;L</th>
   </tr></thead><tbody><tr><td colspan="10" class="loading">loading live bot feed…</td></tr></tbody></table></div>
 
   <h2 id="botResHead">Live bot — resolved bets</h2>
   <div class="scroll"><table id="botResolved"><thead><tr>
-    <th class="wcol" title="the followed wallet whose trade this copied — grey = no longer followed">Wallet</th><th title="when the bot placed the copy">Placed</th><th title="market + outcome copied">Market</th><th title="the wallet's own fill price">Their&nbsp;px</th><th title="the bot's fill price ~60s later">Our&nbsp;px</th><th title="(our px − their px) ÷ their px — negative means we got a BETTER price">Slip</th><th title="stake paid at entry, excluding the fee">Cost</th><th title="Polymarket taker fee: shares × 3% × p × (1−p)">Fee</th><th title="WON/LOST = held to resolution · SOLD = mirror-exited when the wallet sold">Status</th><th title="net of all fees: won = payout − cost − fee · lost = −(cost+fee) · sold = exit proceeds − cost − fees">P&amp;L</th>
+    <th class="wcol" title="the followed wallet whose trade this copied — grey = no longer followed">Wallet</th><th title="when the bot placed the copy">Placed</th><th title="market + outcome copied">Market</th><th title="the wallet's own fill price">Their&nbsp;Entry</th><th title="the bot's fill price ~60s later">Our&nbsp;Entry</th><th title="(our px − their px) ÷ their px — negative means we got a BETTER price">Slip</th><th title="stake paid at entry, excluding the fee">Stake</th><th title="Polymarket taker fee: shares × 3% × p × (1−p)">Fee</th><th title="WON/LOST = held to resolution · SOLD = mirror-exited when the wallet sold">Result</th><th title="net of all fees: won = payout − cost − fee · lost = −(cost+fee) · sold = exit proceeds − cost − fees">P&amp;L</th>
   </tr></thead><tbody><tr><td colspan="10" class="loading">loading…</td></tr></tbody></table></div>
 
   <h2 id="botMissHead">Live bot — missed bets</h2>
@@ -139,7 +139,7 @@
   <h2 id="botAllocHead">Live bot — allocation by wallet</h2>
   <div class="sub info" style="margin:-6px 0 10px">Aggregated from every copy the bot has placed. <b>Invested</b> = cost basis of currently-open copies; <b>Realized</b> = settled P&amp;L net of all fees, <i>including</i> mirror-sold exits (a sold exit adds to Realized but isn't counted as a W or L). Greyed wallets are no longer followed — their historical bets stay in the book.</div>
   <div class="scroll"><table id="botAlloc"><thead><tr>
-    <th class="wcol" title="grey = no longer followed (historical bets remain in the book)">Wallet</th><th title="copies placed by the bot for this wallet">Bets</th><th title="share of this wallet's settled copies that won">Win&nbsp;%</th><th title="settled copies: won–lost (sold exits not counted as W or L)">Win&nbsp;/&nbsp;Loss</th><th title="cost basis of currently-open copies">Invested</th><th title="settled P&amp;L net of fees, including mirror-sold exits">Realized</th>
+    <th class="wcol" title="grey = no longer followed (historical bets remain in the book)">Wallet</th><th title="copies placed by the bot for this wallet">Bets</th><th title="share of this wallet's settled copies that won">Win&nbsp;%</th><th title="settled copies: won–lost (sold exits not counted as W or L)">Record</th><th title="cost basis of currently-open copies">Invested</th><th title="settled P&amp;L net of fees, including mirror-sold exits">Realized</th>
   </tr></thead><tbody><tr><td colspan="6" class="loading">loading…</td></tr></tbody></table></div>
 
   <script>
@@ -184,7 +184,7 @@
       const FOLLOWED=new Set(d.wallets||[]);
       const CLS=d.classes||{};
       const whale=n=>CLS[n]==="whale"?' <span class="whale">🐋 whale</span>':'';
-      const rowCls=b=>b.status==="won"?"rwon":b.status==="lost"?"rlost":b.status==="closed"?"rsold":"";
+      const rowCls=b=>b.status==="won"?"rwon":b.status==="lost"?"rlost":b.status==="closed"?"rsold":b.status==="refund"?"rref":"";
       const betRow=b=>{
         const un=b.name&&!FOLLOWED.has(b.name);          // wallet no longer followed -> grey
         const slip=b.slippage_pct==null?"—":((b.slippage_pct>=0?"+":"")+(b.slippage_pct*100).toFixed(1)+"%");
@@ -202,8 +202,9 @@
       $("botBetsHead").textContent=`Live bot — open bets (${openBets.length})`;
       $("botBets").querySelector("tbody").innerHTML=openBets.map(betRow).join("")
         ||'<tr><td colspan="10" class="loading">no open bets — waiting for a new conviction trade from the wallets</td></tr>';
-      const rw=resBets.filter(b=>b.status==="won").length, rl=resBets.filter(b=>b.status==="lost").length;
-      $("botResHead").textContent=`Live bot — resolved bets (${resBets.length}${resBets.length?` · ${rw}W / ${rl}L`:''})`;
+      const rw=resBets.filter(b=>b.status==="won").length, rl=resBets.filter(b=>b.status==="lost").length,
+            rr=resBets.filter(b=>b.status==="refund").length, rs=resBets.filter(b=>b.status==="closed").length;
+      $("botResHead").textContent=`Live bot — resolved bets (${resBets.length}${resBets.length?` · ${rw}W / ${rl}L${rr?` / ${rr}R`:''}${rs?` / ${rs}S`:''}`:''})`;
       $("botResolved").querySelector("tbody").innerHTML=resBets.map(betRow).join("")
         ||'<tr><td colspan="10" class="loading">none settled yet</td></tr>';
       const missed=d.missed||[];
@@ -218,21 +219,22 @@
           +'<td class="dim">'+(m.reason||"")+'</td><td>'+res+'</td><td>'+pl+'</td></tr>';
       }).join("")||'<tr><td colspan="8" class="loading">none — the bot has taken every qualifying bet so far</td></tr>';
       // per-wallet allocation, aggregated from the placed bets in the feed
-      const agg={}; (d.wallets||[]).forEach(n=>agg[n]={addr:null,bets:0,w:0,l:0,inv:0,real:0});
+      const agg={}; (d.wallets||[]).forEach(n=>agg[n]={addr:null,bets:0,w:0,l:0,r:0,s:0,inv:0,real:0});
       for(const b of d.bets||[]){
-        const a=agg[b.name]||(agg[b.name]={addr:null,bets:0,w:0,l:0,inv:0,real:0});
+        const a=agg[b.name]||(agg[b.name]={addr:null,bets:0,w:0,l:0,r:0,s:0,inv:0,real:0});
         a.addr=a.addr||b.wallet; a.bets++;
         if(b.status==="open") a.inv+=b.cost||0;
         else if(b.status==="won"){a.w++; a.real+=b.pnl||0;}
         else if(b.status==="lost"){a.l++; a.real+=b.pnl||0;}
-        else if(b.pnl!=null) a.real+=b.pnl;                 // mirror-sold with recorded P&L
+        else if(b.status==="refund"){a.r++; a.real+=b.pnl||0;}
+        else if(b.pnl!=null){a.s++; a.real+=b.pnl;}         // mirror-sold with recorded P&L
       }
       $("botAlloc").querySelector("tbody").innerHTML=Object.entries(agg).map(([n,a])=>{
         const nm=a.addr?`<a href="https://polymarket.com/profile/${a.addr}" target="_blank">${n}</a>`:n;
         const un=!FOLLOWED.has(n);
         const nn=a.w+a.l, wp=nn?Math.round(100*a.w/nn)+"%":'<span class="dim">—</span>';
         return `<tr><td class="name${un?' unfollowed':''}">${nm}${whale(n)}${un?' <span style="font-size:10px">· unfollowed</span>':''}</td><td>${a.bets}</td><td>${wp}</td>`
-          +`<td>${nn?`${a.w}–${a.l}`:'<span class="dim">—</span>'}</td>`
+          +`<td>${recCell(a.w,a.l,a.r,a.s)}</td>`
           +`<td>${money(a.inv)}</td><td class="${a.real>=0?'green':'red'}">${sgn(a.real)}</td></tr>`;
       }).join("")||'<tr><td colspan="6" class="loading">no bets yet</td></tr>';
     }
@@ -269,28 +271,28 @@
 
   <h2 id="curHead">Current bets — what you're in & when they settle</h2>
   <div class="scroll"><table id="current"><thead><tr>
-    <th class="wcol" title="the wallet being mirrored — 🐋 = whale class (every bet, 12% stakes)">Wallet</th><th title="market + outcome">Market</th><th title="outcome side held">Side</th><th title="stake at entry (class % of equity at the time)">Bought in</th><th title="current market value of the position">Value now</th><th title="unrealized: value now − stake (becomes Realized at settlement)">P&amp;L</th><th title="when the market resolves">Settles</th>
+    <th class="wcol" title="the wallet being mirrored">Wallet</th><th title="market + outcome">Market</th><th title="outcome side held">Side</th><th title="stake at entry (class % of equity at the time)">Stake</th><th title="current market value of the position">Value now</th><th title="unrealized: value now − stake (becomes Realized at settlement)">P&amp;L</th><th title="when the market resolves">Settles</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
 
   <h2 id="resHead">Resolved bets — settled</h2>
   <div class="scroll"><table id="resolved"><thead><tr>
-    <th class="wcol" title="the wallet that was mirrored">Wallet</th><th title="market + outcome">Market</th><th title="outcome side held">Side</th><th title="stake at entry">Bought in</th><th title="payout at resolution (winners pay $1/share, losers $0)">Returned</th><th title="returned − stake − entry fee">P&amp;L</th><th title="resolution date (hover for exact)">Date</th>
+    <th class="wcol" title="the wallet that was mirrored">Wallet</th><th title="market + outcome">Market</th><th title="outcome side held">Side</th><th title="stake at entry">Stake</th><th title="payout at resolution (winners pay $1/share, losers $0)">Result</th><th title="returned − stake − entry fee">P&amp;L</th><th title="resolution date (hover for exact)">Settled</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
 
   <h2 id="missOpenHead">Missed bets (open) — couldn't afford</h2>
   <div class="scroll"><table id="missedOpenTbl"><thead><tr>
-    <th class="wcol">Wallet</th><th>Market</th><th>Side</th><th>Bought in</th><th>Value now</th><th>Missed P&amp;L</th><th>Settles</th>
+    <th class="wcol">Wallet</th><th>Market</th><th>Side</th><th>Stake</th><th>Value now</th><th>Missed P&amp;L</th><th>Settles</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
 
   <h2 id="missHead">Missed bets (resolved) — couldn't afford</h2>
   <div class="scroll"><table id="missedTbl"><thead><tr>
-    <th class="wcol" title="whose bet the replay couldn't afford">Wallet</th><th title="market + outcome">Market</th><th>Side</th><th title="stake the replay would have used">Bought in</th><th title="how the market resolved (LIVE = still open)">Returned</th><th title="what the skipped stake would have made or dodged">Missed P&amp;L</th><th title="resolution date">Date</th>
+    <th class="wcol" title="whose bet the replay couldn't afford">Wallet</th><th title="market + outcome">Market</th><th>Side</th><th title="stake the replay would have used">Stake</th><th title="how the market resolved (LIVE = still open)">Result</th><th title="what the skipped stake would have made or dodged">Missed P&amp;L</th><th title="resolution date">Settled</th>
   </tr></thead><tbody><tr><td colspan="7" class="loading">loading…</td></tr></tbody></table></div>
 
   <h2>Allocation by wallet</h2>
   <div class="sub info" style="margin:-6px 0 10px">Aggregated from the bets the replay placed in the current rolling window. 🐋 <b>whale</b>-class wallets mirror <b>every</b> bet at 12% of equity; the rest mirror conviction bets (top-20% by stake) at 4%. <b>Invested</b> = current value of open replayed positions; <b>Realized</b> = settled P&amp;L net of entry fees.</div>
   <div class="scroll"><table id="wallets"><thead><tr>
-    <th class="wcol" title="🐋 = whale class (every bet at 12%) · others mirror conviction bets at 4%">Wallet</th><th title="bets the replay placed for this wallet">Bets</th><th title="share of settled replayed bets that won">Win&nbsp;%</th><th title="settled replayed bets: won–lost">Win&nbsp;/&nbsp;Loss</th><th title="current value of open replayed positions">Invested</th><th title="settled P&amp;L net of entry fees">Realized</th>
+    <th class="wcol" title="every wallet mirrors its conviction bets (top-20% stakes) at 4% of equity">Wallet</th><th title="bets the replay placed for this wallet">Bets</th><th title="share of settled replayed bets that won">Win&nbsp;%</th><th title="settled replayed bets: won–lost, +R refunds, +S mirrored exits">Record</th><th title="current value of open replayed positions">Invested</th><th title="settled P&amp;L net of entry fees">Realized</th>
   </tr></thead><tbody></tbody></table></div>
 
   <div class="note" id="note"></div>
@@ -303,7 +305,7 @@
   <h2 id="sharpsHead">Sharp wallets — validated copyable</h2>
   <div class="sub info" style="margin:-6px 0 10px">The repeatable find: wallets whose <b>large bets win on genuinely-uncertain markets</b>, validated forward on trusted data and filtered to the ones that are actually <b>copyable</b> — copy-positive, a real trailing hold-to-resolution record, not last-minute snipers. Refreshed daily by the winning-wallet-finder pipeline. <b>Two kinds of P&amp;L here:</b> the Conv / All-Time P&amp;L columns price every entry <i>held to resolution</i> at the wallet's own stakes — a <b>copy ceiling</b>, since the bot copies entries and holds. <b>PM P&amp;L</b> is the wallet's <i>actual</i> account result as Polymarket reports it (all cash flows, including early exits). Roughly equal → a true holder; a huge gap → a scalper whose entries resolve well but who never holds them (fills may not be reproducible — watch their measured slippage in the live book). Click a name for their Polymarket profile; hover any column header for definitions.</div>
   <div class="scroll"><table id="sharps"><thead><tr>
-    <th data-k="name" class="wcol" title="click for their Polymarket profile · click any header to sort">Wallet</th><th data-k="win30" title="share of their conviction bets (top-20% by stake) resolved in the last 30 days that won">30&nbsp;Day&nbsp;Win&nbsp;%</th><th data-k="rec30" title="their conviction bets resolved in the last 30 days: won–lost">30&nbsp;Day&nbsp;Conv&nbsp;Record</th><th data-k="pnl30" title="hold-to-resolution value of those entries at their stakes — a copy ceiling, not their cash result">30d&nbsp;Conv&nbsp;P&amp;L</th><th data-k="lifeWin" title="all their conviction bets over the cached history (~180d+)">Life&nbsp;Conv&nbsp;Win&nbsp;%</th><th data-k="recLife" title="lifetime conviction bets: won–lost">Life&nbsp;Conv&nbsp;Record</th><th data-k="convPnl" title="hold-to-resolution value of lifetime conviction entries — a copy ceiling">Life&nbsp;Conv&nbsp;P&amp;L</th><th data-k="winAll" title="every resolved bet ever cached for this wallet, any size — outcomes verified post-resolution (trusted rows)">All&nbsp;Time&nbsp;Win&nbsp;%</th><th data-k="recAll" title="every resolved bet ever cached, any size: won–lost">All&nbsp;Time&nbsp;Record</th><th data-k="pnlAll" title="hold-to-resolution value of every entry ever cached — the copy ceiling">All&nbsp;Time&nbsp;P&amp;L</th><th data-k="pmPnl" title="the wallet's ACTUAL all-time account P&amp;L as Polymarket reports it (cash flows incl. early sells). Compare with All Time P&amp;L: ~equal = true holder; a huge gap = scalper whose entries resolve well but who never holds (ArbTrader: +$8.6k real vs +$462k held)">PM&nbsp;P&amp;L</th><th data-k="avgBet" title="average conviction stake — how big they bet when they mean it">Avg&nbsp;bet</th><th data-k="lead" title="median time between their entry and market resolution — long lead = copyable">Avg&nbsp;lead</th><th data-k="last" title="time since their last conviction-size entry">Last&nbsp;conv&nbsp;bet</th>
+    <th data-k="name" class="wcol" title="click for their Polymarket profile · click any header to sort">Wallet</th><th data-k="win30" title="share of their conviction bets (top-20% by stake) resolved in the last 30 days that won">30d&nbsp;Conv&nbsp;Win&nbsp;%</th><th data-k="rec30" title="their conviction bets resolved in the last 30 days: won–lost">30d&nbsp;Conv&nbsp;Record</th><th data-k="pnl30" title="hold-to-resolution value of those entries at their stakes — a copy ceiling, not their cash result">30d&nbsp;Conv&nbsp;P&amp;L</th><th data-k="lifeWin" title="all their conviction bets over the cached history (~180d+)">Life&nbsp;Conv&nbsp;Win&nbsp;%</th><th data-k="recLife" title="lifetime conviction bets: won–lost">Life&nbsp;Conv&nbsp;Record</th><th data-k="convPnl" title="hold-to-resolution value of lifetime conviction entries — a copy ceiling">Life&nbsp;Conv&nbsp;P&amp;L</th><th data-k="winAll" title="every resolved bet ever cached for this wallet, any size — outcomes verified post-resolution (trusted rows)">All&nbsp;Time&nbsp;Win&nbsp;%</th><th data-k="recAll" title="every resolved bet ever cached, any size: won–lost">All&nbsp;Time&nbsp;Record</th><th data-k="pnlAll" title="hold-to-resolution value of every entry ever cached — the copy ceiling">All&nbsp;Time&nbsp;P&amp;L</th><th data-k="pmPnl" title="the wallet's ACTUAL all-time account P&amp;L as Polymarket reports it (cash flows incl. early sells). Compare with All Time P&amp;L: ~equal = true holder; a huge gap = scalper whose entries resolve well but who never holds (ArbTrader: +$8.6k real vs +$462k held)">PM&nbsp;P&amp;L</th><th data-k="avgBet" title="average conviction stake — how big they bet when they mean it">Avg&nbsp;bet</th><th data-k="lead" title="median time between their entry and market resolution — long lead = copyable">Avg&nbsp;lead</th><th data-k="last" title="time since their last conviction-size entry">Last&nbsp;conv&nbsp;bet</th>
   </tr></thead><tbody><tr><td colspan="14" class="loading">loading…</td></tr></tbody></table></div>
   </div></section>
 </div>
@@ -358,10 +360,13 @@ async function getSharps(){
   SHARPS_CACHE = (d||[]).filter(s=>s.wallet).map(s=>{ const w=s.wallet.toLowerCase();
     return {n: s.name || w.slice(0,8), w, lead:(s.med_lead_h||0)/24,
             won: s.conv_won||0, lost: s.conv_lost||0,
+            ref: s.conv_ref||0, sold: s.conv_sold||0,
             won30: s.conv30_won||0, lost30: s.conv30_lost||0, pnl30: s.conv30_pnl||0,
+            ref30: s.conv30_ref||0, sold30: s.conv30_sold||0,
             convPnl: s.conv_pnl||0, pnl: s.realized_pnl||0, avgBet: s.avg_bet||0,
             copyPnl: s.copy_pnl||0,
             wonAll: s.all_won||0, lostAll: s.all_lost||0, pnlAll: s.all_pnl||0,
+            refAll: s.all_ref||0, soldAll: s.all_sold||0,
             pmPnl: (s.pm_pnl==null? null : s.pm_pnl),
             last: s.last_conv_bet||0, lastAny: s.last_trade||0}; });
   return SHARPS_CACHE;
@@ -404,6 +409,8 @@ async function walletData(w){
 //   conv win%/record/P&L : over ALL the wallet's conviction bets (top-20% stake), from cache
 //   realized P&L         : over the wallet's last 500 resolved bets
 const winRate = r => { const n=r.won+r.lost; return n? 100*r.won/n : null; };   // derive % from the record so they always agree
+// standardized record cell: W\u2013L, +R refunds (amber), +S mirrored exits (dim)
+const recCell = (w,l,rf,sd) => (w+l+((rf||0)+(sd||0))) ? `${w}\u2013${l}`+(rf?` <span class="amber">+${rf}R</span>`:'')+(sd?` <span class="dim">+${sd}S</span>`:'') : '<span class="dim">\u2014</span>';
 const pctlbl = p => p%1===0? p.toFixed(0) : p.toFixed(1);
 // click-to-sort: per-column sort key (numeric desc = greatest→least; name is alpha)
 const SK = {
@@ -449,13 +456,13 @@ function drawSharps(){
     return `<tr>
       <td class="name"><a href="https://polymarket.com/profile/${r.w}" target="_blank" title="${r.n}">${nm}</a></td>
       <td>${wr30}</td>
-      <td>${n30? r.won30+'–'+r.lost30 : '<span class="dim">—</span>'}</td>
+      <td>${recCell(r.won30,r.lost30,r.ref30,r.sold30)}</td>
       <td class="${n30? (r.pnl30>=0?'green':'red') : 'dim'}"><b>${n30? sg(r.pnl30) : '—'}</b></td>
       <td>${wr}</td>
-      <td>${n? r.won+'–'+r.lost : '<span class="dim">—</span>'}</td>
+      <td>${recCell(r.won,r.lost,r.ref,r.sold)}</td>
       <td class="${n? (r.convPnl>=0?'green':'red') : 'dim'}">${n? sg(r.convPnl) : '—'}</td>
       <td>${wrAll}</td>
-      <td>${nAll? r.wonAll+'–'+r.lostAll : '<span class="dim">—</span>'}</td>
+      <td>${recCell(r.wonAll,r.lostAll,r.refAll,r.soldAll)}</td>
       <td class="${nAll? (r.pnlAll>=0?'green':'red') : 'dim'}">${nAll? sg(r.pnlAll) : '—'}</td>
       <td class="${r.pmPnl==null? 'dim' : (r.pmPnl>=0?'green':'red')}">${r.pmPnl==null? '—' : sg(r.pmPnl)}</td>
       <td class="dim">${r.avgBet? fmt(r.avgBet) : '—'}</td>
@@ -545,7 +552,7 @@ function renderPortfolio(P){
   document.querySelector("#wallets tbody").innerHTML=(P.wallets||[]).map(w=>{
     const nn=(w.won||0)+(w.lost||0);
     const wp=nn?Math.round(100*w.won/nn)+"%":'<span class="dim">—</span>';
-    const wl=nn?`${w.won}–${w.lost}`:'<span class="dim">—</span>';
+    const wl=recCell(w.won||0,w.lost||0,w.ref,w.sold);
     return `<tr><td class="name"><a href="https://polymarket.com/profile/${w.wallet}" target="_blank">${w.name}</a>${btWhale(w.name)}</td><td>${w.bets}</td><td>${wp}</td><td>${wl}</td><td>${fmt(w.invested)}</td><td class="${w.realized>=0?'green':'red'}">${sg(w.realized)}</td></tr>`;}).join("");
   const capTxt = (P.event_cap ? `; max ${P.event_cap} bets per event${P.capped_count?` — ${P.capped_count} skipped by the cap`:''}` : '')
     + (P.max_entry && P.max_entry < 1 ? `; entries above ${Math.round(P.max_entry*100)}¢ skipped` : '')
