@@ -247,7 +247,7 @@
   <div class="sechead" onclick="toggleSec(this)"><span class="car">▾</span>📉 Back Test
     <span class="schip">rolling replay model · what these wallets would have returned</span></div>
   <div class="secbody">
-  <div class="sub info">A $1,000 paper account replaying a <b>rolling window</b> — "what if I'd started following these wallets 30 days ago" — over the wallet set in <code>live/backtest.json</code> (interchangeable: any wallet can be added or removed; currently the copy bot's follow set). <b>Volume-class</b> wallets mirror <b>high-conviction bets</b> (top 20% by stake, threshold from pre-window history); <b>whale-class</b> wallets mirror <b>every bet</b>. Entries above <b>95¢</b> are skipped (slippage + fees eat the payout). Stakes are <b>dynamic: the class % of current equity per bet</b> (Kelly-style compounding — bets grow with wins, shrink in drawdowns, halve below 80% of the equity peak), and <b>never larger than the followed wallet's own stake</b>: when the percentage works out to more than they actually bet, the replay bets exactly their amount — you can't out-conviction the signal, and every fill stays within size the market demonstrably absorbed. Each entry pays the real <b>Polymarket taker fee</b> (0.03 sports rate) and a <b>lag-slippage haircut</b> (~90s, +0.5% entry). Held to resolution; cash recycles as bets settle.</div>
+  <div class="sub info">A $1,000 paper account replaying a <b>rolling window</b> — "what if I'd started following these wallets 30 days ago" — over the wallet set in <code>live/backtest.json</code> (interchangeable: any wallet can be added or removed; currently the copy bot's follow set). <b>Volume-class</b> wallets mirror <b>high-conviction bets</b> (top 20% by stake, threshold from pre-window history); <b>whale-class</b> wallets mirror <b>every bet</b>. Entries above <b>95¢</b> are skipped (slippage + fees eat the payout). Stakes are <b>dynamic: the class % of current equity per bet</b> (Kelly-style compounding — bets grow with wins, shrink in drawdowns, halve below 80% of the equity peak), and <b>never larger than the followed wallet's own stake</b>: when the percentage works out to more than they actually bet, the replay bets exactly their amount — you can't out-conviction the signal, and every fill stays within size the market demonstrably absorbed. Each entry pays the real <b>Polymarket taker fee</b> (0.03 sports rate) and a <b>lag-slippage haircut</b> (~90s, +0.5% entry). <b>Exits mirror the signal</b>, like the live bot: when the wallet fully closed a position before resolution the replay sells there too (exit fee + slippage paid, status <b>SOLD</b>); bets they held settle at the <b>on-chain payout</b> — 1/0, or <b>0.5 for 50/50 refunds</b> (walkovers/abandonments, counted as scratches, not losses). Cash recycles as bets settle or exit.</div>
 
   <div class="hero">
     <div class="row-actions">
@@ -515,14 +515,16 @@ function renderPortfolio(P){
     return `<tr><td class="name">${c.name}${btWhale(c.name)}</td><td class="mkt">${c.title||''}</td><td>${c.outcome||''}</td><td>${fmt(c.stake)}</td><td>${fmt(c.val)}</td><td class="${c.pnl>=0?'green':'red'}">${sg(c.pnl)}</td><td>${when}</td></tr>`;}).join("")
     : '<tr><td colspan="7" class="loading">no open bets right now — all cash is liquid</td></tr>';
   // resolved bets
-  document.getElementById("resHead").textContent=`Resolved bets — ${P.resolved_count} settled (${P.wins}W / ${P.losses}L${P.refunds?` / ${P.refunds}R`:''})`;
+  document.getElementById("resHead").textContent=`Resolved bets — ${P.resolved_count} settled (${P.wins}W / ${P.losses}L${P.refunds?` / ${P.refunds}R`:''}${P.sold?` / ${P.sold}S`:''})`;
   document.querySelector("#resolved tbody").innerHTML=(P.resolved&&P.resolved.length)? P.resolved.map(s=>{
     const st=s.status||(s.won?'won':'lost');
     // refund = 50/50 scratch: pays $0.50/share, so it's not a win yet can be
-    // P&L-positive (entries below 50¢) — never render it as a red "lost"
+    // P&L-positive (entries below 50¢) — never render it as a red "lost".
+    // sold = the signal exited pre-resolution and the replay mirrored it.
     const result=st==='refund'?`<span class="amber">refund · ${fmt(s.stake+s.pnl)}</span>`
+      :st==='sold'?`<span class="dim">sold · ${fmt(s.stake+s.pnl)}</span>`
       :st==='won'?`<span class="green">won · ${fmt(s.stake+s.pnl)}</span>`:`<span class="red">lost · $0</span>`;
-    const cls=st==='refund'?'rref':st==='won'?'rwon':'rlost';
+    const cls=st==='refund'?'rref':st==='sold'?'rsold':st==='won'?'rwon':'rlost';
     return `<tr class="${cls}"><td class="name">${s.name}${btWhale(s.name)}</td><td class="mkt">${s.title||''}</td><td></td><td>${fmt(s.stake)}</td><td>${result}</td><td class="${s.pnl>=0?'green':'red'}">${sg(s.pnl)}</td><td>${relD(s.date)}</td></tr>`;}).join("")
     : '<tr><td colspan="7" class="loading">none yet</td></tr>';
   // missed (resolved history); hide the legacy open-missed table (cache has resolved only)
@@ -531,6 +533,7 @@ function renderPortfolio(P){
     const mst=m.status||(m.won==null?null:(m.won?'won':'lost'));
     const result=mst==null?'<span class="pill" style="background:rgba(91,176,255,.13);color:var(--accent)">LIVE</span>'
       :mst==='refund'?`<span class="amber">refund · ${fmt((m.stake||0)+m.pnl)}</span>`
+      :mst==='sold'?`<span class="dim">sold · ${fmt((m.stake||0)+m.pnl)}</span>`
       :(mst==='won'?`<span class="green">won · ${fmt((m.stake||0)+m.pnl)}</span>`:`<span class="red">lost · $0</span>`);
     const d=m.date?new Date(m.date*1000).toLocaleDateString():'<span class="dim">—</span>';
     const why=m.capped?' <span class="pill" style="background:rgba(245,196,81,.13);color:var(--amber)">EVENT CAP</span>':'';
