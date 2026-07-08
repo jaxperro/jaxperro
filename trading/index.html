@@ -526,21 +526,23 @@ function drawSharps(){
     const w=winRate(r);
     const wr = w==null? '<span class="dim">—</span>' : pctlbl(w)+'%';
     const n30=r.won30+r.lost30, w30=n30? 100*r.won30/n30 : null;
+    const act30=n30+(r.ref30||0)+(r.sold30||0);
     const wr30 = w30==null? '<span class="dim">—</span>' : pctlbl(w30)+'%';
     const nm = r.n.length>20 ? r.n.slice(0,20)+'…' : r.n;
     const nAll=r.wonAll+r.lostAll, wAll=nAll? 100*r.wonAll/nAll : null;
+    const actAll=nAll+(r.refAll||0)+(r.soldAll||0), act=n+(r.ref||0)+(r.sold||0);
     const wrAll = wAll==null? '<span class="dim">—</span>' : pctlbl(wAll)+'%';
     return `<tr>
       <td class="name"><a href="https://polymarket.com/profile/${r.w}" target="_blank" title="${r.n}">${nm}</a></td>
       <td>${wr30}</td>
       <td>${recCell(r.won30,r.lost30,r.ref30,r.sold30)}</td>
-      <td class="${n30? (r.pnl30>=0?'green':'red') : 'dim'}"><b>${n30? sg(r.pnl30) : '—'}</b></td>
+      <td class="${act30? (r.pnl30>=0?'green':'red') : 'dim'}"><b>${act30? sg(r.pnl30) : '—'}</b></td>
       <td>${wr}</td>
       <td>${recCell(r.won,r.lost,r.ref,r.sold)}</td>
-      <td class="${n? (r.convPnl>=0?'green':'red') : 'dim'}">${n? sg(r.convPnl) : '—'}</td>
+      <td class="${act? (r.convPnl>=0?'green':'red') : 'dim'}">${act? sg(r.convPnl) : '—'}</td>
       <td>${wrAll}</td>
       <td>${recCell(r.wonAll,r.lostAll,r.refAll,r.soldAll)}</td>
-      <td class="${nAll? (r.pnlAll>=0?'green':'red') : 'dim'}">${nAll? sg(r.pnlAll) : '—'}</td>
+      <td class="${actAll? (r.pnlAll>=0?'green':'red') : 'dim'}">${actAll? sg(r.pnlAll) : '—'}</td>
       <td class="${r.openPnl==null? 'dim' : (r.openPnl>=0?'green':'red')}">${r.openPnl==null? '—' : sg(r.openPnl)}</td>
       <td class="${r.pmPnl==null? 'dim' : (r.pmPnl>=0?'green':'red')}">${r.pmPnl==null? '—' : sg(r.pmPnl)}</td>
       <td class="dim">${r.avgBet? fmt(r.avgBet) : '—'}</td>
