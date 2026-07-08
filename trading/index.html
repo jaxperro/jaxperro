@@ -305,8 +305,8 @@
   <h2 id="sharpsHead">Sharp wallets — validated copyable</h2>
   <div class="sub info" style="margin:-6px 0 10px">The repeatable find: wallets whose <b>large bets win on genuinely-uncertain markets</b>, validated forward on trusted data and filtered to the ones that are actually <b>copyable</b> — copy-positive, a real trailing hold-to-resolution record, not last-minute snipers. Refreshed daily by the winning-wallet-finder pipeline. <b>P&amp;L is their REALIZED track record</b> — Polymarket's own <i>realizedPnl</i> per closed position, summed over the wallet's full history: what they've actually banked trading (buy / sell / hold), which is exactly what a copier mirroring every move realizes. It matches their Polymarket profile <b>PM P&amp;L</b> (the two differ only by unrealized marks on positions still open). <b>Win %</b> = share of their closed positions that made money. Click a name for their Polymarket profile; hover any column header for definitions.</div>
   <div class="scroll"><table id="sharps"><thead><tr>
-    <th data-k="name" class="wcol" title="click for their Polymarket profile · click any header to sort">Wallet</th><th data-k="win30" title="share of their conviction positions (top-20% by stake) closed in the last 30 days that made money (realized)">30d&nbsp;Conv&nbsp;Win&nbsp;%</th><th data-k="rec30" title="conviction positions closed in the last 30 days: profitable–unprofitable">30d&nbsp;Conv&nbsp;Record</th><th data-k="pnl30" title="realized P&amp;L on those conviction positions — what they actually banked (Polymarket realizedPnl)">30d&nbsp;Conv&nbsp;P&amp;L</th><th data-k="lifeWin" title="share of their lifetime conviction positions that made money (realized)">Life&nbsp;Conv&nbsp;Win&nbsp;%</th><th data-k="recLife" title="lifetime conviction positions: profitable–unprofitable">Life&nbsp;Conv&nbsp;Record</th><th data-k="convPnl" title="realized P&amp;L on their lifetime conviction positions">Life&nbsp;Conv&nbsp;P&amp;L</th><th data-k="winAll" title="share of ALL their closed positions (any size) that made money — realized, full history">All&nbsp;Time&nbsp;Win&nbsp;%</th><th data-k="recAll" title="every closed position, any size: profitable–unprofitable">All&nbsp;Time&nbsp;Record</th><th data-k="pnlAll" title="the wallet's REALIZED all-time P&amp;L — Polymarket's own per-position realized cash, full history (matches their profile P&amp;L)">All&nbsp;Time&nbsp;P&amp;L</th><th data-k="pmPnl" title="the wallet's profile P&amp;L as Polymarket reports it. Now ~equals our All-Time P&amp;L (both realized cash); any gap is unrealized P&amp;L on positions still open">PM&nbsp;P&amp;L</th><th data-k="avgBet" title="average conviction stake — how big they bet when they mean it">Avg&nbsp;bet</th><th data-k="lead" title="median time between their entry and market resolution — long lead = copyable">Avg&nbsp;lead</th><th data-k="last" title="time since their last conviction-size entry">Last&nbsp;conv&nbsp;bet</th>
-  </tr></thead><tbody><tr><td colspan="14" class="loading">loading…</td></tr></tbody></table></div>
+    <th data-k="name" class="wcol" title="click for their Polymarket profile · click any header to sort">Wallet</th><th data-k="win30" title="share of their conviction positions (top-20% by stake) closed in the last 30 days that made money (realized)">30d&nbsp;Conv&nbsp;Win&nbsp;%</th><th data-k="rec30" title="conviction positions closed in the last 30 days: profitable–unprofitable">30d&nbsp;Conv&nbsp;Record</th><th data-k="pnl30" title="realized P&amp;L on those conviction positions — what they actually banked (Polymarket realizedPnl)">30d&nbsp;Conv&nbsp;P&amp;L</th><th data-k="lifeWin" title="share of their lifetime conviction positions that made money (realized)">Life&nbsp;Conv&nbsp;Win&nbsp;%</th><th data-k="recLife" title="lifetime conviction positions: profitable–unprofitable">Life&nbsp;Conv&nbsp;Record</th><th data-k="convPnl" title="realized P&amp;L on their lifetime conviction positions">Life&nbsp;Conv&nbsp;P&amp;L</th><th data-k="winAll" title="share of ALL their closed positions (any size) that made money — realized, full history">All&nbsp;Time&nbsp;Win&nbsp;%</th><th data-k="recAll" title="every closed position, any size: profitable–unprofitable">All&nbsp;Time&nbsp;Record</th><th data-k="pnlAll" title="the wallet's REALIZED all-time P&amp;L — Polymarket's own per-position realized cash, full history (matches their profile P&amp;L)">All&nbsp;Time&nbsp;P&amp;L</th><th data-k="openPnl" title="OPEN (unrealized) P&amp;L across their current positions. A big NEGATIVE here on a wallet with a great realized record = selling winners, holding losers — the realized number flatters live-follow experience. All&nbsp;Time&nbsp;P&amp;L + Open&nbsp;P&amp;L reconciles to PM&nbsp;P&amp;L.">Open&nbsp;P&amp;L</th><th data-k="pmPnl" title="the wallet's profile P&amp;L as Polymarket reports it. Now ~equals our All-Time P&amp;L (both realized cash); any gap is unrealized P&amp;L on positions still open">PM&nbsp;P&amp;L</th><th data-k="avgBet" title="average conviction stake — how big they bet when they mean it">Avg&nbsp;bet</th><th data-k="lead" title="median time between their entry and market resolution — long lead = copyable">Avg&nbsp;lead</th><th data-k="last" title="time since their last conviction-size entry">Last&nbsp;conv&nbsp;bet</th>
+  </tr></thead><tbody><tr><td colspan="15" class="loading">loading…</td></tr></tbody></table></div>
   </div></section>
 </div>
 
@@ -367,6 +367,7 @@ async function getSharps(){
             copyPnl: s.copy_pnl||0,
             wonAll: s.all_won||0, lostAll: s.all_lost||0, pnlAll: s.all_pnl||0,
             refAll: s.all_ref||0, soldAll: s.all_sold||0,
+            openPnl: (s.open_pnl==null? null : s.open_pnl),
             pmPnl: (s.pm_pnl==null? null : s.pm_pnl),
             last: s.last_conv_bet||0, lastAny: s.last_trade||0}; });
   return SHARPS_CACHE;
@@ -418,6 +419,7 @@ const SK = {
   winAll:  r=>{ const n=r.wonAll+r.lostAll; return n? r.wonAll/n : -1; },
   recAll:  r=> r.wonAll+r.lostAll,
   pnlAll:  r=> r.pnlAll,
+  openPnl: r=> r.openPnl==null? Infinity : r.openPnl,
   pmPnl:   r=> r.pmPnl==null? -Infinity : r.pmPnl,
   win30:   r=>{ const n=r.won30+r.lost30; return n? r.won30/n : -1; },
   rec30:   r=> r.won30+r.lost30,
@@ -464,18 +466,19 @@ function drawSharps(){
       <td>${wrAll}</td>
       <td>${recCell(r.wonAll,r.lostAll,r.refAll,r.soldAll)}</td>
       <td class="${nAll? (r.pnlAll>=0?'green':'red') : 'dim'}">${nAll? sg(r.pnlAll) : '—'}</td>
+      <td class="${r.openPnl==null? 'dim' : (r.openPnl>=0?'green':'red')}">${r.openPnl==null? '—' : sg(r.openPnl)}</td>
       <td class="${r.pmPnl==null? 'dim' : (r.pmPnl>=0?'green':'red')}">${r.pmPnl==null? '—' : sg(r.pmPnl)}</td>
       <td class="dim">${r.avgBet? fmt(r.avgBet) : '—'}</td>
       <td class="dim">${r.lead<1? Math.round(r.lead*24)+'h' : r.lead.toFixed(1)+'d'}</td>
       <td class="dim">${ago(r.last)}</td></tr>`;
-  }).join("") || '<tr><td colspan="14" class="loading">no data</td></tr>';
+  }).join("") || '<tr><td colspan="15" class="loading">no data</td></tr>';
 }
 
 async function renderSharps(){
   let rows;
   try{ rows = await getSharps(); }
   catch(e){ document.querySelector("#sharps tbody").innerHTML =
-      '<tr><td colspan="14" class="loading">couldn\'t load the sharp-wallet feed</td></tr>'; return; }
+      '<tr><td colspan="15" class="loading">couldn\'t load the sharp-wallet feed</td></tr>'; return; }
   const monthAgo = Date.now()/1000 - 30*86400;
   _sharpRows = rows.filter(r=> r.lastAny && r.lastAny >= monthAgo);   // drop wallets inactive >1 month
   const head = document.getElementById("sharpsHead");
