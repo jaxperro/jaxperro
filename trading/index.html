@@ -116,7 +116,7 @@
       <div class="split"><div class="slabel">💵 Free cash</div><div class="sval" id="botCash">—</div><div class="ssub" id="botCashSub">of $1,000 book</div></div>
       <div class="split"><div class="slabel">📊 Deployed</div><div class="sval" id="botDeployed">—</div><div class="ssub" id="botOpen">open bets</div></div>
       <div class="split"><div class="slabel">🏦 Realized</div><div class="sval" id="botRealized">—</div><div class="ssub">settled P&amp;L</div></div>
-      <div class="split"><div class="slabel">⏱️ Exec lag</div><div class="sval" id="botLag">—</div><div class="ssub" id="botSlip">avg slippage</div></div>
+      <div class="split"><div class="slabel">⏱️ Exec lag <span class="dim" style="font-size:9px">24h</span></div><div class="sval" id="botLag">—</div><div class="ssub" id="botSlip">avg slippage</div></div>
     </div>
     <div class="meta" id="botMeta">connecting to the live bot feed…</div>
   </div>
@@ -178,7 +178,7 @@
       const re=$("botRealized");re.textContent=sgn(pnl);re.className="sval "+(pnl>=0?"green":"red");
       const L=d.lag||{};
       $("botLag").textContent=L.avg_s!=null?Math.round(L.avg_s)+"s":"—";
-      $("botSlip").textContent=L.avg_slip_pct!=null?((L.avg_slip_pct*100).toFixed(1)+"% slip · "+(L.n||0)+" copies"):"avg slippage";
+      $("botSlip").textContent=L.avg_slip_pct!=null?((L.avg_slip_pct*100).toFixed(1)+"% slip · "+(L.n24!=null?L.n24+" fills/24h":(L.n||0)+" copies")):"avg slippage";
       const sz=d.stake_pct?((d.stake_pct*100).toFixed(0)+"% of equity per bet (now $"+Math.round(d.stake||0)+")"):"$"+(d.stake||50)+" each";
       $("botMeta").textContent=(d.bets||[]).length+" bets placed · "+sz+(d.event_cap?" · max "+d.event_cap+"/event":"")+" · free cash gates new bets · "+(d.wallets||[]).join(", ");
       const FOLLOWED=new Set(d.wallets||[]);
