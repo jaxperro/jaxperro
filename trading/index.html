@@ -95,8 +95,6 @@
       <div class="bv" id="sbBT">—</div><div class="bs" id="sbBTSub">rolling replay</div></div>
     <div class="bchip" onclick="jumpSec('secSharps')"><div class="bl">🎯 Sharp Wallets</div>
       <div class="bv" id="sbSharps">—</div><div class="bs">active &amp; copyable</div></div>
-    <div class="bchip" onclick="location.href='/live/'"><div class="bl">💰 Real Money</div>
-      <div class="bv" id="sbRM">—</div><div class="bs" id="sbRMSub">not started · open /live →</div></div>
   </div>
 
   <!-- ───────── live copy-bot: bets actually placed (feed: live/copybot_live.json) ───────── -->
@@ -150,16 +148,6 @@
     "https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/live/copybot_live.json",
     {chipId:"sbBot", chipSubId:"sbBotSub",
      offlineMsg:"live bot feed unavailable — the bot isn't publishing yet (run copybot.py --poll)"});
-  // Real Money lives on /live — the board chip above deep-links there and
-  // this fill-in keeps its value current without rendering the full section
-  fetch("https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/live/copybot_live_real.json",{cache:"no-store"})
-    .then(r=>{if(!r.ok)throw 0;return r.json();})
-    .then(d=>{const t=(d.cash||0)+(d.deployed||0)+(d.reserve||0),p=d.realized||0;
-      const e=document.getElementById("sbRM");
-      e.textContent=(t<0?"-$":"$")+Math.abs(t).toLocaleString(undefined,{maximumFractionDigits:0});
-      e.className="bv "+(p>=0?"green":"red");
-      document.getElementById("sbRMSub").textContent="real USDC · open /live →";})
-    .catch(()=>{});
   </script>
   </div></section>
 
