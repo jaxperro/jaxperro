@@ -16,6 +16,7 @@
     const STAT={open:'<span class="pill" style="background:rgba(91,176,255,.13);color:var(--accent)">OPEN</span>',
                 won:'<span class="pill buy">WON</span>',lost:'<span class="pill sell">LOST</span>',
                 closed:'<span class="pill" style="background:rgba(139,155,176,.15);color:var(--dim)">SOLD</span>',
+                sold:'<span class="pill" style="background:rgba(139,155,176,.15);color:var(--dim)">SOLD</span>',
                 refund:'<span class="pill" style="background:rgba(245,196,81,.15);color:var(--amber)">REFUND 50/50</span>'};
     function offline(msg){const st=$(P+"Status");st.textContent=opts.offlinePill||"OFFLINE";
       st.className="pill "+(opts.offlineQuiet?"":"sell");$(P+"Meta").textContent=msg;
