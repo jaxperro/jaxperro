@@ -60,7 +60,8 @@
       const rowCls=b=>b.status==="won"?"rwon":b.status==="lost"?"rlost":b.status==="closed"?"rsold":b.status==="refund"?"rref":"";
       const betRow=b=>{
         const un=b.name&&!FOLLOWED.has(b.name);          // wallet no longer followed -> grey
-        const slip=b.slippage_pct==null?"—":((b.slippage_pct>=0?"+":"")+(b.slippage_pct*100).toFixed(1)+"%");
+        const slip=(b.slippage_pct==null?"—":((b.slippage_pct>=0?"+":"")+(b.slippage_pct*100).toFixed(1)+"%"))
+          +(b.lag_s!=null?' <span class="dim">·'+(b.lag_s<10?b.lag_s.toFixed(1):Math.round(b.lag_s))+'s</span>':'');
         const pl=b.pnl==null?"—":'<span class="'+(b.pnl>=0?"green":"red")+'">'+sgn(b.pnl)+'</span>';
         const fee=b.fee!=null?money(b.fee):'<span class="dim">—</span>';
         return '<tr class="'+rowCls(b)+'"><td class="name'+(un?' unfollowed':'')+'" '+(un?'title="no longer followed"':'')+'>'+(b.name||"")+whale(b.name)+'</td>'+relTd(b.opened)
