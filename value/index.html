@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Value Bot — Sub-2¢ Paper Portfolio</title>
+<style>
+  :root { --bg:#0d1117; --card:#161b22; --line:#30363d; --tx:#c9d1d9;
+          --dim:#8b949e; --green:#3fb950; --red:#f85149; --gold:#d29922; }
+  * { box-sizing:border-box; margin:0; }
+  body { background:var(--bg); color:var(--tx); font:14px/1.5 -apple-system,
+         "Segoe UI", Roboto, monospace; padding:24px; max-width:980px; margin:0 auto; }
+  h1 { font-size:20px; margin-bottom:4px; }
+  .sub { color:var(--dim); margin-bottom:20px; font-size:13px; }
+  .sub a { color:var(--gold); text-decoration:none; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+           gap:12px; margin-bottom:24px; }
+  .tile { background:var(--card); border:1px solid var(--line); border-radius:8px;
+          padding:14px; }
+  .tile .k { color:var(--dim); font-size:11px; text-transform:uppercase; }
+  .tile .v { font-size:22px; font-weight:700; margin-top:2px; }
+  .tile .d { color:var(--dim); font-size:12px; }
+  h2 { font-size:14px; color:var(--dim); margin:20px 0 8px; text-transform:uppercase; }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th { text-align:left; color:var(--dim); font-weight:400; padding:4px 8px;
+       border-bottom:1px solid var(--line); }
+  td { padding:4px 8px; border-bottom:1px solid #21262d; }
+  .g { color:var(--green); } .r { color:var(--red); } .y { color:var(--gold); }
+  .dim { color:var(--dim); }
+</style>
+</head>
+<body>
+<h1>🎯 Value Bot — sub-2¢ paper portfolio</h1>
+<div class="sub">Systematically buys $1 tickets on any market side priced ≤ 2¢
+ (the calibration study's one underpriced bucket · ~1.24x gross in 13.5M resolved
+ bets). PAPER — honest FAK fills, chain-truth settles. Verdict at ~2,000 resolved
+ tickets vs a ~1.05% break-even hit rate.
+ <a href="https://github.com/jaxperro/winning-wallet-finder/blob/main/value/PLAN.md">plan ↗</a>
+ · <a href="/trading">copy-bot dashboards</a></div>
+<div class="tiles" id="tiles"></div>
+<h2>Recent settles</h2>
+<table id="resolved"><thead><tr><th>when</th><th>kind</th><th>entry</th>
+<th>payout</th><th>market</th></tr></thead><tbody></tbody></table>
+<h2>Recent misses (thin books — the honesty ledger)</h2>
+<table id="missed"><thead><tr><th>when</th><th>reason</th><th>market</th>
+</tr></thead><tbody></tbody></table>
+<script>
+const FEED = "https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/value/valuebot.json";
+const ago = ts => { const m = (Date.now()/1000 - ts)/60;
+  return m < 90 ? `${m|0}m` : m < 60*36 ? `${m/60|0}h` : `${m/1440|0}d`; };
+fetch(FEED + "?t=" + Date.now()).then(r => r.json()).then(d => {
+  const s = d.stats, eq = d.cash + d.deployed;
+  const mult = d.realized_multiple, fr = d.fill_rate;
+  document.getElementById("tiles").innerHTML = [
+    ["equity", `$${eq.toFixed(2)}`, `of $${d.bank} paper bank`],
+    ["deployed", `$${d.deployed.toFixed(2)}`, `${d.open_count} open tickets`],
+    ["fill rate", fr == null ? "—" : (fr*100).toFixed(0) + "%",
+     `${s.fills}/${s.attempts} attempts · kill <30%`],
+    ["resolved", `${s.resolved}`, `${s.wins}W / ${s.losses}L / ${s.refunds}R`],
+    ["realized multiple", mult == null ? "—" : mult.toFixed(2) + "x",
+     "target >1.1x @ 2k tickets"],
+    ["updated", ago(d.updated) + " ago", "5-min scan cycles"],
+  ].map(([k,v,dd]) => `<div class="tile"><div class="k">${k}</div>
+    <div class="v">${v}</div><div class="d">${dd}</div></div>`).join("");
+  document.querySelector("#resolved tbody").innerHTML =
+    (d.recent_resolved||[]).slice().reverse().map(x => `<tr>
+      <td class="dim">${ago(x.ts)}</td>
+      <td class="${x.kind=='win'?'g':x.kind=='refund'?'y':'r'}">${x.kind.toUpperCase()}</td>
+      <td>${(x.price*100).toFixed(1)}¢</td>
+      <td class="${x.payout>x.cost?'g':'r'}">$${x.payout.toFixed(2)}</td>
+      <td>${x.title}</td></tr>`).join("")
+    || "<tr><td colspan=5 class=dim>none yet — tickets resolve on their own schedule</td></tr>";
+  document.querySelector("#missed tbody").innerHTML =
+    (d.recent_missed||[]).slice().reverse().slice(0,25).map(x => `<tr>
+      <td class="dim">${ago(x.ts)}</td><td class="dim">${x.reason}</td>
+      <td>${x.title}</td></tr>`).join("");
+}).catch(e => document.getElementById("tiles").innerHTML =
+  `<div class="tile"><div class="k">feed unavailable</div><div class="d">${e}</div></div>`);
+</script>
+</body>
+</html>
