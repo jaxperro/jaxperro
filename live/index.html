@@ -187,15 +187,19 @@ function render(){
   // wallet cards: LIFETIME rollup from the feed (server-side, survives
   // address changes + window rotation); falls back to window agg pre-deploy
   const addrOf={};for(const b of bets)if(b.name&&b.wallet&&!addrOf[b.name])addrOf[b.name]=b.wallet;
+  const missAgg={};for(const m of missSrc){const n=m.name||"";const a=missAgg[n]||(missAgg[n]={n:0,pnl:0});a.n++;if(m.pnl!=null)a.pnl+=m.pnl;}
   const WP=d.wallet_pnl;
   if(WP){
     $("wallets").innerHTML=Object.entries(WP)
       .sort((a,b)=>(FOL.has(b[0])-FOL.has(a[0]))||((b[1].last_ts||0)-(a[1].last_ts||0)))
       .map(([n,w])=>{const un=!FOL.has(n);const addr=addrOf[n];
         const win=w.n?Math.round(100*w.wins/w.n)+"%":"—";
+        const mn=w.miss_n!=null?w.miss_n:(missAgg[n]?missAgg[n].n:0);
+        const mp=w.miss_pnl!=null?w.miss_pnl:(missAgg[n]?missAgg[n].pnl:0);
         return `<div class="wcard" style="opacity:${un?".55":"1"}" onclick="openW('${esc(n)}')" title="${un?'no longer followed — history kept · ':''}click for every followed + missed trade">
 <div style="display:flex;align-items:baseline;gap:6px">${addr?`<a href="https://polymarket.com/profile/${addr}" target="_blank" class="nm ell" style="font-size:12.5px" onclick="event.stopPropagation()">${esc(n)}</a>`:`<span class="nm ell" style="font-size:12.5px">${esc(n)}</span>`}${CLS[n]==="whale"?'<span class="wtag" style="font-size:9px">whale</span>':""}<span style="font-size:14px;font-weight:700;margin-left:auto;color:${cOf(w.realized)}">${sgn(w.realized)}</span></div>
-<div class="sub" style="font-size:10.5px;margin-top:3px">lifetime · ${w.n} settled · ${w.wins}W (${win}) · ${money(w.open_cost)} open${w.open_n?" ("+w.open_n+")":""}</div></div>`;}).join("");
+<div class="sub" style="font-size:10.5px;margin-top:3px">lifetime · ${w.n} settled · ${w.wins}W (${win}) · ${money(w.open_cost)} open${w.open_n?" ("+w.open_n+")":""}</div>
+<div class="sub" style="font-size:10.5px;margin-top:2px" title="skips + what the skipped stakes would have returned">${mn} missed${mn?` · <span style="color:${cOf(mp)}">${sgn(mp)}</span> would-be`:""}</div></div>`;}).join("");
   }else{
     const agg={};(d.wallets||[]).forEach(n=>agg[n]={addr:null,bets:0,w:0,l:0,inv:0,real:0});
     for(const b of bets){const a=agg[b.name]||(agg[b.name]={addr:null,bets:0,w:0,l:0,inv:0,real:0});
@@ -236,7 +240,8 @@ function renderModal(){
     .sort((a,b)=>(b.ts||0)-(a.ts||0));
   const wp=(d.wallet_pnl||{})[MW];
   $("mtitle").textContent=MW;
-  $("msub").innerHTML=(wp?`lifetime <b style="color:${cOf(wp.realized)}">${sgn(wp.realized)}</b> · ${wp.n} settled · ${wp.wins}W · ${money(wp.open_cost)} open`:"")
+  const mp=wm.reduce((s,m)=>s+(m.pnl||0),0);
+  $("msub").innerHTML=(wp?`lifetime <b style="color:${cOf(wp.realized)}">${sgn(wp.realized)}</b> · ${wp.n} settled · ${wp.wins}W · ${money(wp.open_cost)} open · missed <b style="color:${cOf(mp)}">${sgn(mp)}</b> would-be`:"")
     +(FULL?"":' <span style="color:'+AMB+'">· full history still loading — showing recent window</span>');
   $("mtabF").innerHTML="Followed · "+wb.length;
   $("mtabM").innerHTML="Missed · "+wm.length;
