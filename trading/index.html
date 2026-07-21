@@ -58,13 +58,21 @@ h1{font-size:17px;margin:0;font-weight:700}
 .howbox{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:12px;font-size:12.5px;color:var(--dim);line-height:1.7;display:none}
 .howbox b{color:#c9d6e5}
 section{scroll-margin-top:16px}
-@media(max-width:760px){.bg,.mg,.cg,.sg,.donly{display:none!important}.mcard{display:block}.hg,.jg{grid-template-columns:1fr}.eq{font-size:32px}.wrap{padding:18px 14px 48px}.wg{display:flex;overflow-x:auto;padding-bottom:4px}.wg>.wcard{flex:none;min-width:170px}}
+#wallets .wcard{cursor:pointer}#wallets .wcard:hover{border-color:#2c3e57}
+.ovl{position:fixed;inset:0;background:rgba(4,7,12,.72);z-index:40;display:none;align-items:flex-start;justify-content:center;padding:5vh 14px;backdrop-filter:blur(2px)}
+.ovl.on{display:flex}
+.modal{background:var(--panel2);border:1px solid var(--border);border-radius:14px;max-width:980px;width:100%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+.mhead{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border)}
+.mbody{overflow-y:auto}
+.mclose{margin-left:auto;cursor:pointer;color:var(--dim);font-size:20px;line-height:1;padding:2px 6px}.mclose:hover{color:var(--text)}
+@media(max-width:760px){.bg,.mg,.cg,.sg,.donly{display:none!important}.mcard{display:block}.hg,.jg{grid-template-columns:1fr}.eq{font-size:32px}.wrap{padding:18px 14px 48px}.wg{display:flex;overflow-x:auto;padding-bottom:4px}.wg>.wcard{flex:none;min-width:170px}.ovl{padding:2vh 8px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header><h1>Winning Wallet Finder</h1><span class="sub" style="font-size:12.5px">paper portfolio</span>
-    <a href="/live/" style="margin-left:auto;font-size:12.5px">real money dashboard →</a></header>
+    <a href="/live/" style="margin-left:auto;font-size:12.5px">real money dashboard →</a>
+    <a href="/surge/" style="font-size:12.5px">surge (study A) →</a></header>
 
   <div class="jg">
     <a class="jcard" href="#bot"><div class="klabel" style="font-size:10.5px">Live Bot · paper book</div><div id="jBot" style="font-size:22px;font-weight:700;margin-top:3px">—</div><div id="jBotSub" class="sub" style="font-size:11px;margin-top:2px">loading…</div></a>
@@ -123,12 +131,22 @@ section{scroll-margin-top:16px}
       <b style="color:#c9d6e5">Paper money — edge unproven out-of-sample.</b></div>
   </section>
 </div>
+<div class="ovl" id="ovl" onclick="if(event.target===this)closeW()">
+  <div class="modal">
+    <div class="mhead"><span class="nm" id="mtitle" style="font-size:14px"></span><span id="msub" class="sub"></span><span class="mclose" onclick="closeW()">×</span></div>
+    <div class="tabs" style="margin:12px 18px 10px">
+      <div class="tab on" id="mtabF" onclick="setMTab('followed')">Followed · —</div>
+      <div class="tab" id="mtabM" onclick="setMTab('missed')">Missed · —</div>
+    </div>
+    <div class="mbody"><div class="tbl" id="mbook" style="border-radius:0;border-left:0;border-right:0;border-bottom:0"></div></div>
+  </div>
+</div>
 <script>
 const BASE="https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/live/";
 const FEED=new URLSearchParams(location.search).get("botFeed")||BASE+"copybot_live.json";
 const N=6;
 const G="#3fd17a",R="#ff6b6b",DIM="#8b9bb0",AMB="#f5c451",TXT="#e6edf3";
-let D=null,OFFLINE=false,P=null,S=null,SERR=false;
+let D=null,FULL=null,OFFLINE=false,P=null,S=null,SERR=false,MW=null,MTAB="followed";
 let TAB="open",EXP={},EXPMISS=false,BTTAB="current",BTEXP={},HOW=false,SORT={k:"pnl30",dir:-1};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
@@ -141,6 +159,8 @@ const timeStr=ts=>ts?new Date(ts*1000).toLocaleString(undefined,{month:"short",d
 const ep=s=>{if(!s)return 0;const t=Date.parse(String(s).replace(" ","T"));return isNaN(t)?0:t/1000;};
 const STAT={open:["OPEN","pblue"],won:["WON","pgreen"],lost:["LOST","pred"],closed:["SOLD","pgrey"],sold:["SOLD","pgrey"],refund:["REFUND","pamber"]};
 const EDGE={won:G,lost:R,closed:"#5a6b80",sold:"#5a6b80",refund:AMB};
+function mkBotMiss(m){const s=m.status==="open"?["LIVE","pblue"]:(STAT[m.status]||[String(m.status||"—").toUpperCase(),"pgrey"]);
+  return {nm:m.name||"",ago:ago(m.ts),mkt:(m.outcome?m.outcome+" · ":"")+(m.title||""),reason:m.reason||"",px:Math.round((m.price||0)*100)+"¢",stake:money(m.stake||0),res:s[0],pillCls:s[1],pl:m.pnl==null?"—":sgn(m.pnl),plC:m.pnl==null?DIM:cOf(m.pnl)};}
 function spark(vals,cap){if(vals.length<2)return "";const mn=Math.min(0,...vals),mx=Math.max(0,...vals),rg=(mx-mn)||1;
   const pts=vals.map((v,i)=>(4+i/(vals.length-1)*222).toFixed(1)+","+(54-(v-mn)/rg*48).toFixed(1)).join(" ");
   const c=vals[vals.length-1]>=0?G:R;
@@ -188,14 +208,14 @@ function setTab(t){TAB=t;renderBot();}
 function tglExp(){if(TAB==="missed")EXPMISS=!EXPMISS;else EXP[TAB]=!EXP[TAB];renderBot();}
 function renderBot(){
   const d=D||{};
-  const bets=d.bets||[],FOL=new Set(d.wallets||[]),CLS=d.classes||{};
+  const bets=(FULL&&FULL.bets)||d.bets||[],FOL=new Set(d.wallets||[]),CLS=d.classes||{};
   const open=bets.filter(b=>b.status==="open").sort((a,b)=>(b.opened||0)-(a.opened||0)).map(b=>mkRow(b,FOL,CLS));
   const resRaw=bets.filter(b=>b.status!=="open").sort((a,b)=>(b.opened||0)-(a.opened||0));
   const res=resRaw.map(b=>mkRow(b,FOL,CLS));
   const rw=resRaw.filter(b=>b.status==="won").length,rl=resRaw.filter(b=>b.status==="lost").length,
     rr=resRaw.filter(b=>b.status==="refund").length,rs=resRaw.filter(b=>b.status==="closed"||b.status==="sold").length;
-  const missAll=(d.missed||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0)).map(m=>{const s=m.status==="open"?["LIVE","pblue"]:(STAT[m.status]||[String(m.status||"—").toUpperCase(),"pgrey"]);
-    return {nm:m.name||"",ago:ago(m.ts),mkt:(m.outcome?m.outcome+" · ":"")+(m.title||""),reason:m.reason||"",px:Math.round((m.price||0)*100)+"¢",stake:money(m.stake||0),res:s[0],pillCls:s[1],pl:m.pnl==null?"—":sgn(m.pnl),plC:m.pnl==null?DIM:cOf(m.pnl)};});
+  const missSrc=(FULL&&FULL.missed)||d.missed||[];
+  const missAll=missSrc.slice().sort((a,b)=>(b.ts||0)-(a.ts||0)).map(mkBotMiss);
   const cash=d.cash||0,dep=d.deployed||0,resv=d.reserve||0,pnl=d.realized||0,bank=d.bankroll||1000;
   const L=d.lag||{},drift=d.ledger_drift||0;
   const fees=bets.reduce((s,b)=>s+(b.fee||0),0);
@@ -211,24 +231,36 @@ function renderBot(){
   $("spark").innerHTML=spark(vals,"realized P&amp;L, bet by bet");
   const sizing=d.stake_pct?(d.stake_pct*100).toFixed(0)+"% equity/bet (now $"+Math.round(d.stake||0)+")":"$"+(d.stake||50)+"/bet";
   $("heroline").innerHTML=D?`<span><b>${money(cash)}</b> free cash (${Math.round(cash/(bank||1)*100)}% of ${money(bank)} book)</span><span><b>${money(dep)}</b> deployed · ${d.open_count||open.length} open</span><span title="${esc(sizing)}${d.event_cap?" · max "+d.event_cap+" bets/event":""} · free cash gates new bets">${esc(sizing)}</span>`:"";
+  const lf=d.last_fill;
   $("health").innerHTML=`
 <div><div class="hv">${L.avg_s!=null?Math.round(L.avg_s)+"s":"—"}</div><div class="hs">exec lag 24h</div></div>
 <div><div class="hv">${L.avg_slip_pct!=null?(L.avg_slip_pct*100).toFixed(1)+"%":"—"}</div><div class="hs" title="${L.n24!=null?L.n24+" fills in 24h":(L.n||0)+" copies"}">avg slippage</div></div>
 <div><div class="hv" style="color:${Math.abs(drift)>0.01?R:G}" title="drift = cash vs what the ledger implies">${Math.abs(drift)>0.01?sgn(drift):"✓ ok"}</div><div class="hs">ledger check</div></div>
-<div><div class="hv">${money(fees)}</div><div class="hs">fees paid</div></div>`;
-  const agg={};(d.wallets||[]).forEach(n=>agg[n]={addr:null,bets:0,w:0,l:0,r:0,s:0,inv:0,real:0});
-  for(const b of bets){const a=agg[b.name]||(agg[b.name]={addr:null,bets:0,w:0,l:0,r:0,s:0,inv:0,real:0});
-    a.addr=a.addr||b.wallet;a.bets++;
-    if(b.status==="open")a.inv+=b.cost||0;
-    else if(b.status==="won"){a.w++;a.real+=b.pnl||0;}
-    else if(b.status==="lost"){a.l++;a.real+=b.pnl||0;}
-    else if(b.status==="refund"){a.r++;a.real+=b.pnl||0;}
-    else if(b.pnl!=null){a.s++;a.real+=b.pnl;}}
-  $("wallets").innerHTML=Object.entries(agg).sort((a,b)=>b[1].bets-a[1].bets).map(([n,a])=>{const nn=a.w+a.l;const un=!FOL.has(n);
-    const rec=(a.w+a.l+a.r+a.s)?(a.w+"–"+a.l+(a.r?" +"+a.r+"R":"")+(a.s?" +"+a.s+"S":"")):"—";
-    return `<div class="wcard" style="opacity:${un?".55":"1"}" ${un?'title="no longer followed — historical bets stay in the book"':""}>
-<div style="display:flex;align-items:baseline;gap:6px">${a.addr?`<a href="https://polymarket.com/profile/${a.addr}" target="_blank" class="nm ell" style="font-size:12.5px">${esc(n)}</a>`:`<span class="nm ell" style="font-size:12.5px">${esc(n)}</span>`}${CLS[n]==="whale"?'<span class="wtag" style="font-size:9px">whale</span>':""}<span style="font-size:14px;font-weight:700;margin-left:auto;color:${cOf(a.real)}">${sgn(a.real)}</span></div>
-<div class="sub" style="font-size:10.5px;margin-top:3px">${a.bets} bets · ${rec} · ${nn?Math.round(100*a.w/nn)+"%":"—"} win · ${money(a.inv)} open</div></div>`;}).join("");
+<div><div class="hv">${money(fees)}</div><div class="hs">fees paid</div></div>
+<div style="grid-column:1/-1"><div class="hv" style="font-size:14px" ${lf?`title="${esc((lf.side||"")+" "+(lf.outcome?lf.outcome+" · ":"")+(lf.title||""))} @ ${lf.price}"`:""}>${lf?ago(lf.ts):"—"}${lf?` <span class="dim" style="font-weight:400;font-size:11.5px">· ${esc(lf.side==="SELL"?"sold":"bought")} ${esc((lf.outcome?lf.outcome+" · ":"")+(lf.title||"")).slice(0,46)}</span>`:""}</div><div class="hs">last trade placed</div></div>`;
+  const addrOf={};for(const b of bets)if(b.name&&b.wallet&&!addrOf[b.name])addrOf[b.name]=b.wallet;
+  const missAgg={};for(const m of missSrc){const n=m.name||"";const a=missAgg[n]||(missAgg[n]={n:0,pnl:0});a.n++;if(m.pnl!=null)a.pnl+=m.pnl;}
+  const WP=d.wallet_pnl;
+  if(WP){
+    $("wallets").innerHTML=Object.entries(WP)
+      .sort((a,b)=>(FOL.has(b[0])-FOL.has(a[0]))||((b[1].last_ts||0)-(a[1].last_ts||0)))
+      .map(([n,w])=>{const un=!FOL.has(n);const addr=addrOf[n];
+        const win=w.n?Math.round(100*w.wins/w.n)+"%":"—";
+        const mn=w.miss_n!=null?w.miss_n:(missAgg[n]?missAgg[n].n:0);
+        const mp=w.miss_pnl!=null?w.miss_pnl:(missAgg[n]?missAgg[n].pnl:0);
+        return `<div class="wcard" style="opacity:${un?".55":"1"}" onclick="openW('${esc(n)}')" title="${un?'no longer followed — history kept · ':''}click for every followed + missed trade">
+<div style="display:flex;align-items:baseline;gap:6px">${addr?`<a href="https://polymarket.com/profile/${addr}" target="_blank" class="nm ell" style="font-size:12.5px" onclick="event.stopPropagation()">${esc(n)}</a>`:`<span class="nm ell" style="font-size:12.5px">${esc(n)}</span>`}${CLS[n]==="whale"?'<span class="wtag" style="font-size:9px">whale</span>':""}<span style="font-size:14px;font-weight:700;margin-left:auto;color:${cOf(w.realized)}">${sgn(w.realized)}</span></div>
+<div class="sub" style="font-size:10.5px;margin-top:3px">lifetime · ${w.n} settled · ${w.wins}W (${win}) · ${money(w.open_cost)} open${w.open_n?" ("+w.open_n+")":""}</div>
+<div class="sub" style="font-size:10.5px;margin-top:2px" title="skips + what the skipped stakes would have returned">${mn} missed${mn?` · <span style="color:${cOf(mp)}">${sgn(mp)}</span> would-be`:""}</div></div>`;}).join("");
+  }else{
+    const agg={};(d.wallets||[]).forEach(n=>agg[n]={addr:null,bets:0,w:0,l:0,inv:0,real:0});
+    for(const b of bets){const a=agg[b.name]||(agg[b.name]={addr:null,bets:0,w:0,l:0,inv:0,real:0});
+      a.addr=a.addr||b.wallet;a.bets++;
+      if(b.status==="open")a.inv+=b.cost||0;else if(b.pnl!=null){a.real+=b.pnl;if(b.status==="won")a.w++;if(b.status==="lost")a.l++;}}
+    $("wallets").innerHTML=Object.entries(agg).sort((a,b)=>b[1].bets-a[1].bets).map(([n,a])=>
+      `<div class="wcard" onclick="openW('${esc(n)}')"><div style="display:flex;align-items:baseline;gap:6px"><span class="nm ell" style="font-size:12.5px">${esc(n)}</span><span style="font-size:14px;font-weight:700;margin-left:auto;color:${cOf(a.real)}">${sgn(a.real)}</span></div>
+<div class="sub" style="font-size:10.5px;margin-top:3px">${a.bets} bets · ${a.w}–${a.l} · ${money(a.inv)} open</div></div>`).join("");
+  }
   $("tabOpen").innerHTML="Open · "+open.length;
   $("tabResolved").innerHTML="Resolved · "+res.length+(res.length?" · "+rw+"W/"+rl+"L":"");
   $("tabMissed").innerHTML="Missed · "+missAll.length+(d.missed_pnl?" · "+sgn(d.missed_pnl):"");
@@ -351,9 +383,45 @@ function renderSharps(){
 <div style="display:flex;align-items:center;gap:10px;margin-top:6px;font-size:11.5px;color:${DIM};flex-wrap:wrap"><span>30d <b style="color:${TXT}">${r.w30}</b> (${r.rec30})</span><span>30d P&L <b style="color:${r.pnl30C}">${r.pnl30}</b></span><span>open <b style="color:${r.openC}">${r.open}</b></span><span>all-time <b style="color:${r.allC}">${r.all}</b></span></div></div>`).join("")
   ||head+'<div class="loading">no data</div>';
 }
+/* ── wallet drill-down modal ── */
+function openW(n){MW=n;MTAB="followed";renderModal();$("ovl").classList.add("on");}
+function closeW(){MW=null;$("ovl").classList.remove("on");}
+function setMTab(t){MTAB=t;renderModal();}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeW();});
+function renderModal(){
+  if(!MW)return;
+  const d=D||{},FOL=new Set(d.wallets||[]),CLS=d.classes||{};
+  const wb=((FULL&&FULL.bets)||d.bets||[]).filter(b=>b.name===MW)
+    .sort((a,b)=>((b.settled||b.opened||0)-(a.settled||a.opened||0)));
+  const wm=((FULL&&FULL.missed)||d.missed||[]).filter(m=>(m.name||"")===MW)
+    .sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const wp=(d.wallet_pnl||{})[MW];
+  const mp=wm.reduce((s,m)=>s+(m.pnl||0),0);
+  $("mtitle").textContent=MW;
+  $("msub").innerHTML=(wp?`lifetime <b style="color:${cOf(wp.realized)}">${sgn(wp.realized)}</b> · ${wp.n} settled · ${wp.wins}W · ${money(wp.open_cost)} open · missed <b style="color:${cOf(mp)}">${sgn(mp)}</b> would-be`:"")
+    +(FULL?"":' <span style="color:'+AMB+'">· full history still loading — showing recent window</span>');
+  $("mtabF").innerHTML="Followed · "+wb.length;
+  $("mtabM").innerHTML="Missed · "+wm.length;
+  $("mtabF").classList.toggle("on",MTAB==="followed");
+  $("mtabM").classList.toggle("on",MTAB==="missed");
+  let html;
+  if(MTAB==="missed"){
+    html=MH+wm.map(mkBotMiss).map(missRowH).join("");
+    if(!wm.length)html+=`<div class="loading">no skips recorded for ${esc(MW)}</div>`;
+  }else{
+    html=BH+wb.map(b=>mkRow(b,FOL,CLS)).map(betRow).join("");
+    if(!wb.length)html+=`<div class="loading">no copies recorded for ${esc(MW)}</div>`;
+  }
+  $("mbook").innerHTML=html;
+}
 /* ── boot ── */
-function loadBot(){fetch(FEED,{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();})
-  .then(d=>{D=d;OFFLINE=false;renderBot();}).catch(()=>{OFFLINE=true;renderBot();});}
+const FULLURL=FEED.replace(/\.json$/,"_full.json");
+function loadBot(){
+  fetch(FEED,{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();})
+    .then(d=>{D=d;OFFLINE=false;renderBot();if(MW)renderModal();}).catch(()=>{OFFLINE=true;renderBot();});
+  fetch(FULLURL,{cache:"no-store"}).then(r=>r.ok?r.json():null)
+    .then(f=>{if(f){FULL=f;renderBot();if(MW)renderModal();}}).catch(()=>{});
+}
 loadBot();setInterval(loadBot,30000);
 fetch(BASE+"portfolio.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();}).then(p=>{P=p;renderBT();}).catch(()=>{});
 fetch(BASE+"watch_sharps.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();}).then(s=>{S=s;renderSharps();}).catch(()=>{SERR=true;renderSharps();});
