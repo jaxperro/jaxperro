@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Oracle — Study B Paper Harness</title>
+<link rel="icon" type="image/png" sizes="512x512" href="/assets/flavorcon.png" />
+<style>
+:root{--bg:#0a0e14;--panel:#121822;--panel2:#0f141c;--border:#1f2a38;--text:#e6edf3;--dim:#8b9bb0;--green:#3fd17a;--red:#ff6b6b;--accent:#5bb0ff;--amber:#f5c451}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+.wrap{max-width:1040px;margin:0 auto;padding:26px 20px 60px}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.dim{color:var(--dim)}
+header{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h1{font-size:17px;margin:0;font-weight:700}
+.pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;white-space:nowrap}
+.pgreen{background:rgba(63,209,122,.13);color:var(--green)}.pred{background:rgba(255,107,107,.13);color:var(--red)}
+.pblue{background:rgba(91,176,255,.13);color:var(--accent)}.pgrey{background:rgba(139,155,176,.15);color:var(--dim)}.pamber{background:rgba(245,196,81,.15);color:var(--amber)}
+.hg{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px;margin-top:16px}
+.hero{background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:14px;padding:20px 24px}
+.side{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px 20px}
+.eq{font-size:40px;font-weight:700;letter-spacing:-.5px;line-height:1.1}
+.klabel{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--dim)}
+.heroline{display:flex;gap:16px;margin-top:16px;font-size:12px;color:var(--dim);flex-wrap:wrap}
+.heroline b{color:var(--text)}
+.syms{display:grid;grid-template-columns:1fr;gap:6px;margin-top:10px;font-size:12.5px}
+.symrow{display:flex;align-items:baseline;gap:8px}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none;position:relative;top:-1px}
+.cells{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+.cell{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px 18px}
+.cv{font-size:24px;font-weight:700;margin-top:2px}
+.cs{font-size:11px;color:var(--dim);margin-top:4px;line-height:1.6}
+.tabs{display:flex;gap:6px;margin:18px 0 12px;flex-wrap:wrap}
+.tab{font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:9px;cursor:pointer;user-select:none;border:1px solid var(--border);color:var(--dim)}
+.tab.on{border-color:#2c3e57;color:var(--text);background:#17202c}
+.tbl{border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden}
+.og{display:grid;grid-template-columns:90px minmax(0,1fr) 80px 70px 80px 100px;gap:12px;align-items:center;padding:9px 16px}
+.eg{display:grid;grid-template-columns:90px minmax(0,1fr) 80px 70px 90px 100px;gap:12px;align-items:center;padding:9px 16px}
+.kg{display:grid;grid-template-columns:90px minmax(0,1fr) 120px 70px;gap:12px;align-items:center;padding:9px 16px}
+.thead{font-size:10.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--dim);background:var(--panel2)}
+.thead [title]{cursor:help}
+.row{border-top:1px solid #1a2330}
+.r{text-align:right}
+.ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mkt{font-size:13px;font-weight:500}
+.sub{font-size:11px;color:var(--dim)}
+.more{padding:10px 16px;border-top:1px solid #1a2330;font-size:11.5px;color:var(--accent);cursor:pointer;user-select:none;text-align:center}
+.loading{padding:16px;font-size:12.5px;color:var(--dim)}
+.mcard{display:none;padding:10px 14px;border-top:1px solid #1a2330}
+.note{color:var(--dim);font-size:12px;margin-top:22px;line-height:1.7}
+@media(max-width:760px){.og,.eg,.kg{display:none!important}.mcard{display:block}.hg,.cells{grid-template-columns:1fr}.eq{font-size:32px}.wrap{padding:18px 14px 48px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>Oracle — Study B</h1><span id="pill" class="pill pamber">PAPER</span><span id="upd" class="sub" style="font-size:12px">loading feed…</span>
+    <a href="https://github.com/jaxperro/winning-wallet-finder/issues/17" target="_blank" rel="noopener" style="margin-left:auto;font-size:12.5px">pre-registration #17 ↗</a>
+    <a href="/surge/" style="font-size:12.5px">← surge (Study A)</a>
+    <a href="/live/" style="font-size:12.5px">← real money</a></header>
+  <div class="hg">
+    <div class="hero">
+      <div style="display:flex;gap:20px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
+        <div><div class="klabel">Realized paper P&amp;L</div><div class="eq" id="pnl">—</div><div id="pnlsub" style="font-size:14px;font-weight:600;margin-top:4px"></div></div>
+        <div id="spark"></div>
+      </div>
+      <div class="heroline" id="heroline"></div>
+    </div>
+    <div class="side"><div class="klabel" title="the venue's own Binance settlement feed — fair value is computed tick-by-tick on it">Oracle feed health</div><div class="syms" id="syms"></div></div>
+  </div>
+  <div class="cells" id="cells"></div>
+  <div class="tabs">
+    <div class="tab on" id="tabOpen" onclick="setTab('open')">Open · —</div>
+    <div class="tab" id="tabSettled" onclick="setTab('settled')">Settled · —</div>
+    <div class="tab" id="tabSkips" onclick="setTab('skips')">Skips · —</div>
+  </div>
+  <div class="tbl" id="book"><div class="loading">loading oracle feed…</div></div>
+  <div class="note"><b style="color:#c9d6e5">Paper money, measurement mode.</b> This harness prices every crypto strike/sprint
+    market as a digital option on Polymarket's own Binance settlement feed (fair = Φ(ln(S/K)/σ√τ), σ = trailing 30-min realized vol)
+    and paper-FAKs $100 at the live CLOB book whenever a trade prints ≥ 4¢ below fair (cooldown 300s/token, τ 1min–12h, one-touch excluded).
+    No bank, no sizing — it exists to measure whether the tape sim's mispricings are <i>capturable at real latency</i>.
+    Settles are provisional (own-feed tick, then CLOB flags) until the nightly re-grade against on-chain payout vectors (CHAIN badge).
+    <b style="color:#c9d6e5">The Study B verdict binds to the forward ledger only</b> — a good harness cannot rescue a
+    <a href="https://github.com/jaxperro/winning-wallet-finder/issues/17" target="_blank">#17</a> KILL, it can only seed a pre-registered v2.
+    Feed: <a href="https://wwf-oraclebot.fly.dev/feed" target="_blank">wwf-oraclebot.fly.dev/feed</a> · refreshes every 20s.</div>
+</div>
+<script>
+const FEED="https://wwf-oraclebot.fly.dev/feed";
+const LEDGER="https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/research/oracle_paper_ledger.jsonl";
+const N=8;
+const G="#3fd17a",R="#ff6b6b",DIM="#8b9bb0",AMB="#f5c451";
+const SYMNAMES={btcusdt:"BTC",ethusdt:"ETH",solusdt:"SOL",xrpusdt:"XRP",bnbusdt:"BNB",dogeusdt:"DOGE"};
+let D=null,OFFLINE=false,CHAIN={},LROWS=[],TAB="open",EXP={};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+const money=n=>(n<0?"-$":"$")+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:Math.abs(n)>=100?0:2});
+const sgn=n=>(n>=0?"+":"")+money(n);
+const cOf=n=>n>=0?G:R;
+const ageStr=s=>{s=Math.max(0,s);return s<90?Math.round(s)+"s":s<5400?Math.round(s/60)+"m":s<172800?Math.round(s/3600)+"h":Math.round(s/86400)+"d";};
+const ago=ts=>ts?ageStr(Date.now()/1000-ts)+" ago":"—";
+const px=n=>n==null?"—":n>=1000?Math.round(n).toLocaleString():n>=1?n.toLocaleString(undefined,{maximumFractionDigits:2}):n.toPrecision(3);
+function spark(vals){if(vals.length<2)return "";const mn=Math.min(0,...vals),mx=Math.max(0,...vals),rg=(mx-mn)||1;
+  const pts=vals.map((v,i)=>(4+i/(vals.length-1)*222).toFixed(1)+","+(54-(v-mn)/rg*48).toFixed(1)).join(" ");
+  const c=vals[vals.length-1]>=0?G:R;
+  return `<div style="text-align:right"><svg width="180" height="52" viewBox="0 0 230 60" preserveAspectRatio="none" style="display:block"><polyline points="${pts}" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg><div class="sub" style="font-size:10.5px;margin-top:2px">settled P&amp;L, chain-graded where available</div></div>`;}
+function setTab(t){TAB=t;render();}
+function tglExp(){EXP[TAB]=!EXP[TAB];render();}
+function graded(s){const c=CHAIN[s.asset+"|"+s.ts];return c?{pnl:c.chain_pnl,pay:c.chain_payout,badge:["CHAIN","pgreen"],flip:c.flip}:{pnl:s.pnl,pay:s.payout,badge:["PROV","pgrey"],flip:false};}
+function cellCard(E,cell){
+  const key=E.toFixed(2).replace(/^0\.10$/,"0.1");
+  const chain=LROWS.filter(r=>(r.edge||0)>=E);
+  const useChain=chain.length>0;
+  const fills=useChain?chain.length:(cell.fills||0);
+  const wins=useChain?chain.filter(r=>r.chain_payout===1).length:(cell.wins||0);
+  const pnl=useChain?chain.reduce((s,r)=>s+(r.chain_pnl||0),0):(cell.pnl||0);
+  const ev=fills?pnl/fills:null,hit=fills?wins/fills:null;
+  const att=cell.attempts||0,crat=cell.craters||0;
+  const cratePct=att?Math.round(100*crat/att):null;
+  return `<div class="cell"><div class="klabel">edge ≥ ${Math.round(E*100)}¢ <span class="pill ${useChain?"pgreen":"pgrey"}" style="margin-left:6px">${useChain?"CHAIN":"PROV"}</span></div>
+  <div class="cv" style="color:${ev==null?"var(--dim)":cOf(ev)}">${ev==null?"—":sgn(ev)+"/fill"}</div>
+  <div class="cs">${fills} fills · hit ${hit==null?"—":(100*hit).toFixed(0)+"%"} · ${cell.events||0} events<br>
+  ${crat} craters${cratePct!=null?" ("+cratePct+"% of attempts)":""}${cell.throttle?" · "+cell.throttle+" throttled":""}</div></div>`;}
+function render(){
+  const d=D||{};
+  const open=(d.open||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const settled=(d.settled||[]).slice().sort((a,b)=>(b.settled_ts||0)-(a.settled_ts||0));
+  const skips=(d.skips||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const c=d.counters||{},sk=c.skip||{};
+  $("pill").textContent=OFFLINE?"OFFLINE":"PAPER";
+  $("pill").className="pill "+(OFFLINE?"pred":"pamber");
+  $("upd").textContent=OFFLINE?"feed unreachable — retrying":"updated "+ago(d.updated);
+  const chainTot=LROWS.reduce((s,r)=>s+(r.chain_pnl||0),0);
+  const provTot=settled.filter(s=>!CHAIN[s.asset+"|"+s.ts]).reduce((s,x)=>s+(x.pnl||0),0);
+  const tot=LROWS.length||settled.length?chainTot+provTot:(d.pnl_realized||0);
+  $("pnl").innerHTML=D?`<span style="color:${cOf(tot)}">${sgn(tot)}</span>`:"—";
+  const W=settled.filter(s=>graded(s).pay===1).length,L=settled.filter(s=>graded(s).pay===0).length;
+  $("pnlsub").innerHTML=D?`<span class="dim">flat $100 paper FAKs · ${W}W / ${L}L recent settles · ${c.settled_total??0} lifetime</span>`:"";
+  let cum=0;const vals=settled.slice().reverse().map(s=>cum+=graded(s).pnl||0);
+  $("spark").innerHTML=spark(vals);
+  const capt=c.attempts?Math.round(100*c.fills/c.attempts):null;
+  $("heroline").innerHTML=D?`<span><b>${c.events??"—"}</b> events</span><span><b>${c.attempts??"—"}</b> attempts</span><span><b>${c.fills??"—"}</b> fills${capt!=null?` <b style="color:${capt>=50?G:AMB}">(${capt}% capture)</b>`:""}</span><span><b>${c.craters??"—"}</b> craters</span><span title="warmup / stale-feed / pre-window / s0-gap / no-vol / tau / book-fail">skips <b>${(sk.warmup??0)+(sk.stale??0)+(sk.pre_window??0)+(sk.s0_gap??0)+(sk.no_vol??0)+(sk.tau??0)+(sk.book_fail??0)}</b></span>`:"";
+  const syms=d.symbols||{};
+  $("syms").innerHTML=Object.keys(SYMNAMES).map(k=>{const s=syms[k]||{};
+    const ok=s.fresh&&s.warm,warming=s.fresh&&!s.warm;
+    const col=ok?G:warming?AMB:R;
+    const lab=ok?"live":warming?(s.warm_eta_s?`warming ${Math.ceil(s.warm_eta_s/60)}m`:"warming"):"stale";
+    const vol=s.vol_1s?(s.vol_1s*1e4).toFixed(1)+"bp/√s":"—";
+    return `<div class="symrow"><span class="dot" style="background:${col}"></span><b style="width:44px">${SYMNAMES[k]}</b><span style="flex:1">${px(s.px)}</span><span class="dim" title="trailing 30-min realized vol of 1s log-returns">${vol}</span><span class="pill ${ok?"pgreen":warming?"pamber":"pred"}">${lab}</span></div>`;}).join("");
+  const cells=d.cells||{};
+  $("cells").innerHTML=D?[0.04,0.07,0.10].map(E=>cellCard(E,cells[E===0.10?"0.1":E.toFixed(2)]||{})).join(""):"";
+  $("tabOpen").innerHTML="Open · "+open.length;
+  $("tabSettled").innerHTML="Settled · "+settled.length;
+  $("tabSkips").innerHTML="Skips · "+skips.length;
+  ["Open","Settled","Skips"].forEach(t=>$("tab"+t).classList.toggle("on",TAB===t.toLowerCase()));
+  const exp=!!EXP[TAB];
+  let html;
+  const edgec=e=>`<span title="fair minus print at trigger">+${Math.round((e||0)*100)}¢</span>`;
+  if(TAB==="open"){
+    const rows=exp?open:open.slice(0,N);
+    const eta=p=>{if(!p.t1)return["—",DIM,""];const dt=p.t1-Date.now()/1000;
+      const t=new Date(p.t1*1000).toLocaleString();
+      return dt<=0?["settling…",AMB,t]:["in "+ageStr(dt).replace(" ago",""),DIM,t];};
+    html=`<div class="og thead"><div>When</div><div>Market</div><div class="r" title="paper FAK VWAP against the live book, capped at print×1.05">Entry</div><div class="r" title="fair − print at trigger">Edge</div><div class="r">Stake</div><div class="r" title="market expiry from the title (τ)">Resolves</div></div>`
+      +rows.map(p=>{const[e,ec,et]=eta(p);return `<div class="og row"><div class="sub">${ago(p.ts)}</div><div class="mkt ell" title="${esc(p.title)} · fair ${Math.round(p.fair*100)}¢ vs print ${Math.round(p.p_ref*100)}¢">${esc((p.outcome?p.outcome+" · ":"")+p.title)}</div><div class="r">${Math.round(p.price*100)}¢${p.partial?"*":""}</div><div class="r" style="color:${G}">${edgec(p.edge)}</div><div class="r">${money(p.cost)}</div><div class="r" style="font-size:12px;color:${ec}" title="${et}">${e}</div></div>
+<div class="mcard"><div class="mkt ell">${esc((p.outcome?p.outcome+" · ":"")+p.title)}</div><div class="sub" style="margin-top:3px">${ago(p.ts)} · ${Math.round(p.price*100)}¢ · ${money(p.cost)} · edge +${Math.round(p.edge*100)}¢ · <span style="color:${ec}">${e}</span></div></div>`;}).join("");
+    if(!open.length)html+=`<div class="loading">${D?"no open lots — waiting for a ≥4¢ mispricing":"loading…"}</div>`;
+    if(open.length>N)html+=`<div class="more" onclick="tglExp()">${exp?"Show top "+N:"View all "+open.length+" →"}</div>`;
+  }else if(TAB==="settled"){
+    const rows=exp?settled:settled.slice(0,N);
+    html=`<div class="eg thead"><div>When</div><div>Market</div><div class="r">Entry</div><div class="r">Edge</div><div class="r" title="CHAIN = re-graded against on-chain payout vectors · PROV = own-feed tick or CLOB flags, pending nightly re-grade">Grade</div><div class="r">P&amp;L</div></div>`
+      +rows.map(s=>{const g=graded(s);return `<div class="eg row" style="box-shadow:inset 2px 0 0 ${g.pay===1?G:g.pay===0.5?AMB:R}"><div class="sub">${ago(s.settled_ts)}</div><div class="mkt ell" title="${esc(s.title)} · settled via ${esc(s.source)}">${esc((s.outcome?s.outcome+" · ":"")+s.title)}</div><div class="r">${Math.round(s.price*100)}¢</div><div class="r">${edgec(s.edge)}</div><div class="r"><span class="pill ${g.badge[1]}">${g.badge[0]}${g.flip?" ⚠":""}</span></div><div class="r" style="font-weight:600;color:${cOf(g.pnl)}">${sgn(g.pnl)}</div></div>
+<div class="mcard" style="box-shadow:inset 2px 0 0 ${g.pay===1?G:g.pay===0.5?AMB:R}"><div class="mkt ell">${esc((s.outcome?s.outcome+" · ":"")+s.title)}</div><div class="sub" style="margin-top:3px">${ago(s.settled_ts)} · ${Math.round(s.price*100)}¢ · edge +${Math.round(s.edge*100)}¢ · <span class="pill ${g.badge[1]}" style="font-size:9px">${g.badge[0]}</span> <b style="color:${cOf(g.pnl)}">${sgn(g.pnl)}</b></div></div>`;}).join("");
+    if(!settled.length)html+=`<div class="loading">${D?"nothing settled yet — sprints settle within minutes of expiry":"loading…"}</div>`;
+    if(settled.length>N)html+=`<div class="more" onclick="tglExp()">${exp?"Show top "+N:"View all "+settled.length+" →"}</div>`;
+  }else{
+    const rows=exp?skips:skips.slice(0,N);
+    html=`<div class="kg thead"><div>When</div><div>Market</div><div class="r" title="ref = trigger print · ask = live best ask (crater = no ask inside ref×1.05)">Ref → ask</div><div class="r">Edge</div></div>`
+      +rows.map(k=>`<div class="kg row"><div class="sub">${ago(k.ts)}</div><div style="min-width:0"><div class="mkt ell" title="${esc(k.title)}">${esc(k.title)}</div><div style="font-size:11px;color:${AMB}">${esc(k.why||"crater")}</div></div><div class="r">${Math.round((k.p_ref||0)*100)}¢ → ${k.ba?Math.round(k.ba*100)+"¢":"—"}</div><div class="r dim">${edgec(k.edge)}</div></div>
+<div class="mcard"><div class="mkt ell">${esc(k.title)}</div><div class="sub" style="margin-top:3px">${ago(k.ts)} · <span style="color:${AMB}">${esc(k.why||"crater")}</span> · ${Math.round((k.p_ref||0)*100)}¢ → ${k.ba?Math.round(k.ba*100)+"¢":"—"} · edge +${Math.round((k.edge||0)*100)}¢</div></div>`).join("");
+    if(!skips.length)html+=`<div class="loading">${D?"no craters logged yet":"loading…"}</div>`;
+    if(skips.length>N)html+=`<div class="more" onclick="tglExp()">${exp?"Show top "+N:"View all "+skips.length+" →"}</div>`;
+  }
+  $("book").innerHTML=html;
+}
+function load(){
+  fetch(FEED,{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();})
+    .then(d=>{D=d;OFFLINE=false;render();}).catch(()=>{OFFLINE=true;render();});
+  fetch(LEDGER,{cache:"no-store"}).then(r=>r.ok?r.text():"").then(t=>{
+    const m={},rows=[];t.split("\n").forEach(l=>{if(!l.trim())return;try{const d=JSON.parse(l);m[d.asset+"|"+d.ts]=d;rows.push(d);}catch(e){}});
+    CHAIN=m;LROWS=rows;if(D)render();}).catch(()=>{});
+}
+load();setInterval(load,20000);
+</script>
+</body>
+</html>
