@@ -61,12 +61,12 @@ h1{font-size:17px;margin:0;font-weight:700}
   <div class="hg">
     <div class="hero">
       <div style="display:flex;gap:20px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
-        <div><div class="klabel">Realized paper P&amp;L</div><div class="eq" id="pnl">—</div><div id="pnlsub" style="font-size:14px;font-weight:600;margin-top:4px"></div></div>
+        <div><div class="klabel">Paper P&amp;L</div><div class="eq" id="pnl">—</div><div id="pnlsub" style="font-size:14px;font-weight:600;margin-top:4px"></div></div>
         <div id="spark"></div>
       </div>
       <div class="heroline" id="heroline"></div>
     </div>
-    <div class="side"><div class="klabel" title="the venue's own Binance settlement feed — fair value is computed tick-by-tick on it">Oracle feed health</div><div class="syms" id="syms"></div></div>
+    <div class="side"><div class="klabel" title="the venue's own Binance settlement feed — fair value is computed tick-by-tick on it">Feed health</div><div class="syms" id="syms"></div></div>
   </div>
   <div class="cells" id="cells"></div>
   <div class="tabs">
@@ -133,12 +133,13 @@ function render(){
   const provTot=settled.filter(s=>!CHAIN[s.asset+"|"+s.ts]).reduce((s,x)=>s+(x.pnl||0),0);
   const tot=LROWS.length||settled.length?chainTot+provTot:(d.pnl_realized||0);
   $("pnl").innerHTML=D?`<span style="color:${cOf(tot)}">${sgn(tot)}</span>`:"—";
-  const W=settled.filter(s=>graded(s).pay===1).length,L=settled.filter(s=>graded(s).pay===0).length;
-  $("pnlsub").innerHTML=D?`<span class="dim">flat $100 paper FAKs · ${W}W / ${L}L recent settles · ${c.settled_total??0} lifetime</span>`:"";
+  const pays=[...LROWS.map(r=>r.chain_payout),...settled.filter(s=>!CHAIN[s.asset+"|"+s.ts]).map(s=>s.payout)];
+  const W=pays.filter(p=>p===1).length,R=pays.filter(p=>p===0.5).length,L=pays.length-W-R;
+  $("pnlsub").innerHTML=D?`<span class="dim">${W}W / ${L}L${R?" / "+R+"R":""} settled · ${c.settled_total??0} lifetime</span>`:"";
   let cum=0;const vals=settled.slice().reverse().map(s=>cum+=graded(s).pnl||0);
   $("spark").innerHTML=spark(vals);
   const capt=c.attempts?Math.round(100*c.fills/c.attempts):null;
-  $("heroline").innerHTML=D?`<span><b>${c.events??"—"}</b> events</span><span><b>${c.attempts??"—"}</b> attempts</span><span><b>${c.fills??"—"}</b> fills${capt!=null?` <b style="color:${capt>=50?G:AMB}">(${capt}% capture)</b>`:""}</span><span><b>${c.craters??"—"}</b> craters</span><span title="warmup / stale-feed / pre-window / s0-gap / no-vol / tau / book-fail">skips <b>${(sk.warmup??0)+(sk.stale??0)+(sk.pre_window??0)+(sk.s0_gap??0)+(sk.no_vol??0)+(sk.tau??0)+(sk.book_fail??0)}</b></span>`:"";
+  $("heroline").innerHTML=D?`<span><b>${c.events??"—"}</b> events · <b>${c.fills??"—"}</b> fills${capt!=null?` <b style="color:${capt>=50?G:AMB}">(${capt}% capture)</b>`:""}</span><span><b>${c.craters??"—"}</b> FAK craters · <span title="warmup / stale-feed / pre-window / s0-gap / no-vol / tau / book-fail"><b>${(sk.warmup??0)+(sk.stale??0)+(sk.pre_window??0)+(sk.s0_gap??0)+(sk.no_vol??0)+(sk.tau??0)+(sk.book_fail??0)}</b> guarded skips</span></span><span title="no bank, no sizing — measurement harness; the verdict binds to the forward ledger (#17)">flat $100 FAKs · measurement mode</span>`:"";
   const syms=d.symbols||{};
   $("syms").innerHTML=Object.keys(SYMNAMES).map(k=>{const s=syms[k]||{};
     const ok=s.fresh&&s.warm,warming=s.fresh&&!s.warm;
