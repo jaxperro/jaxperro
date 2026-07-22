@@ -70,7 +70,7 @@ h1,h2{font-size:17px;margin:0;font-weight:700}
   <div class="hg">
     <div class="hero">
       <div style="display:flex;gap:20px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
-        <div><div class="klabel">Paper book</div><div class="eq" id="s_equity">—</div><div id="s_pnl" style="font-size:14px;font-weight:600;margin-top:4px"></div></div>
+        <div><div class="klabel">Paper P&amp;L</div><div class="eq" id="s_equity">—</div><div id="s_pnl" style="font-size:14px;font-weight:600;margin-top:4px"></div></div>
         <div id="s_spark"></div>
       </div>
       <div class="heroline" id="s_heroline"></div>
@@ -83,10 +83,12 @@ h1,h2{font-size:17px;margin:0;font-weight:700}
     <div class="tab" id="s_tabSkips" onclick="setTab('s','skips')">Skips · —</div>
   </div>
   <div class="tbl" id="s_book"><div class="loading">loading surge feed…</div></div>
-  <div class="note"><b style="color:#c9d6e5">Paper money, verdict-gated.</b> This bot trades Study A's frozen surge signal
-    (net informed flow ≥ $300/60s in an in-play sports/esports market, entry 10–90¢) with the $100 deployment spec:
-    5%-of-equity stakes set daily, cash-gated, max 2 positions per event, paper FAK against the live CLOB book.
-    Settles are provisional until the nightly re-grade against on-chain payout vectors (CHAIN badge).
+  <div class="note"><b style="color:#c9d6e5">Paper money, measurement mode (A2).</b> This harness trades Study A's frozen surge signal
+    (net informed flow ≥ $300/60s in an in-play sports/esports market, entry 10–90¢, cooldown 900s/token) and paper-FAKs
+    <b style="color:#c9d6e5">every</b> trigger at $100 against the live CLOB book — no bank, no cash gate. The v1 cash-gated book was
+    halted 2026-07-22 after its ~2% trigger subsample proved adversely selected (−$9/fill vs +$41/fill on the full signal, same day, same sim);
+    bankroll specs are now replayed offline from the full attempts log — the <b style="color:#c9d6e5">virtual $100/5% book</b> in the panel above
+    is that nightly replay. Settles are provisional until the nightly re-grade against on-chain payout vectors (CHAIN badge).
     Believing any number here is gated on the <a href="https://github.com/jaxperro/winning-wallet-finder/issues/16" target="_blank">#16 forward verdict</a>;
     funding happens only through the <a href="https://github.com/jaxperro/winning-wallet-finder/issues/19" target="_blank">#19 decision matrix</a>.
     Feed: <a href="https://wwf-surgebot.fly.dev/feed" target="_blank">wwf-surgebot.fly.dev/feed</a> · refreshes every 20s.</div>
@@ -126,7 +128,7 @@ const G="#3fd17a",R="#ff6b6b",DIM="#8b9bb0",AMB="#f5c451";
 const SYMNAMES={btcusdt:"BTC",ethusdt:"ETH",solusdt:"SOL",xrpusdt:"XRP",bnbusdt:"BNB",dogeusdt:"DOGE"};
 const RAW="https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/research/";
 const ST={
-  s:{FEED:"https://wwf-surgebot.fly.dev/feed",LEDGER:RAW+"surge_paper_ledger.jsonl",D:null,OFF:false,CHAIN:{},LROWS:[],TAB:"open",EXP:{}},
+  s:{FEED:"https://wwf-surgebot.fly.dev/feed",LEDGER:RAW+"surge_meas_ledger.jsonl",BOOKURL:RAW+"surge_book.json",BOOK:null,D:null,OFF:false,CHAIN:{},LROWS:[],TAB:"open",EXP:{}},
   o:{FEED:"https://wwf-oraclebot.fly.dev/feed",LEDGER:RAW+"oracle_paper_ledger.jsonl",D:null,OFF:false,CHAIN:{},LROWS:[],TAB:"open",EXP:{}}};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
@@ -154,22 +156,29 @@ function renderS(){
   const skips=(d.skips||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
   const c=d.counters||{};
   pillUpd("s");
-  const eq=d.equity||0,bank=d.bank||100;
-  $("s_equity").textContent=S.D?money(eq):"—";
-  $("s_pnl").innerHTML=S.D?`<span style="color:${cOf(eq-bank)}">${sgn(eq-bank)} vs ${money(bank)}</span> <span class="dim">· ${settled.filter(x=>graded("s",x).pay===1).length}W / ${settled.filter(x=>graded("s",x).pay===0).length}L settled</span>`:"";
+  const chainTot=S.LROWS.reduce((s,r)=>s+(r.chain_pnl||0),0);
+  const provTot=settled.filter(x=>!S.CHAIN[x.asset+"|"+x.ts]).reduce((s,x)=>s+(x.pnl||0),0);
+  const tot=S.LROWS.length||settled.length?chainTot+provTot:(d.pnl_realized||0);
+  $("s_equity").innerHTML=S.D?`<span style="color:${cOf(tot)}">${sgn(tot)}</span>`:"—";
+  const pays=[...S.LROWS.map(r=>r.chain_payout),...settled.filter(x=>!S.CHAIN[x.asset+"|"+x.ts]).map(x=>x.payout)];
+  const W=pays.filter(p=>p===1).length,RF=pays.filter(p=>p===0.5).length,L=pays.length-W-RF;
+  $("s_pnl").innerHTML=S.D?`<span class="dim">${W}W / ${L}L${RF?" / "+RF+"R":""} settled · ${c.settled_total??0} lifetime</span>`:"";
   let cum=0;const vals=settled.slice().reverse().map(x=>cum+=graded("s",x).pnl||0);
   $("s_spark").innerHTML=spark(vals);
-  $("s_heroline").innerHTML=S.D?`<span><b>${money(d.cash||0)}</b> free cash</span><span><b>${open.length}</b> open · stake <b>${money(d.day_stake||0)}</b>/bet today (5% equity)</span><span title="frozen signal params">flow ≥ $${d.flow_usd||300}/${d.window_s||60}s · ${Math.round((d.band||[.1,.9])[0]*100)}–${Math.round((d.band||[.1,.9])[1]*100)}¢ · cap ${d.event_cap||2}/event</span>`:"";
-  const cap=c.triggers?Math.round(100*c.fills/c.triggers):null;
+  const cap=c.attempts?Math.round(100*c.fills/c.attempts):null;
+  $("s_heroline").innerHTML=S.D?`<span><b>${c.triggers??"—"}</b> triggers · <b>${c.fills??"—"}</b> fills${cap!=null?` <b style="color:${cap>=50?G:AMB}">(${cap}% capture)</b>`:""}</span><span><b>${c.craters??"—"}</b> FAK craters</span><span title="every cooldown-passed trigger is attempted at $100; no bank, no cash gate — bankroll specs are replayed offline (virtual book, nightly)">flat $100 FAKs · measurement mode</span><span title="frozen signal params">flow ≥ $${(d.frozen||{}).flow_usd||300}/${(d.frozen||{}).window_s||60}s · ${Math.round(((d.frozen||{}).band||[.1,.9])[0]*100)}–${Math.round(((d.frozen||{}).band||[.1,.9])[1]*100)}¢</span>`:"";
+  const B=S.BOOK;
+  const bEq=B?B.equity:null,bC=B?B.counters||{}:{};
   $("s_health").innerHTML=`
-<div><div class="hv">${c.triggers??"—"}</div><div class="hs">triggers</div></div>
+<div><div class="hv">${c.triggers??"—"}</div><div class="hs">triggers (all attempted)</div></div>
 <div><div class="hv">${c.fills??"—"}${cap!=null?` <span class="dim" style="font-size:11px;font-weight:400">(${cap}%)</span>`:""}</div><div class="hs">fills (capture)</div></div>
 <div><div class="hv">${c.craters??"—"}</div><div class="hs">FAK craters</div></div>
-<div><div class="hv">${(c.cash_skip??"—")+" / "+(c.event_skip??"—")}</div><div class="hs">skips cash / event-cap</div></div>
+<div><div class="hv">${(c.throttle_skip??0)+(c.book_fail??0)}</div><div class="hs">throttled / book-fail</div></div>
+<div style="grid-column:1/-1"><div class="hv" style="font-size:14px;color:${bEq==null?"var(--dim)":cOf(bEq-100)}">${bEq==null?"—":money(bEq)} <span class="dim" style="font-weight:400;font-size:11.5px">· ${B?`${B.settled} settled ${B.wins}W · taken ${bC.taken??"—"} (${bC.cash_skip??0} cash-skips) · ${ago((Date.parse(B.computed_at)||0)/1000)}`:"awaiting first nightly replay"}</span></div><div class="hs" title="the $100 bank · 5%-of-equity · cash-gated · 2/event spec replayed offline over the FULL attempts stream — what v1 tried to measure physically">virtual $100/5% book (nightly replay)</div></div>
 <div style="grid-column:1/-1"><div class="hv" style="font-size:14px">${d.informed?((d.informed.n||"—")+" wallets"):"—"} <span class="dim" style="font-weight:400;font-size:11.5px">· set ${d.informed?ago(d.informed.generated_at):"—"}</span></div><div class="hs">informed set (frozen method, republished nightly)</div></div>`;
   $("s_tabOpen").innerHTML="Open · "+open.length;
-  const tot=settled.reduce((s,x)=>s+(graded("s",x).pnl||0),0);
-  $("s_tabSettled").innerHTML="Settled · "+settled.length+(settled.length?" · "+sgn(tot):"");
+  const stot=settled.reduce((s,x)=>s+(graded("s",x).pnl||0),0);
+  $("s_tabSettled").innerHTML="Settled · "+settled.length+(settled.length?" · "+sgn(stot):"");
   $("s_tabSkips").innerHTML="Skips · "+skips.length;
   ["Open","Settled","Skips"].forEach(t=>$("s_tab"+t).classList.toggle("on",S.TAB===t.toLowerCase()));
   const exp=!!S.EXP[S.TAB];
@@ -180,7 +189,7 @@ function renderS(){
       const t=new Date(p.end_ts*1000).toLocaleString();
       return dt<=0?["settling…",AMB,t]:["in "+ageStr(dt).replace(" ago",""),DIM,t];};
     html=`<div class="sog thead"><div>When</div><div>Market</div><div class="r" title="paper fill price (live CLOB best ask at trigger)">Entry</div><div class="r">Stake</div><div class="r" title="informed net flow in the 60s window that fired the trigger">Flow</div><div class="r" title="market's scheduled end (in-play games often resolve earlier) · settling… = past its end date">Resolves</div></div>`
-      +rows.map(p=>{const[e,ec,et]=eta(p);return `<div class="sog row"><div class="sub">${ago(p.ts)}</div><div class="mkt ell" title="${esc(p.title)}">${esc((p.outcome?p.outcome+" · ":"")+p.title)}</div><div class="r">${Math.round(p.price*100)}¢</div><div class="r">${money(p.cost)}</div><div class="r dim">$${p.flow}</div><div class="r" style="font-size:12px;color:${ec}" title="${et}">${e}</div></div>
+      +rows.map(p=>{const[e,ec,et]=eta(p);return `<div class="sog row"><div class="sub">${ago(p.ts)}</div><div class="mkt ell" title="${esc(p.title)}">${esc((p.outcome?p.outcome+" · ":"")+p.title)}</div><div class="r">${Math.round(p.price*100)}¢${p.partial?"*":""}</div><div class="r">${money(p.cost)}</div><div class="r dim">$${p.flow}</div><div class="r" style="font-size:12px;color:${ec}" title="${et}">${e}</div></div>
 <div class="mcard"><div class="mkt ell">${esc((p.outcome?p.outcome+" · ":"")+p.title)}</div><div class="sub" style="margin-top:3px">${ago(p.ts)} · ${Math.round(p.price*100)}¢ · ${money(p.cost)} · flow $${p.flow} · <span style="color:${ec}">${e}</span></div></div>`;}).join("");
     if(!open.length)html+=`<div class="loading">${S.D?"no open positions — waiting for a surge":"loading…"}</div>`;
     html+=moreRow("s",open,exp);
@@ -287,6 +296,8 @@ function load(){
     fetch(S.LEDGER,{cache:"no-store"}).then(r=>r.ok?r.text():"").then(t=>{
       const m={},rows=[];t.split("\n").forEach(l=>{if(!l.trim())return;try{const d=JSON.parse(l);m[d.asset+"|"+d.ts]=d;rows.push(d);}catch(e){}});
       S.CHAIN=m;S.LROWS=rows;if(S.D)render(k);}).catch(()=>{});
+    if(S.BOOKURL)fetch(S.BOOKURL,{cache:"no-store"}).then(r=>r.ok?r.json():null).then(b=>{
+      if(b){S.BOOK=b;if(S.D)render(k);}}).catch(()=>{});
   }
 }
 load();setInterval(load,20000);
