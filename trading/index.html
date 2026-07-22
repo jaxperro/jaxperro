@@ -237,7 +237,7 @@ function renderBot(){
 <div><div class="hv">${L.avg_slip_pct!=null?(L.avg_slip_pct*100).toFixed(1)+"%":"—"}</div><div class="hs" title="${L.n24!=null?L.n24+" fills in 24h":(L.n||0)+" copies"}">avg slippage</div></div>
 <div><div class="hv" style="color:${Math.abs(drift)>0.01?R:G}" title="drift = cash vs what the ledger implies">${Math.abs(drift)>0.01?sgn(drift):"✓ ok"}</div><div class="hs">ledger check</div></div>
 <div><div class="hv">${money(fees)}</div><div class="hs">fees paid</div></div>
-<div style="grid-column:1/-1"><div class="hv" style="font-size:14px" ${lf?`title="${esc((lf.side||"")+" "+(lf.outcome?lf.outcome+" · ":"")+(lf.title||""))} @ ${lf.price}"`:""}>${lf?ago(lf.ts):"—"}${lf?` <span class="dim" style="font-weight:400;font-size:11.5px">· ${esc(lf.side==="SELL"?"sold":"bought")} ${esc((lf.outcome?lf.outcome+" · ":"")+(lf.title||"")).slice(0,46)}</span>`:""}</div><div class="hs">last trade placed</div></div>`;
+<div><div class="hv" ${lf?`title="${esc((lf.side||"")+" "+(lf.outcome?lf.outcome+" · ":"")+(lf.title||""))} @ ${lf.price}"`:""}>${lf?ago(lf.ts):"—"}</div><div class="hs">last trade placed</div></div>`;
   const addrOf={};for(const b of bets)if(b.name&&b.wallet&&!addrOf[b.name])addrOf[b.name]=b.wallet;
   const missAgg={};for(const m of missSrc){const n=m.name||"";const a=missAgg[n]||(missAgg[n]={n:0,pnl:0});a.n++;if(m.pnl!=null)a.pnl+=m.pnl;}
   const WP=d.wallet_pnl;

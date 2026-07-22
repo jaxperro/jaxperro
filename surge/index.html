@@ -30,7 +30,7 @@ h1{font-size:17px;margin:0;font-weight:700}
 .tab{font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:9px;cursor:pointer;user-select:none;border:1px solid var(--border);color:var(--dim)}
 .tab.on{border-color:#2c3e57;color:var(--text);background:#17202c}
 .tbl{border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden}
-.og{display:grid;grid-template-columns:90px minmax(0,1fr) 90px 90px 90px;gap:12px;align-items:center;padding:9px 16px}
+.og{display:grid;grid-template-columns:90px minmax(0,1fr) 80px 80px 80px 100px;gap:12px;align-items:center;padding:9px 16px}
 .eg{display:grid;grid-template-columns:90px minmax(0,1fr) 90px 90px 90px 100px;gap:12px;align-items:center;padding:9px 16px}
 .kg{display:grid;grid-template-columns:90px minmax(0,1fr) 120px 90px;gap:12px;align-items:center;padding:9px 16px}
 .thead{font-size:10.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--dim);background:var(--panel2)}
@@ -128,9 +128,12 @@ function render(){
   let html;
   if(TAB==="open"){
     const rows=exp?open:open.slice(0,N);
-    html=`<div class="og thead"><div>When</div><div>Market</div><div class="r" title="paper fill price (live CLOB best ask at trigger)">Entry</div><div class="r">Stake</div><div class="r" title="informed net flow in the 60s window that fired the trigger">Flow</div></div>`
-      +rows.map(p=>`<div class="og row"><div class="sub">${ago(p.ts)}</div><div class="mkt ell" title="${esc(p.title)}">${esc((p.outcome?p.outcome+" · ":"")+p.title)}</div><div class="r">${Math.round(p.price*100)}¢</div><div class="r">${money(p.cost)}</div><div class="r dim">$${p.flow}</div></div>
-<div class="mcard"><div class="mkt ell">${esc((p.outcome?p.outcome+" · ":"")+p.title)}</div><div class="sub" style="margin-top:3px">${ago(p.ts)} · ${Math.round(p.price*100)}¢ · ${money(p.cost)} · flow $${p.flow}</div></div>`).join("");
+    const eta=p=>{if(!p.end_ts)return["—",DIM,""];const dt=p.end_ts-Date.now()/1000;
+      const t=new Date(p.end_ts*1000).toLocaleString();
+      return dt<=0?["settling…",AMB,t]:["in "+ageStr(dt).replace(" ago",""),DIM,t];};
+    html=`<div class="og thead"><div>When</div><div>Market</div><div class="r" title="paper fill price (live CLOB best ask at trigger)">Entry</div><div class="r">Stake</div><div class="r" title="informed net flow in the 60s window that fired the trigger">Flow</div><div class="r" title="market's scheduled end (in-play games often resolve earlier) · settling… = past its end date">Resolves</div></div>`
+      +rows.map(p=>{const[e,ec,et]=eta(p);return `<div class="og row"><div class="sub">${ago(p.ts)}</div><div class="mkt ell" title="${esc(p.title)}">${esc((p.outcome?p.outcome+" · ":"")+p.title)}</div><div class="r">${Math.round(p.price*100)}¢</div><div class="r">${money(p.cost)}</div><div class="r dim">$${p.flow}</div><div class="r" style="font-size:12px;color:${ec}" title="${et}">${e}</div></div>
+<div class="mcard"><div class="mkt ell">${esc((p.outcome?p.outcome+" · ":"")+p.title)}</div><div class="sub" style="margin-top:3px">${ago(p.ts)} · ${Math.round(p.price*100)}¢ · ${money(p.cost)} · flow $${p.flow} · <span style="color:${ec}">${e}</span></div></div>`;}).join("");
     if(!open.length)html+=`<div class="loading">${D?"no open positions — waiting for a surge":"loading…"}</div>`;
     if(open.length>N)html+=`<div class="more" onclick="tglExp()">${exp?"Show top "+N:"View all "+open.length+" →"}</div>`;
   }else if(TAB==="settled"){
