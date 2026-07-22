@@ -298,10 +298,14 @@ function renderBT(){
   let cum=0;const vals=(p.resolved||[]).slice().sort((a,b)=>(a.date||0)-(b.date||0)).filter(s=>s.pnl!=null).map(s=>cum+=s.pnl);
   $("btSpark").innerHTML=spark(vals,"realized P&amp;L over the window");
   $("btLine").innerHTML=pOK?`<span><b>${money(p.liquid||0)}</b> liquid</span><span><b>${money(p.invested||0)}</b> invested · ${p.open_count||0} open · <b style="color:${cOf(p.unreal||0)}">${sgn(p.unreal||0)}</b> unreal.</span><span><b style="color:${cOf(p.realized||0)}">${sgn(p.realized||0)}</b> realized</span><span title="skipped for lack of capital or event cap"><b style="color:${AMB}">${sgn(p.missed_pnl||0)}</b> missed · ${p.missed_count||0} skipped</span>`:"";
+  const btMissAgg={};(p.missed||[]).forEach(m=>{const n=m.name||"";const a=btMissAgg[n]||(btMissAgg[n]={n:0,pnl:0});a.n++;if(m.pnl!=null)a.pnl+=m.pnl;});
   $("btWallets").innerHTML=(p.wallets||[]).map(w=>{const nn=(w.won||0)+(w.lost||0);
     const rec=nn||w.ref||w.sold?((w.won||0)+"–"+(w.lost||0)+(w.ref?" +"+w.ref+"R":"")+(w.sold?" +"+w.sold+"S":"")):"—";
+    const mn=w.missed_n!=null?w.missed_n:(btMissAgg[w.name]?btMissAgg[w.name].n:0);
+    const mp=w.missed_pnl!=null?w.missed_pnl:(btMissAgg[w.name]?btMissAgg[w.name].pnl:0);
     return `<div class="wcard"><div style="display:flex;align-items:baseline;gap:6px"><a href="https://polymarket.com/profile/${w.wallet||""}" target="_blank" class="nm ell" style="font-size:12.5px">${esc(w.name)}</a>${tag(w.name)}<span style="font-size:14px;font-weight:700;margin-left:auto;color:${cOf(w.realized||0)}">${sgn(w.realized||0)}</span></div>
-<div class="sub" style="font-size:10.5px;margin-top:3px">${w.bets||0} bets · ${rec} · ${nn?Math.round(100*w.won/nn)+"%":"—"} win · ${money(w.invested||0)} open</div></div>`;}).join("");
+<div class="sub" style="font-size:10.5px;margin-top:3px">${w.bets||0} bets · ${rec} · ${nn?Math.round(100*w.won/nn)+"%":"—"} win · ${money(w.invested||0)} open</div>
+<div class="sub" style="font-size:10.5px;margin-top:2px" title="capital/event-cap skips + what those stakes would have returned">${mn} missed${mn?` · <span style="color:${cOf(mp)}">${sgn(mp)}</span> would-be`:""}</div></div>`;}).join("");
   const mkCur=c=>{const e=ep(c.end),days=e?Math.round((e-now)/86400):null;
     return {nm:c.name||"",wtag:tag(c.name),mkt:(c.outcome?c.outcome+" · ":"")+(c.title||""),note:"",stake:money(c.stake||0),
       val:money(c.val||0),pillCls:"pgrey",pl:sgn(c.pnl||0),plC:cOf(c.pnl||0),
