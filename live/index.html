@@ -117,18 +117,19 @@ function mkRow(b,FOL,CLS){const s=STAT[b.status]||[String(b.status||"—").toUpp
     mkt:(b.outcome?b.outcome+" · ":"")+(b.title||""),their:Math.round((b.their_price||0)*100)+"¢",mine:Math.round((b.my_price||0)*100)+"¢",
     slip:b.slippage_pct==null?"—":((b.slippage_pct>=0?"+":"")+(b.slippage_pct*100).toFixed(1)+"%"),slipC:b.slippage_pct==null?DIM:(b.slippage_pct>0?R:G),
     stake:money(b.cost||0),fee:b.fee!=null?money(b.fee)+" fee":"",
-    stat:s[0],pillCls:s[1],pl:b.pnl==null?"—":sgn(b.pnl),plC:b.pnl==null?DIM:cOf(b.pnl),edge:EDGE[b.status]||"transparent"};}
+    stat:s[0],pillCls:s[1],pl:b.pnl==null?"—":sgn(b.pnl),plC:b.pnl==null?DIM:cOf(b.pnl),edge:EDGE[b.status]||"transparent",eta:(b.status==="open"&&b.end_ts)?((b.end_ts-Date.now()/1000)<=0?"settling…":"in "+durS(b.end_ts-Date.now()/1000)):"",etaC:(b.end_ts&&(b.end_ts-Date.now()/1000)<=0)?AMB:DIM};}
+const durS=s=>s<5400?Math.round(s/60)+"m":s<172800?Math.round(s/3600)+"h":Math.round(s/86400)+"d";
 const betRow=b=>`<div class="bg row" style="box-shadow:inset 2px 0 0 ${b.edge}">
 <div style="min-width:0"><div class="nm ell" style="color:${b.nmC}">${esc(b.nm)}${b.wtag?' <span class="wtag">'+b.wtag+'</span>':''}</div><div class="sub" title="${b.exact}">${b.ago}</div></div>
 <div class="mkt ell" title="${esc(b.mkt)}">${esc(b.mkt)}</div>
 <div class="r" style="font-size:12.5px">${b.their} <span class="dim">→</span> ${b.mine}<div style="font-size:11px;color:${b.slipC}">${b.slip} slip</div></div>
 <div class="r" style="font-size:13px">${b.stake}<div class="dim" style="font-size:10.5px">${b.fee}</div></div>
-<div class="r"><span class="pill ${b.pillCls}">${b.stat}</span></div>
+<div class="r"><span class="pill ${b.pillCls}">${b.stat}</span>${b.eta?`<div style="font-size:10.5px;color:${b.etaC}" title="scheduled market end — in-play games often resolve earlier">${b.eta}</div>`:""}</div>
 <div class="r" style="font-weight:600;font-size:13px;color:${b.plC}">${b.pl}</div></div>
 <div class="mcard" style="box-shadow:inset 2px 0 0 ${b.edge}">
 <div style="display:flex;gap:8px;align-items:baseline"><span class="nm" style="font-size:12.5px;color:${b.nmC}">${esc(b.nm)}</span><span class="sub" style="margin-left:auto">${b.ago}</span></div>
 <div class="mkt ell" style="margin-top:3px">${esc(b.mkt)}</div>
-<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span class="pill ${b.pillCls}" style="font-size:9.5px">${b.stat}</span><span class="sub" style="font-size:11.5px">${b.their} → ${b.mine} · ${b.stake}</span><span style="font-weight:700;font-size:13px;margin-left:auto;color:${b.plC}">${b.pl}</span></div></div>`;
+<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span class="pill ${b.pillCls}" style="font-size:9.5px">${b.stat}</span><span class="sub" style="font-size:11.5px">${b.their} → ${b.mine} · ${b.stake}${b.eta?" · "+b.eta:""}</span><span style="font-weight:700;font-size:13px;margin-left:auto;color:${b.plC}">${b.pl}</span></div></div>`;
 const missRowH=m=>`<div class="mg row">
 <div style="min-width:0"><div class="nm ell">${esc(m.nm)}</div><div class="sub">${m.ago}</div></div>
 <div style="min-width:0"><div class="mkt ell" title="${esc(m.mkt)}">${esc(m.mkt)}</div><div style="font-size:11px;color:${AMB};opacity:.85" class="ell">${esc(m.reason)}</div></div>
