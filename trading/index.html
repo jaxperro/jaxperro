@@ -299,7 +299,9 @@ function renderBT(){
   const exeNote=(p.entry_mode==="maker"
     ?"Entries rest at the sharp's own price (maker, feeless — #20 parity; declared optimistic 100%-fill bound)"
     :"Every entry pays the real Polymarket taker fee plus a lag haircut")
-    +(p.exit_mode==="hold"?"; exits hold to resolution (#21 parity — the signal's sells are ignored)":", exits mirror the signal (SOLD)");
+    +(p.exit_mode==="hold"?"; exits hold to resolution (#21 parity — the signal's sells are ignored)"
+      :p.mirror_sell_min_p>0?`; exits mirror the signal only at ≥${Math.round(p.mirror_sell_min_p*100)}¢ (band-guarded — sub-band sells held to truth per the sell-band study)`
+      :", exits mirror the signal (SOLD)");
   $("howBox").innerHTML=pOK?`A ${money(bank)} paper account replaying a rolling ${p.days||30}-day window — "what if I'd started following these wallets ${p.days||30} days ago". Volume-class wallets mirror <b>conviction bets</b> (top 20% of their own stake sizes); whale-class wallets mirror <b>every bet</b>. Stakes are a class % of current equity, never larger than the wallet's own bet; entries above 95¢ skipped. ${exeNote}, and 50/50 refunds count as scratches.${p.fee_rate&&p.entry_mode!=="maker"?" Fees modeled at the "+p.fee_rate+" rate"+(p.fees_paid?" — "+money(p.fees_paid)+" paid so far.":"."):""}`:"";
   $("btEquity").textContent=pOK?money(p.equity||0):"—";
   $("btPnl").innerHTML=pOK?`<span style="color:${cOf(pnl)}">${sgn(pnl)} (${(pnl>=0?"+":"")+(pnl/bank*100).toFixed(1)}%)</span> <span class="dim">on ${money(bank)}</span>`:"";
