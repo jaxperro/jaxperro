@@ -114,15 +114,25 @@ section{scroll-margin-top:16px}
       <div class="heroline" id="btLine"></div>
     </div>
     <div class="wg" id="btWallets"></div>
-    <div class="secttl" style="margin-top:20px"><h2 style="font-size:15px">Profitable bench</h2><span id="btpMeta" class="sub" style="font-size:12px">—</span>
-      <span class="sub" style="margin-left:auto;font-size:11px" title="the same replay, trimmed to wallets whose realized P&amp;L plus what their missed bets would have returned is positive — the set the capital says it wants">realized + would-be missed &gt; 0</span></div>
-    <div class="wg" id="btpWallets"></div>
     <div class="tabs">
       <div class="tab on" id="btabCurrent" onclick="setBtTab('current')">Current · —</div>
       <div class="tab" id="btabResolved" onclick="setBtTab('resolved')">Resolved · —</div>
       <div class="tab" id="btabMissed" onclick="setBtTab('missed')">Missed · —</div>
     </div>
     <div class="tbl" id="btBook"><div class="loading">replaying live trades…</div></div>
+  </section>
+
+  <section id="btp">
+    <div class="secttl"><h2>Profitable bench</h2><span id="btpMeta" class="sub" style="font-size:12px">loading…</span>
+      <span class="sub" style="margin-left:auto;font-size:11px" title="the full bench replay (candidate superset), trimmed to wallets whose realized P&amp;L plus what their missed bets would have returned is positive — the set the capital says it wants">full bench · realized + would-be missed &gt; 0</span></div>
+    <div class="hero">
+      <div style="display:flex;gap:20px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
+        <div><div class="klabel">Bench replay equity</div><div class="eq" id="btpEquity">—</div><div id="btpPnl" style="font-size:14px;font-weight:600;margin-top:4px"></div></div>
+        <div id="btpSpark"></div>
+      </div>
+      <div class="heroline" id="btpLine"></div>
+    </div>
+    <div class="wg" id="btpWallets"></div>
   </section>
 
   <section id="sharps">
@@ -149,7 +159,7 @@ const BASE="https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/mai
 const FEED=new URLSearchParams(location.search).get("botFeed")||BASE+"copybot_live.json";
 const N=6;
 const G="#3fd17a",R="#ff6b6b",DIM="#8b9bb0",AMB="#f5c451",TXT="#e6edf3";
-let D=null,FULL=null,OFFLINE=false,P=null,S=null,SERR=false,MW=null,MTAB="followed";
+let D=null,FULL=null,OFFLINE=false,P=null,PB=null,S=null,SERR=false,MW=null,MTAB="followed";
 let TAB="open",EXP={},EXPMISS=false,BTTAB="current",BTEXP={},HOW=false,SORT={k:"pnl30",dir:-1};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
@@ -295,7 +305,7 @@ function renderBT(){
   $("jBT").textContent=pOK?money(p.equity||0):"—";
   $("jBT").style.color=pOK?cOf(pnl):TXT;
   $("jBTSub").textContent=pOK?sgn(pnl)+" · rolling "+(p.days||30)+"d model":"loading…";
-  $("btMeta").textContent=pOK?"rolling "+(p.days||30)+"d replay · from "+new Date((p.started||0)*1000).toLocaleDateString()+" · refreshed daily · updated "+ago(p.updated):"loading…";
+  $("btMeta").textContent=pOK?(p.follow_only?"followed set only · ":"")+"rolling "+(p.days||30)+"d replay · from "+new Date((p.started||0)*1000).toLocaleDateString()+" · refreshed daily · updated "+ago(p.updated):"loading…";
   const exeNote=(p.entry_mode==="maker"
     ?"Entries rest at the sharp's own price (maker, feeless — #20 parity; declared optimistic 100%-fill bound)"
     :"Every entry pays the real Polymarket taker fee plus a lag haircut")
@@ -313,19 +323,9 @@ function renderBT(){
     const rec=nn||w.ref||w.sold?((w.won||0)+"–"+(w.lost||0)+(w.ref?" +"+w.ref+"R":"")+(w.sold?" +"+w.sold+"S":"")):"—";
     const mn=w.missed_n!=null?w.missed_n:(btMissAgg[w.name]?btMissAgg[w.name].n:0);
     const mp=w.missed_pnl!=null?w.missed_pnl:(btMissAgg[w.name]?btMissAgg[w.name].pnl:0);
-    return `<div class="wcard"><div style="display:flex;align-items:baseline;gap:6px"><a href="https://polymarket.com/profile/${w.wallet||""}" target="_blank" class="nm ell" style="font-size:12.5px">${esc(w.name)}</a>${tag(w.name)}<span style="font-size:14px;font-weight:700;margin-left:auto;color:${cOf(w.realized||0)}">${sgn(w.realized||0)}</span></div>
+    return `<div class="wcard" onclick="openW('${esc(w.name)}')" title="click for every followed + missed trade"><div style="display:flex;align-items:baseline;gap:6px"><a href="https://polymarket.com/profile/${w.wallet||""}" target="_blank" onclick="event.stopPropagation()" class="nm ell" style="font-size:12.5px">${esc(w.name)}</a>${tag(w.name)}<span style="font-size:14px;font-weight:700;margin-left:auto;color:${cOf(w.realized||0)}">${sgn(w.realized||0)}</span></div>
 <div class="sub" style="font-size:10.5px;margin-top:3px">${w.bets||0} bets · ${rec} · ${nn?Math.round(100*w.won/nn)+"%":"—"} win · ${money(w.invested||0)} open</div>
 <div class="sub" style="font-size:10.5px;margin-top:2px" title="capital/event-cap skips + what those stakes would have returned">${mn} missed${mn?` · <span style="color:${cOf(mp)}">${sgn(mp)}</span> would-be`:""}</div></div>`;}).join("");
-  const btpAll=(p.wallets||[]).map(w=>{const mp2=w.missed_pnl!=null?w.missed_pnl:(btMissAgg[w.name]?btMissAgg[w.name].pnl:0);
-    return {...w,_mp:mp2,_mn:w.missed_n!=null?w.missed_n:(btMissAgg[w.name]?btMissAgg[w.name].n:0),_tot:(w.realized||0)+mp2};});
-  const btpKeep=btpAll.filter(w=>w._tot>0).sort((a,b)=>b._tot-a._tot);
-  $("btpMeta").textContent=pOK?btpKeep.length+" of "+btpAll.length+" bench wallets carry their weight":"loading…";
-  $("btpWallets").innerHTML=btpKeep.map(w=>{const nn=(w.won||0)+(w.lost||0);
-    const rec=nn||w.ref||w.sold?((w.won||0)+"–"+(w.lost||0)+(w.ref?" +"+w.ref+"R":"")+(w.sold?" +"+w.sold+"S":"")):"—";
-    return `<div class="wcard"><div style="display:flex;align-items:baseline;gap:6px"><a href="https://polymarket.com/profile/${w.wallet||""}" target="_blank" class="nm ell" style="font-size:12.5px">${esc(w.name)}</a>${tag(w.name)}<span style="font-size:14px;font-weight:700;margin-left:auto;color:${cOf(w._tot)}" title="realized + would-be missed">${sgn(w._tot)}</span></div>
-<div class="sub" style="font-size:10.5px;margin-top:3px">${sgn(w.realized||0)} realized · <span style="color:${cOf(w._mp)}">${sgn(w._mp)}</span> would-be (${w._mn})</div>
-<div class="sub" style="font-size:10.5px;margin-top:2px">${w.bets||0} bets · ${rec} · ${nn?Math.round(100*w.won/nn)+"%":"—"} win</div></div>`;}).join("")
-    ||(pOK?`<div class="sub" style="padding:10px 2px">no wallet clears the bar in this window</div>`:"");
   const mkCur=c=>{const e=ep(c.end),days=e?Math.round((e-now)/86400):null;
     return {nm:c.name||"",wtag:tag(c.name),mkt:(c.outcome?c.outcome+" · ":"")+(c.title||""),note:"",stake:money(c.stake||0),
       val:money(c.val||0),pillCls:"pgrey",pl:sgn(c.pnl||0),plC:cOf(c.pnl||0),
@@ -408,6 +408,29 @@ function renderSharps(){
   ||head+'<div class="loading">no data</div>';
 }
 /* ── wallet drill-down modal ── */
+/* ── profitable bench (full 15-wallet replay, trimmed) ── */
+function renderPB(){
+  const p=PB||{};const pOK=!!PB;const bank=p.bank||1000;
+  const pnl=p.pnl||0;
+  $("btpEquity").textContent=pOK?money(p.equity||0):"—";
+  $("btpPnl").innerHTML=pOK?`<span style="color:${cOf(pnl)}">${sgn(pnl)} (${(pnl>=0?"+":"")+(pnl/bank*100).toFixed(1)}%)</span> <span class="dim">on ${money(bank)}</span>`:"";
+  let cum=0;const vals=(p.resolved||[]).slice().sort((a,b)=>(a.date||0)-(b.date||0)).filter(s=>s.pnl!=null).map(s=>cum+=s.pnl);
+  $("btpSpark").innerHTML=spark(vals,"bench realized P&amp;L over the window");
+  $("btpLine").innerHTML=pOK?`<span><b>${money(p.liquid||0)}</b> liquid</span><span><b>${money(p.invested||0)}</b> invested · ${p.open_count||0} open · <b style="color:${cOf(p.unreal||0)}">${sgn(p.unreal||0)}</b> unreal.</span><span><b style="color:${cOf(p.realized||0)}">${sgn(p.realized||0)}</b> realized</span><span title="skipped for lack of capital + what those stakes would have returned"><b style="color:${AMB}">${sgn(p.missed_pnl||0)}</b> missed · ${p.missed_count||0} skipped</span>`:"";
+  const BW={};(p.wallets||[]).forEach(w=>BW[w.name]=w);
+  const tag2=n=>(BW[n]&&BW[n]["class"])==="whale"?' <span class="wtag">whale</span>':"";
+  const agg={};(p.missed||[]).forEach(m=>{const n=m.name||"";const a=agg[n]||(agg[n]={n:0,pnl:0});a.n++;if(m.pnl!=null)a.pnl+=m.pnl;});
+  const all=(p.wallets||[]).map(w=>{const mp2=w.missed_pnl!=null?w.missed_pnl:(agg[w.name]?agg[w.name].pnl:0);
+    return {...w,_mp:mp2,_mn:w.missed_n!=null?w.missed_n:(agg[w.name]?agg[w.name].n:0),_tot:(w.realized||0)+mp2};});
+  const keep=all.filter(w=>w._tot>0).sort((a,b)=>b._tot-a._tot);
+  $("btpMeta").textContent=pOK?keep.length+" of "+all.length+" bench wallets carry their weight · updated "+ago(p.updated):"loading…";
+  $("btpWallets").innerHTML=keep.map(w=>{const nn=(w.won||0)+(w.lost||0);
+    const rec=nn||w.ref||w.sold?((w.won||0)+"–"+(w.lost||0)+(w.ref?" +"+w.ref+"R":"")+(w.sold?" +"+w.sold+"S":"")):"—";
+    return `<div class="wcard" onclick="openW('${esc(w.name)}')" title="click for the full trade detail"><div style="display:flex;align-items:baseline;gap:6px"><a href="https://polymarket.com/profile/${w.wallet||""}" target="_blank" onclick="event.stopPropagation()" class="nm ell" style="font-size:12.5px">${esc(w.name)}</a>${tag2(w.name)}<span style="font-size:14px;font-weight:700;margin-left:auto;color:${cOf(w._tot)}" title="realized + would-be missed">${sgn(w._tot)}</span></div>
+<div class="sub" style="font-size:10.5px;margin-top:3px">${sgn(w.realized||0)} realized · <span style="color:${cOf(w._mp)}">${sgn(w._mp)}</span> would-be (${w._mn})</div>
+<div class="sub" style="font-size:10.5px;margin-top:2px">${w.bets||0} bets · ${rec} · ${nn?Math.round(100*w.won/nn)+"%":"—"} win</div></div>`;}).join("")
+    ||(pOK?`<div class="sub" style="padding:10px 2px">no wallet clears the bar in this window</div>`:"");
+}
 function openW(n){MW=n;MTAB="followed";renderModal();$("ovl").classList.add("on");}
 function closeW(){MW=null;$("ovl").classList.remove("on");}
 function setMTab(t){MTAB=t;renderModal();}
@@ -436,6 +459,21 @@ function renderModal(){
     html=BH+wb.map(b=>mkRow(b,FOL,CLS)).map(betRow).join("");
     if(!wb.length)html+=`<div class="loading">no copies recorded for ${esc(MW)}</div>`;
   }
+  // bench-only wallets: no paper-bot history — show the backtest replay's
+  // window rows for this wallet instead (resolved + open + missed)
+  if(!wb.length&&!wm.length&&PB){
+    const br=[...(PB.resolved||[]).map(r=>({...r,_k:"res"})),...(PB.current||[]).map(c=>({...c,_k:"open"})),...(PB.missed||[]).map(m=>({...m,_k:"miss"}))].filter(r=>(r.name||"")===MW);
+    if(br.length){
+      const bw2=((PB.wallets||[]).find(w=>w.name===MW))||{};
+      $("msub").innerHTML=`bench replay · <b style="color:${cOf(bw2.realized||0)}">${sgn(bw2.realized||0)}</b> realized · <b style="color:${cOf(bw2.missed_pnl||0)}">${sgn(bw2.missed_pnl||0)}</b> would-be (${bw2.missed_n||0}) · not followed by the bot`;
+      html=`<div class="sub" style="padding:6px 2px 8px">no paper-bot history — showing the backtest window (most recent rows)</div>`
+        +br.slice(0,40).map(r=>{const st=r._k==="open"?"open":(r.status||(r.won==null?"live":(r.won?"won":"lost")));
+        const pc=r.pnl==null?DIM:cOf(r.pnl);
+        return `<div class="mcard" style="display:block;border-top:1px solid #1a2330;padding:8px 4px"><div class="mkt ell">${esc(r.title||"")}</div><div class="sub" style="margin-top:3px">${r._k==="miss"?"missed · ":""}${esc(st)} · stake ${money(r.stake||0)} · <b style="color:${pc}">${r.pnl==null?"—":sgn(r.pnl)}</b>${r.date?" · "+ago(r.date):""}</div></div>`;}).join("");
+      $("mbook").innerHTML=html;
+      return;
+    }
+  }
   $("mbook").innerHTML=html;
 }
 /* ── boot ── */
@@ -447,7 +485,9 @@ function loadBot(){
     .then(f=>{if(f){FULL=f;renderBot();if(MW)renderModal();}}).catch(()=>{});
 }
 loadBot();setInterval(loadBot,30000);
-fetch(BASE+"portfolio.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();}).then(p=>{P=p;renderBT();}).catch(()=>{});
+fetch(BASE+"portfolio_follow.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();}).then(p=>{P=p;renderBT();})
+  .catch(()=>fetch(BASE+"portfolio.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();}).then(p=>{P=p;renderBT();}).catch(()=>{}));
+fetch(BASE+"portfolio.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();}).then(p=>{PB=p;renderPB();if(MW)renderModal();}).catch(()=>{});
 fetch(BASE+"watch_sharps.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();}).then(s=>{S=s;renderSharps();}).catch(()=>{SERR=true;renderSharps();});
 renderBT();
 </script>
