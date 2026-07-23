@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Tests — Study A &amp; B Paper Harnesses</title>
+<title>Tests — Paper Study Harnesses</title>
 <link rel="icon" type="image/png" sizes="512x512" href="/assets/flavorcon.png" />
 <style>
 :root{--bg:#0a0e14;--panel:#121822;--panel2:#0f141c;--border:#1f2a38;--text:#e6edf3;--dim:#8b9bb0;--green:#3fd17a;--red:#ff6b6b;--accent:#5bb0ff;--amber:#f5c451}
@@ -133,6 +133,37 @@ h1,h2{font-size:17px;margin:0;font-weight:700}
     <b style="color:#c9d6e5">follow</b> small leans ($150–500, absorbed flow) and <b style="color:#c9d6e5">fade</b> whale bags ($2k+, picked-off makers).
     Entry-price optimism is stated in the pre-registration: a PASS graduates to a real-execution paper arm, never directly to money.
     Rows come from the nightly <a href="https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/research/forward_ledger.jsonl" target="_blank">forward ledger</a>.</div>
+
+  <!-- ── Study D: sibling lead-lag ──────────────────────────────────────── -->
+  <div class="shead"><h2>Lead-lag — Study D</h2><span id="l_pill" class="pill pamber">PAPER</span><span id="l_upd" class="sub" style="font-size:12px">loading feed…</span>
+    <a href="https://github.com/jaxperro/winning-wallet-finder/issues/23" target="_blank" rel="noopener" style="margin-left:auto;font-size:12.5px">pre-registration #23 ↗</a></div>
+  <div class="hg">
+    <div class="hero">
+      <div style="display:flex;gap:20px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
+        <div><div class="klabel">Paper P&amp;L</div><div class="eq" id="l_pnl">—</div><div id="l_pnlsub" style="font-size:14px;font-weight:600;margin-top:4px"></div></div>
+        <div id="l_spark"></div>
+      </div>
+      <div class="heroline" id="l_heroline"></div>
+    </div>
+    <div class="side"><div class="klabel" title="attempt premiums = standing ask minus the sibling's stale print; median ≥ +8¢ over 3 days pre-registers the edge as a mirage">Instrument health</div><div class="hstats" id="l_health"></div></div>
+  </div>
+  <div class="tabs">
+    <div class="tab on" id="l_tabOpen" onclick="setTab('l','open')">Open · —</div>
+    <div class="tab" id="l_tabSettled" onclick="setTab('l','settled')">Settled · —</div>
+    <div class="tab" id="l_tabSkips" onclick="setTab('l','skips')">Skips · —</div>
+  </div>
+  <div class="tbl" id="l_book"><div class="loading">loading lead-lag feed…</div></div>
+  <div class="note"><b style="color:#c9d6e5">Paper money, measurement mode.</b> Study D trades T9's finding that same-outcome sibling
+    markets reprice slowly: when an event group's most-printed market moves ≥10¢ inside 120s, the harness paper-FAKs $100 at each
+    lagging sibling's live book (≤2 siblings, cooldown 10m/event) — but only within 4¢ of the sibling's stale print, and down-moves buy
+    the sibling's <b style="color:#c9d6e5">complement</b> token so a crashing book can't pose as a bargain. Every attempt logs the standing
+    ask's premium over the stale print: <b style="color:#c9d6e5">median ≥ +8¢ over 3 days pre-registers the whole edge as a mirage</b>
+    (the tape "entered" at prints nobody still quotes) — a kill that needs no paper sample. Settles are provisional (CLOB flags) until the
+    nightly re-grade against on-chain payout vectors (CHAIN badge); EV reports per episode <i>and</i> per dollar staked so partial fills
+    can't flatter it. PASS ≥ +$4/$100 @ n≥400 &amp; ≥5 days · KILL ≤ 0 @ n≥300 — the verdict binds to the
+    <a href="https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/research/lag_paper_ledger.jsonl" target="_blank">chain-graded ledger</a> per
+    <a href="https://github.com/jaxperro/winning-wallet-finder/issues/23" target="_blank">#23</a>.
+    Feed: <a href="https://wwf-lagbot.fly.dev/feed" target="_blank">wwf-lagbot.fly.dev/feed</a> · refreshes every 20s.</div>
 </div>
 <script>
 const N=8;
@@ -141,7 +172,8 @@ const SYMNAMES={btcusdt:"BTC",ethusdt:"ETH",solusdt:"SOL",xrpusdt:"XRP",bnbusdt:
 const RAW="https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/research/";
 const ST={
   s:{FEED:"https://wwf-surgebot.fly.dev/feed",LEDGER:RAW+"surge_meas_ledger.jsonl",BOOKURL:RAW+"surge_book.json",BOOK:null,D:null,OFF:false,CHAIN:{},LROWS:[],TAB:"open",EXP:{}},
-  o:{FEED:"https://wwf-oraclebot.fly.dev/feed",LEDGER:RAW+"oracle_paper_ledger.jsonl",D:null,OFF:false,CHAIN:{},LROWS:[],TAB:"open",EXP:{}}};
+  o:{FEED:"https://wwf-oraclebot.fly.dev/feed",LEDGER:RAW+"oracle_paper_ledger.jsonl",D:null,OFF:false,CHAIN:{},LROWS:[],TAB:"open",EXP:{}},
+  l:{FEED:"https://wwf-lagbot.fly.dev/feed",LEDGER:RAW+"lag_paper_ledger.jsonl",D:null,OFF:false,CHAIN:{},LROWS:[],TAB:"open",EXP:{}}};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
 const money=n=>(n<0?"-$":"$")+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:Math.abs(n)>=100?0:2});
@@ -299,9 +331,68 @@ function renderO(){
   $("o_book").innerHTML=html;
 }
 
-function render(k){k==="s"?renderS():renderO();}
+/* ── Study D: sibling lead-lag (wwf-lagbot) ─────────────────────────────── */
+function renderL(){
+  const S=ST.l,d=S.D||{};
+  const open=(d.open||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const settled=(d.settled||[]).slice().sort((a,b)=>(b.settled_ts||0)-(a.settled_ts||0));
+  const skips=(d.skips||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const c=d.counters||{},sk=c.skip||{};
+  pillUpd("l");
+  const chainTot=S.LROWS.reduce((s,r)=>s+(r.chain_pnl||0),0);
+  const provTot=settled.filter(x=>!S.CHAIN[x.asset+"|"+x.ts]).reduce((s,x)=>s+(x.pnl||0),0);
+  const ltot=S.LROWS.length||settled.length?chainTot+provTot:(d.pnl_realized||0);
+  $("l_pnl").innerHTML=S.D?`<span style="color:${cOf(ltot)}">${sgn(ltot)}</span>`:"—";
+  const pays=[...S.LROWS.map(r=>r.chain_payout),...settled.filter(x=>!S.CHAIN[x.asset+"|"+x.ts]).map(x=>x.payout)];
+  const W=pays.filter(p=>p===1).length,RF=pays.filter(p=>p===0.5).length,LO=pays.length-W-RF;
+  const staked=S.LROWS.reduce((s,r)=>s+(r.cost||0),0)+settled.filter(x=>!S.CHAIN[x.asset+"|"+x.ts]).reduce((s,x)=>s+(x.cost||0),0);
+  $("l_pnlsub").innerHTML=S.D?`<span class="dim">${W}W / ${LO}L${RF?" / "+RF+"R":""} settled${staked?` · ${(100*ltot/staked).toFixed(1)}% of staked`:""} · ${c.settled_total??0} lifetime</span>`:"";
+  let cum=0;const vals=settled.slice().reverse().map(x=>cum+=graded("l",x).pnl||0);
+  $("l_spark").innerHTML=spark(vals);
+  $("l_heroline").innerHTML=S.D?`<span><b>${c.bursts??"—"}</b> leader bursts · <b>${c.attempts??"—"}</b> sibling attempts · <b>${c.fills??"—"}</b> fills</span><span><b style="color:${AMB}">${c.premium_skips??0}</b> premium-refused · <b>${c.craters??0}</b> craters · <span title="warmup / no-sibs / band / no-complement / throttle"><b>${(sk.warmup??0)+(sk.no_sibs??0)+(sk.band??0)+(sk.no_complement??0)+(c.throttle_skip??0)}</b> guarded skips</span></span><span title="no bank, no sizing — measurement harness; verdict binds to the chain-graded ledger (#23)">flat $100 FAKs ≤ stale+4¢ · measurement mode</span>`:"";
+  const prems=[...open.map(o=>o.premium),...settled.map(s2=>s2.premium),
+    ...skips.filter(k2=>k2.why==="premium"&&k2.ba!=null&&k2.stale!=null).map(k2=>k2.ba-k2.stale)].filter(p=>p!=null).sort((a,b)=>a-b);
+  const med=prems.length?prems[Math.floor(prems.length/2)]:null;
+  const warm=(d.warmup_left_s||0)>0;
+  $("l_health").innerHTML=S.D?
+    `<div class="symrow"><span class="dot" style="background:${warm?AMB:G}"></span><b style="width:70px">status</b><span style="flex:1">${warm?`warming ${Math.ceil(d.warmup_left_s/60)}m`:"armed"}</span><span class="pill ${warm?"pamber":"pgreen"}">${warm?"WARMUP":"LIVE"}</span></div>
+     <div class="symrow"><b style="width:70px">map</b><span style="flex:1">${d.groups??"—"} sibling groups</span><span class="dim">cooldown ${((d.frozen||{}).cooldown_s??600)/60}m/event</span></div>
+     <div class="symrow"><b style="width:70px" title="median standing-ask premium over the stale print — rolling view from fills + refused asks; the authoritative number is the nightly grade_lag read over ALL attempts">premium</b><span style="flex:1;color:${med==null?"var(--dim)":med>=0.08?R:med>=0.04?AMB:G}">${med==null?"—":"median "+(med>=0?"+":"")+(100*med).toFixed(1)+"¢"}</span><span class="dim" title="observational kill-switch">mirage bar +8¢/3d</span></div>`:"";
+  $("l_tabOpen").innerHTML="Open · "+open.length;
+  $("l_tabSettled").innerHTML="Settled · "+settled.length;
+  $("l_tabSkips").innerHTML="Skips · "+skips.length;
+  ["Open","Settled","Skips"].forEach(t=>$("l_tab"+t).classList.toggle("on",S.TAB===t.toLowerCase()));
+  const exp=!!S.EXP[S.TAB];
+  let html;
+  const premc=p=>p==null?"—":(p>=0?"+":"")+(100*p).toFixed(1)+"¢";
+  if(S.TAB==="open"){
+    const rows=exp?open:open.slice(0,N);
+    html=`<div class="oog thead"><div>When</div><div>Market</div><div class="r" title="paper FAK VWAP against the live sibling book, capped at stale+4¢ · * = partial fill">Entry</div><div class="r" title="entry premium over the sibling's stale print">Prem</div><div class="r">Stake</div><div class="r" title="the leader move that triggered this episode (negative = complement token bought)">Lead</div></div>`
+      +rows.map(p=>`<div class="oog row"><div class="sub">${ago(p.ts)}</div><div class="mkt ell" title="${esc(p.title)} · leader moved ${p.lead_mv>0?"+":""}${Math.round((p.lead_mv||0)*100)}¢ · stale ${Math.round((p.stale||0)*100)}¢">${esc(p.title)}</div><div class="r">${Math.round(p.price*100)}¢${p.partial?"*":""}</div><div class="r" style="color:${(p.premium||0)>0.02?AMB:G}">${premc(p.premium)}</div><div class="r">${money(p.cost)}</div><div class="r" style="color:${p.lead_mv>0?G:R}">${p.lead_mv>0?"+":""}${Math.round((p.lead_mv||0)*100)}¢</div></div>
+<div class="mcard"><div class="mkt ell">${esc(p.title)}</div><div class="sub" style="margin-top:3px">${ago(p.ts)} · ${Math.round(p.price*100)}¢${p.partial?"*":""} · ${money(p.cost)} · prem ${premc(p.premium)} · lead ${p.lead_mv>0?"+":""}${Math.round((p.lead_mv||0)*100)}¢</div></div>`).join("");
+    if(!open.length)html+=`<div class="loading">${S.D?(warm?"warming up — leader maps build for 30 min before arming":"no open episodes — waiting for a leader burst with a lagging sibling"):"loading…"}</div>`;
+    html+=moreRow("l",open,exp);
+  }else if(S.TAB==="settled"){
+    const rows=exp?settled:settled.slice(0,N);
+    html=`<div class="oeg thead"><div>When</div><div>Market</div><div class="r">Entry</div><div class="r">Prem</div><div class="r" title="CHAIN = re-graded against on-chain payout vectors · PROV = CLOB flags, pending nightly re-grade">Grade</div><div class="r">P&amp;L</div></div>`
+      +rows.map(s2=>{const g=graded("l",s2);return `<div class="oeg row" style="box-shadow:inset 2px 0 0 ${g.pay===1?G:g.pay===0.5?AMB:R}"><div class="sub">${ago(s2.settled_ts)}</div><div class="mkt ell" title="${esc(s2.title)}">${esc(s2.title)}</div><div class="r">${Math.round(s2.price*100)}¢</div><div class="r">${premc(s2.premium)}</div><div class="r"><span class="pill ${g.badge[1]}">${g.badge[0]}${g.flip?" ⚠":""}</span></div><div class="r" style="font-weight:600;color:${cOf(g.pnl)}">${sgn(g.pnl)}</div></div>
+<div class="mcard" style="box-shadow:inset 2px 0 0 ${g.pay===1?G:g.pay===0.5?AMB:R}"><div class="mkt ell">${esc(s2.title)}</div><div class="sub" style="margin-top:3px">${ago(s2.settled_ts)} · ${Math.round(s2.price*100)}¢ · prem ${premc(s2.premium)} · <span class="pill ${g.badge[1]}" style="font-size:9px">${g.badge[0]}</span> <b style="color:${cOf(g.pnl)}">${sgn(g.pnl)}</b></div></div>`;}).join("");
+    if(!settled.length)html+=`<div class="loading">${S.D?"nothing settled yet — episodes settle when their markets resolve":"loading…"}</div>`;
+    html+=moreRow("l",settled,exp);
+  }else{
+    const rows=exp?skips:skips.slice(0,N);
+    html=`<div class="okg thead" style="grid-template-columns:90px minmax(0,1fr) 170px"><div>When</div><div>Market</div><div class="r" title="stale = sibling's last print · ask = live best ask (premium = refused over stale+4¢ · crater = no asks)">Stale → ask</div></div>`
+      +rows.map(k2=>`<div class="okg row" style="grid-template-columns:90px minmax(0,1fr) 170px"><div class="sub">${ago(k2.ts)}</div><div style="min-width:0"><div class="mkt ell" title="${esc(k2.title)}">${esc(k2.title)}</div><div style="font-size:11px;color:${AMB}">${esc(k2.why||"")}</div></div><div class="r">${Math.round((k2.stale||0)*100)}¢ → ${k2.ba!=null?Math.round(k2.ba*100)+"¢":"—"}</div></div>
+<div class="mcard"><div class="mkt ell">${esc(k2.title)}</div><div class="sub" style="margin-top:3px">${ago(k2.ts)} · <span style="color:${AMB}">${esc(k2.why||"")}</span> · ${Math.round((k2.stale||0)*100)}¢ → ${k2.ba!=null?Math.round(k2.ba*100)+"¢":"—"}</div></div>`).join("");
+    if(!skips.length)html+=`<div class="loading">${S.D?"no refused attempts yet":"loading…"}</div>`;
+    html+=moreRow("l",skips,exp);
+  }
+  $("l_book").innerHTML=html;
+}
+
+function render(k){k==="s"?renderS():k==="o"?renderO():renderL();}
 function load(){
-  for(const k of ["s","o"]){
+  for(const k of ["s","o","l"]){
     const S=ST[k];
     fetch(S.FEED,{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();})
       .then(d=>{S.D=d;S.OFF=false;render(k);}).catch(()=>{S.OFF=true;render(k);});
