@@ -469,16 +469,21 @@ function renderModal(){
     html=MH+wm.map(mkBotMiss).map(missRowH).join("");
     if(!wm.length)html+=`<div class="loading">no bot-side skips recorded for ${esc(MW)}</div>`;
     // the backtest's capital-skip rows for this wallet — the FULL list
-    // behind the wallet card's "would-be" total (companion feed)
+    // behind the wallet card's "would-be" total (companion feed), rendered
+    // through the same row builder as every other missed row
     const bm=btMissRows(MW);
     if(bm.rows===null){
       html+=`<div class="loading">loading backtest missed rows…</div>`;
     }else if(bm.rows.length){
       const tot=bm.rows.reduce((s,m)=>s+(m.pnl||0),0);
-      html+=`<div class="sub" style="padding:12px 4px 6px;border-top:1px solid #1a2330"><b style="color:#c9d6e5">Backtest capital skips</b> (${bm.label}) · ${bm.rows.length} bets · <b style="color:${cOf(tot)}">${sgn(tot)}</b> would-be — the wallet card's number</div>`
-        +bm.rows.map(r=>{const st=r.status||(r.won==null?"live":(r.won?"won":"lost"));
-        const pc=r.pnl==null?DIM:cOf(r.pnl);
-        return `<div class="mcard" style="display:block;border-top:1px solid #141c27;padding:7px 4px"><div class="mkt ell">${esc(r.title||"")}</div><div class="sub" style="margin-top:2px">${esc(st)} · stake ${money(r.stake||0)}${r.capped?" · event-cap":""} · <b style="color:${pc}">${r.pnl==null?"—":sgn(r.pnl)}</b>${r.date?" · "+ago(r.date):""}</div></div>`;}).join("");
+      html+=`<div class="sub" style="padding:12px 4px 6px;border-top:1px solid #1a2330"><b style="color:#c9d6e5">Backtest capital skips</b> · ${bm.label} · ${bm.rows.length} bets · <b style="color:${cOf(tot)}">${sgn(tot)}</b> would-be — the wallet card's number</div>`
+        +bm.rows.map(r=>{const st=r.status||(r.won==null?"open":(r.won?"won":"lost"));
+          const s=st==="open"?["LIVE","pblue"]:(STAT[st]||[String(st).toUpperCase(),"pgrey"]);
+          return {nm:r.name||MW,ago:r.date?ago(r.date):"—",mkt:r.title||"",
+            reason:r.capped?"event cap":"no free capital",
+            px:r.p!=null?Math.round(r.p*100)+"¢":"—",stake:money(r.stake||0),
+            res:s[0],pillCls:s[1],pl:r.pnl==null?"—":sgn(r.pnl),plC:r.pnl==null?DIM:cOf(r.pnl)};})
+        .map(missRowH).join("");
     }
   }else{
     html=BH+wb.map(b=>mkRow(b,FOL,CLS)).map(betRow).join("");
@@ -492,9 +497,13 @@ function renderModal(){
       const bw2=((PB.wallets||[]).find(w=>w.name===MW))||{};
       $("msub").innerHTML=`bench replay · <b style="color:${cOf(bw2.realized||0)}">${sgn(bw2.realized||0)}</b> realized · <b style="color:${cOf(bw2.missed_pnl||0)}">${sgn(bw2.missed_pnl||0)}</b> would-be (${bw2.missed_n||0}) · not followed by the bot`;
       html=`<div class="sub" style="padding:6px 2px 8px">no paper-bot history — showing the backtest window (most recent rows)</div>`
-        +br.slice(0,40).map(r=>{const st=r._k==="open"?"open":(r.status||(r.won==null?"live":(r.won?"won":"lost")));
-        const pc=r.pnl==null?DIM:cOf(r.pnl);
-        return `<div class="mcard" style="display:block;border-top:1px solid #1a2330;padding:8px 4px"><div class="mkt ell">${esc(r.title||"")}</div><div class="sub" style="margin-top:3px">${r._k==="miss"?"missed · ":""}${esc(st)} · stake ${money(r.stake||0)} · <b style="color:${pc}">${r.pnl==null?"—":sgn(r.pnl)}</b>${r.date?" · "+ago(r.date):""}</div></div>`;}).join("");
+        +MH+br.slice(0,40).map(r=>{const st=r._k==="open"?"open":(r.status||(r.won==null?"open":(r.won?"won":"lost")));
+          const s=st==="open"?["LIVE","pblue"]:(STAT[st]||[String(st).toUpperCase(),"pgrey"]);
+          return {nm:r.name||MW,ago:r.date?ago(r.date):"—",mkt:r.title||"",
+            reason:r._k==="miss"?(r.capped?"event cap":"no free capital"):"",
+            px:r.p!=null?Math.round(r.p*100)+"¢":"—",stake:money(r.stake||0),
+            res:s[0],pillCls:s[1],pl:r.pnl==null?"—":sgn(r.pnl),plC:r.pnl==null?DIM:cOf(r.pnl)};})
+        .map(missRowH).join("");
       $("mbook").innerHTML=html;
       return;
     }
