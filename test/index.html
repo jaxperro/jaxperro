@@ -60,7 +60,7 @@ h1,h2{font-size:17px;margin:0;font-weight:700}
 </head>
 <body>
 <div class="wrap">
-  <header><h1>Tests — paper harnesses</h1><span class="pill pamber">PAPER</span><span class="sub" style="font-size:12px">two pre-registered studies, verdict-gated</span>
+  <header><h1>Tests — paper harnesses</h1><span class="pill pamber">PAPER</span><span class="sub" style="font-size:12px">pre-registered studies, verdict-gated</span>
     <a href="/live/" style="margin-left:auto;font-size:12.5px">← real money</a><a href="/trading/" style="font-size:12.5px">← paper copy-bot</a></header>
 
   <!-- ── Study A: surge ─────────────────────────────────────────────────── -->
@@ -121,6 +121,18 @@ h1,h2{font-size:17px;margin:0;font-weight:700}
     <b style="color:#c9d6e5">The Study B verdict binds to the forward ledger only</b> — a good harness cannot rescue a
     <a href="https://github.com/jaxperro/winning-wallet-finder/issues/17" target="_blank">#17</a> KILL, it can only seed a pre-registered v2.
     Feed: <a href="https://wwf-oraclebot.fly.dev/feed" target="_blank">wwf-oraclebot.fly.dev/feed</a> · refreshes every 20s.</div>
+
+  <!-- ── Study C: maker inventory-lean ──────────────────────────────────── -->
+  <div class="shead"><h2>Lean — Study C</h2><span id="c_pill" class="pill pblue">FORWARD</span><span id="c_upd" class="sub" style="font-size:12px">loading ledger…</span>
+    <a id="c_issue" href="https://github.com/jaxperro/winning-wallet-finder/issues/22" target="_blank" rel="noopener" style="margin-left:auto;font-size:12.5px">pre-registration #22 ↗</a></div>
+  <div class="cells" id="c_cells" style="grid-template-columns:repeat(2,1fr)"></div>
+  <div class="tbl" id="c_days" style="margin-top:12px"><div class="loading">loading forward ledger…</div></div>
+  <div class="note"><b style="color:#c9d6e5">Tape-scored forward window — no bot, no book.</b> Study C follows screened maker-sharps'
+    inventory leans: wallets are screened on strictly-prior tape each day (no self-selection), a lean fires when net maker inventory
+    crosses $150 at ≥60% one-sidedness, and both arms are scored at the last print with on-chain truth —
+    <b style="color:#c9d6e5">follow</b> small leans ($150–500, absorbed flow) and <b style="color:#c9d6e5">fade</b> whale bags ($2k+, picked-off makers).
+    Entry-price optimism is stated in the pre-registration: a PASS graduates to a real-execution paper arm, never directly to money.
+    Rows come from the nightly <a href="https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/research/forward_ledger.jsonl" target="_blank">forward ledger</a>.</div>
 </div>
 <script>
 const N=8;
@@ -299,6 +311,28 @@ function load(){
     if(S.BOOKURL)fetch(S.BOOKURL,{cache:"no-store"}).then(r=>r.ok?r.json():null).then(b=>{
       if(b){S.BOOK=b;if(S.D)render(k);}}).catch(()=>{});
   }
+  fetch(RAW+"forward_ledger.jsonl",{cache:"no-store"}).then(r=>r.ok?r.text():"").then(t=>{
+    const best={};t.split("\n").forEach(l=>{if(!l.trim())return;try{const d=JSON.parse(l);
+      if(d.study!=="lean")return;if(!best[d.day]||d.computed_at>best[d.day].computed_at)best[d.day]=d;}catch(e){}});
+    renderC(best);}).catch(()=>{});
+}
+function renderC(best){
+  const days=Object.keys(best).sort();
+  $("c_upd").textContent=days.length?("through "+days[days.length-1]):"awaiting first nightly row";
+  const ARMS=[["follow_small","FOLLOW small leans ($150–500)","PASS ≥ +$2/lean & hit ≥ .56 @ n≥1,500 · KILL ≤ 0 @ n≥1,000"],
+              ["fade_whale","FADE whale bags ($2k+) — report-only","failed concentration gate (top event 32%, tail net-negative) — no verdict bars"]];
+  $("c_cells").innerHTML=ARMS.map(([k,label,bar])=>{
+    let n=0,pnl=0,wins=0;
+    days.forEach(d=>{const a=best[d][k];if(a&&a.n){n+=a.n;pnl+=a.pnl;wins+=Math.round((a.hit||0)*a.n);}});
+    const ev=n?pnl/n:null,hit=n?wins/n:null;
+    return `<div class="cell"><div class="klabel">${label}</div>
+    <div class="cv" style="color:${ev==null?"var(--dim)":cOf(ev)}">${ev==null?"—":sgn(ev)+"/lean"}</div>
+    <div class="cs">${n} forward leans · hit ${hit==null?"—":(100*hit).toFixed(0)+"%"} · ${days.length} day${days.length===1?"":"s"}<br><span class="dim">${bar}</span></div></div>`;}).join("");
+  const rows=days.slice(-8).reverse().map(d=>{const r=best[d];
+    const f=r.follow_small||{},w=r.fade_whale||{};
+    return `<div class="okg row" style="grid-template-columns:90px minmax(0,1fr) 160px 160px"><div class="sub">${d}</div><div class="dim" style="font-size:12px">${r.screened||"—"} screened · ${r.leans||0} leans</div><div class="r" style="color:${f.ev_per_lean>0?G:f.ev_per_lean<0?R:DIM}">${f.ev_per_lean==null?"—":sgn(f.ev_per_lean)} (${f.n||0}n)</div><div class="r" style="color:${w.ev_per_lean>0?G:w.ev_per_lean<0?R:DIM}">${w.ev_per_lean==null?"—":sgn(w.ev_per_lean)} (${w.n||0}n)</div></div>`;}).join("");
+  $("c_days").innerHTML=`<div class="okg thead" style="grid-template-columns:90px minmax(0,1fr) 160px 160px"><div>Day</div><div>Universe</div><div class="r">Follow $150–500</div><div class="r">Fade $2k+</div></div>`
+    +(rows||`<div class="loading">forward rows appear after the next nightly</div>`);
 }
 load();setInterval(load,20000);
 </script>
