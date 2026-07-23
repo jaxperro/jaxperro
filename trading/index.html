@@ -431,7 +431,20 @@ function renderPB(){
 <div class="sub" style="font-size:10.5px;margin-top:2px">${w.bets||0} bets · ${rec} · ${nn?Math.round(100*w.won/nn)+"%":"—"} win</div></div>`;}).join("")
     ||(pOK?`<div class="sub" style="padding:10px 2px">no wallet clears the bar in this window</div>`:"");
 }
-function openW(n){MW=n;MTAB="followed";renderModal();$("ovl").classList.add("on");}
+let PFM=null,PBM=null,MISSREQ=false;
+function ensureMissFeeds(){
+  if(MISSREQ)return;MISSREQ=true;
+  fetch(BASE+"portfolio_follow_missed.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{PFM=j;if(MW)renderModal();}).catch(()=>{});
+  fetch(BASE+"portfolio_missed.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{PBM=j;if(MW)renderModal();}).catch(()=>{});
+}
+function btMissRows(n){
+  const followed=!!(P&&P.follow_only&&(P.wallets||[]).some(w=>w.name===n));
+  const src=followed?PFM:PBM;
+  const label=followed?"followed-book replay":"bench replay";
+  if(!src)return {label,rows:null,followed};        // still loading (or unpublished)
+  return {label,rows:src.filter(m=>(m.name||"")===n),followed};
+}
+function openW(n){MW=n;MTAB="followed";ensureMissFeeds();renderModal();$("ovl").classList.add("on");}
 function closeW(){MW=null;$("ovl").classList.remove("on");}
 function setMTab(t){MTAB=t;renderModal();}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeW();});
@@ -454,7 +467,19 @@ function renderModal(){
   let html;
   if(MTAB==="missed"){
     html=MH+wm.map(mkBotMiss).map(missRowH).join("");
-    if(!wm.length)html+=`<div class="loading">no skips recorded for ${esc(MW)}</div>`;
+    if(!wm.length)html+=`<div class="loading">no bot-side skips recorded for ${esc(MW)}</div>`;
+    // the backtest's capital-skip rows for this wallet — the FULL list
+    // behind the wallet card's "would-be" total (companion feed)
+    const bm=btMissRows(MW);
+    if(bm.rows===null){
+      html+=`<div class="loading">loading backtest missed rows…</div>`;
+    }else if(bm.rows.length){
+      const tot=bm.rows.reduce((s,m)=>s+(m.pnl||0),0);
+      html+=`<div class="sub" style="padding:12px 4px 6px;border-top:1px solid #1a2330"><b style="color:#c9d6e5">Backtest capital skips</b> (${bm.label}) · ${bm.rows.length} bets · <b style="color:${cOf(tot)}">${sgn(tot)}</b> would-be — the wallet card's number</div>`
+        +bm.rows.map(r=>{const st=r.status||(r.won==null?"live":(r.won?"won":"lost"));
+        const pc=r.pnl==null?DIM:cOf(r.pnl);
+        return `<div class="mcard" style="display:block;border-top:1px solid #141c27;padding:7px 4px"><div class="mkt ell">${esc(r.title||"")}</div><div class="sub" style="margin-top:2px">${esc(st)} · stake ${money(r.stake||0)}${r.capped?" · event-cap":""} · <b style="color:${pc}">${r.pnl==null?"—":sgn(r.pnl)}</b>${r.date?" · "+ago(r.date):""}</div></div>`;}).join("");
+    }
   }else{
     html=BH+wb.map(b=>mkRow(b,FOL,CLS)).map(betRow).join("");
     if(!wb.length)html+=`<div class="loading">no copies recorded for ${esc(MW)}</div>`;
