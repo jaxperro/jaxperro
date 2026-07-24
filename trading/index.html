@@ -90,6 +90,13 @@ section{scroll-margin-top:16px}
       </div>
       <div class="heroline" id="rpLine"></div>
     </div>
+    <div class="wg" id="rpWallets"></div>
+    <div class="tabs">
+      <div class="tab on" id="rptabCurrent" onclick="setRpTab('current')">Current · —</div>
+      <div class="tab" id="rptabResolved" onclick="setRpTab('resolved')">Resolved · —</div>
+      <div class="tab" id="rptabMissed" onclick="setRpTab('missed')">Missed · —</div>
+    </div>
+    <div class="tbl" id="rpBook"><div class="loading">loading replica book…</div></div>
     <div class="note" id="rpNote" style="margin-top:8px"></div>
   </section>
 
@@ -422,7 +429,9 @@ function renderSharps(){
 }
 /* ── wallet drill-down modal ── */
 /* ── live replica: the model at real capital (#24 honesty dial) ── */
-let RP=null,RPLIVE=null;
+let RP=null,RPLIVE=null,RPTAB="current",RPEXP={};
+function setRpTab(t){RPTAB=t;renderReplica();}
+function tglRpExp(){RPEXP[RPTAB]=!RPEXP[RPTAB];renderReplica();}
 function renderReplica(){
   const p=RP||{};const ok=!!RP;const bank=p.bank||66.42;
   const pnl=p.pnl||0;
@@ -441,6 +450,57 @@ function renderReplica(){
   $("rpNote").innerHTML=ok?`<b style="color:#c9d6e5">The honesty dial.</b> The backtest model run at the real-money book's capital (${money(bank)}, current execution flags, follow-since applied). If model and reality agree, the simulation is trustworthy; the gap is tracked daily in reconcile.csv.
     ${top&&Math.abs(top.pnl)>Math.abs(tot)?`<b style="color:${AMB}">Concentration warning:</b> the single largest bet (${sgn(top.pnl)}) exceeds the entire net — ex-moonshot the model reads ${sgn(exTop)}, nearly reconciling with the live book.`:""}
     Declared optimism still inside: 100% maker-fill assumption (measured rate lands after #20 closes) and static-bank deposit timing.`:"";
+  const now=Date.now()/1000;
+  const RW={};(p.wallets||[]).forEach(w=>RW[w.name]=w);
+  const rpTag=n=>(RW[n]&&RW[n]["class"])==="whale"?' <span class="wtag">whale</span>':"";
+  const rpMissAgg={};(p.missed||[]).forEach(m=>{const n=m.name||"";const a=rpMissAgg[n]||(rpMissAgg[n]={n:0,pnl:0});a.n++;if(m.pnl!=null)a.pnl+=m.pnl;});
+  $("rpWallets").innerHTML=(p.wallets||[]).map(w=>{const nn=(w.won||0)+(w.lost||0);
+    const rec=nn||w.ref||w.sold?((w.won||0)+"–"+(w.lost||0)+(w.ref?" +"+w.ref+"R":"")+(w.sold?" +"+w.sold+"S":"")):"—";
+    const mn=w.missed_n!=null?w.missed_n:(rpMissAgg[w.name]?rpMissAgg[w.name].n:0);
+    const mp=w.missed_pnl!=null?w.missed_pnl:(rpMissAgg[w.name]?rpMissAgg[w.name].pnl:0);
+    return `<div class="wcard" onclick="openW('${esc(w.name)}')" title="click for every followed + missed trade"><div style="display:flex;align-items:baseline;gap:6px"><a href="https://polymarket.com/profile/${w.wallet||""}" target="_blank" onclick="event.stopPropagation()" class="nm ell" style="font-size:12.5px">${esc(w.name)}</a>${rpTag(w.name)}<span style="font-size:14px;font-weight:700;margin-left:auto;color:${cOf(w.realized||0)}">${sgn(w.realized||0)}</span></div>
+<div class="sub" style="font-size:10.5px;margin-top:3px">${w.bets||0} bets · ${rec} · ${nn?Math.round(100*w.won/nn)+"%":"—"} win · ${money(w.invested||0)} open</div>
+<div class="sub" style="font-size:10.5px;margin-top:2px" title="capital skips + what those stakes would have returned">${mn} missed${mn?` · <span style="color:${cOf(mp)}">${sgn(mp)}</span> would-be`:""}</div></div>`;}).join("");
+  const mkCur=c=>{const e=ep(c.end),days=e?Math.round((e-now)/86400):null;
+    return {nm:c.name||"",wtag:rpTag(c.name),mkt:(c.outcome?c.outcome+" · ":"")+(c.title||""),note:"",stake:money(c.stake||0),
+      val:money(c.val||0),pillCls:"pgrey",pl:sgn(c.pnl||0),plC:cOf(c.pnl||0),
+      when:!e?"no date":(e<now?"settling…":(days<=0?"today":"in "+days+"d")),whenC:e&&e<now?AMB:DIM,whenT:e?new Date(e*1000).toLocaleString():"",edge:"transparent"};};
+  const mkRes=s=>{const st=s.status||(s.won?"won":"lost");const pp=STAT[st]||[st,"pgrey"];
+    return {nm:s.name||"",wtag:rpTag(s.name),mkt:s.title||"",note:"",stake:money(s.stake||0),
+      val:pp[0]+" · "+money((s.stake||0)+(s.pnl||0)),pillCls:pp[1],pl:sgn(s.pnl||0),plC:cOf(s.pnl||0),
+      when:s.date?ago(s.date):"—",whenC:DIM,whenT:s.date?new Date(s.date*1000).toLocaleString():"",edge:EDGE[st]||"transparent"};};
+  const mkMiss=m=>{const st=m.status||(m.won==null?null:(m.won?"won":"lost"));
+    const pp=st==null?["LIVE","pblue"]:(STAT[st]||[st,"pgrey"]);
+    return {nm:m.name||"",wtag:rpTag(m.name),mkt:m.title||"",note:m.capped?"event cap":"no free capital",stake:money(m.stake||0),
+      val:st==null?"LIVE":pp[0]+" · "+money((m.stake||0)+(m.pnl||0)),pillCls:pp[1],pl:m.pnl==null?"—":sgn(m.pnl),plC:m.pnl==null?DIM:cOf(m.pnl),
+      when:m.date?ago(m.date):"—",whenC:DIM,whenT:m.date?new Date(m.date*1000).toLocaleString():"",edge:st?(EDGE[st]||"transparent"):"transparent"};};
+  const cur=(p.current||[]).map(mkCur),resd=(p.resolved||[]).map(mkRes),miss=(p.missed||[]).map(mkMiss);
+  $("rptabCurrent").innerHTML="Current · "+cur.length+" · "+money(p.invested||0)+" at work";
+  $("rptabResolved").innerHTML="Resolved · "+(p.resolved_count||resd.length)+(ok?" · "+(p.wins||0)+"W/"+(p.losses||0)+"L":"");
+  $("rptabMissed").innerHTML="Missed · "+(p.missed_count||miss.length)+(p.missed_pnl?" · "+sgn(p.missed_pnl):"");
+  ["Current","Resolved","Missed"].forEach(t=>$("rptab"+t).classList.toggle("on",RPTAB===t.toLowerCase()));
+  const list=RPTAB==="resolved"?resd:RPTAB==="missed"?miss:cur;
+  const exp=!!RPEXP[RPTAB],rows=exp?list:list.slice(0,N);
+  const head=`<div class="cg thead">
+<div title="the wallet being mirrored">Wallet</div><div title="market + outcome">Market</div>
+<div class="r" title="stake at entry (class % of equity at the time)">Stake</div>
+<div class="r" title="${RPTAB==="current"?"current market value of the position":"payout at resolution"}">${RPTAB==="current"?"Value now":"Result"}</div>
+<div class="r" title="unrealized for open bets; net once settled">P&amp;L</div>
+<div class="r" title="${RPTAB==="current"?"when the market resolves":"resolution date"}">${RPTAB==="current"?"Settles":"Settled"}</div></div>`;
+  let html=head+rows.map(c=>`<div class="cg row" style="box-shadow:inset 2px 0 0 ${c.edge}">
+<div style="min-width:0"><div class="nm ell">${esc(c.nm)}${c.wtag}</div></div>
+<div style="min-width:0"><div class="mkt ell" title="${esc(c.mkt)}">${esc(c.mkt)}</div>${c.note?`<div style="font-size:11px;color:${AMB};opacity:.85">${c.note}</div>`:""}</div>
+<div class="r" style="font-size:13px">${c.stake}</div>
+<div class="r"><span class="pill ${c.pillCls}">${c.val}</span></div>
+<div class="r" style="font-weight:600;font-size:13px;color:${c.plC}">${c.pl}</div>
+<div class="r" style="font-size:12px;color:${c.whenC}" title="${c.whenT}">${c.when}</div></div>
+<div class="mcard" style="box-shadow:inset 2px 0 0 ${c.edge}">
+<div style="display:flex;gap:8px;align-items:baseline"><span class="nm" style="font-size:12.5px">${esc(c.nm)}</span><span style="font-size:11px;color:${c.whenC};margin-left:auto">${c.when}</span></div>
+<div class="mkt ell" style="margin-top:3px">${esc(c.mkt)}</div>
+<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span class="pill ${c.pillCls}" style="font-size:9.5px">${c.val}</span><span class="sub" style="font-size:11.5px">${c.stake} stake</span><span style="font-weight:700;font-size:13px;margin-left:auto;color:${c.plC}">${c.pl}</span></div></div>`).join("");
+  if(!list.length)html+=`<div class="loading">${ok?(RPTAB==="current"?"no open positions in the replica":RPTAB==="missed"?"no missed bets — model capital wasn't strained":"none settled yet"):"loading…"}</div>`;
+  if(list.length>N)html+=`<div class="more" onclick="tglRpExp()">${exp?"Show top "+N:"View all "+list.length+" →"}</div>`;
+  $("rpBook").innerHTML=html;
 }
 /* ── profitable bench (full 15-wallet replay, trimmed) ── */
 function renderPB(){
