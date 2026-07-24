@@ -80,6 +80,19 @@ section{scroll-margin-top:16px}
     <a class="jcard" href="#sharps"><div class="klabel" style="font-size:10.5px">Sharp Wallets</div><div id="jSharps" style="font-size:22px;font-weight:700;margin-top:3px">—</div><div class="sub" style="font-size:11px;margin-top:2px">active &amp; copyable · refreshed daily</div></a>
   </div>
 
+  <section id="replica">
+    <div class="secttl"><h2>Live Replica</h2><span class="pill pblue">MODEL</span><span id="rpUpd" class="sub" style="font-size:12px">loading…</span>
+      <span class="sub donly" style="font-size:12px;margin-left:auto" title="the backtest model run at the REAL-MONEY book's capital ($66.42, today's execution flags) — how far model and reality disagree, tracked daily in reconcile.csv">the model at real capital — the honesty dial</span></div>
+    <div class="hero">
+      <div style="display:flex;gap:20px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
+        <div><div class="klabel">Model equity @ $66.42</div><div class="eq" id="rpEquity">—</div><div id="rpPnl" style="font-size:14px;font-weight:600;margin-top:4px"></div></div>
+        <div id="rpSpark"></div>
+      </div>
+      <div class="heroline" id="rpLine"></div>
+    </div>
+    <div class="note" id="rpNote" style="margin-top:8px"></div>
+  </section>
+
   <section id="bot">
     <div class="secttl"><h2>Live Bot</h2><span id="pill" class="pill pgreen">…</span><span id="upd" class="sub" style="font-size:12px">loading live feed…</span>
       <span class="sub donly" style="font-size:12px;margin-left:auto">the real paper book — actual fills, lag &amp; fees</span></div>
@@ -408,6 +421,27 @@ function renderSharps(){
   ||head+'<div class="loading">no data</div>';
 }
 /* ── wallet drill-down modal ── */
+/* ── live replica: the model at real capital (#24 honesty dial) ── */
+let RP=null,RPLIVE=null;
+function renderReplica(){
+  const p=RP||{};const ok=!!RP;const bank=p.bank||66.42;
+  const pnl=p.pnl||0;
+  $("rpUpd").textContent=ok?"updated "+ago(p.updated):"loading…";
+  $("rpEquity").textContent=ok?money(p.equity||0):"—";
+  $("rpPnl").innerHTML=ok?`<span style="color:${cOf(pnl)}">${sgn(pnl)} (${(pnl>=0?"+":"")+(pnl/bank*100).toFixed(0)}%)</span> <span class="dim">on ${money(bank)}</span>`:"";
+  let cum=0;const vals=(p.resolved||[]).slice().sort((a,b)=>(a.date||0)-(b.date||0)).filter(s=>s.pnl!=null).map(s=>cum+=s.pnl);
+  $("rpSpark").innerHTML=spark(vals,"model realized P&amp;L at live capital");
+  const lvReal=RPLIVE&&RPLIVE.realized!=null?RPLIVE.realized:null;
+  const res=(p.resolved||[]).filter(r=>r.pnl!=null).sort((a,b)=>Math.abs(b.pnl)-Math.abs(a.pnl));
+  const top=res[0];const tot=res.reduce((s,r)=>s+r.pnl,0);
+  const exTop=top?tot-top.pnl:tot;
+  $("rpLine").innerHTML=ok?`<span><b style="color:${cOf(p.realized||0)}">${sgn(p.realized||0)}</b> model realized</span>`
+    +(lvReal!=null?`<span><b style="color:${cOf(lvReal)}">${sgn(lvReal)}</b> live book actual · residual <b style="color:${AMB}">${sgn((p.realized||0)-lvReal)}</b></span>`:"")
+    +(top?`<span title="${esc(top.title||"")}">top bet <b style="color:${cOf(top.pnl)}">${sgn(top.pnl)}</b> · ex-top <b style="color:${cOf(exTop)}">${sgn(exTop)}</b></span>`:""):"";
+  $("rpNote").innerHTML=ok?`<b style="color:#c9d6e5">The honesty dial.</b> The backtest model run at the real-money book's capital (${money(bank)}, current execution flags, follow-since applied). If model and reality agree, the simulation is trustworthy; the gap is tracked daily in reconcile.csv.
+    ${top&&Math.abs(top.pnl)>Math.abs(tot)?`<b style="color:${AMB}">Concentration warning:</b> the single largest bet (${sgn(top.pnl)}) exceeds the entire net — ex-moonshot the model reads ${sgn(exTop)}, nearly reconciling with the live book.`:""}
+    Declared optimism still inside: 100% maker-fill assumption (measured rate lands after #20 closes) and static-bank deposit timing.`:"";
+}
 /* ── profitable bench (full 15-wallet replay, trimmed) ── */
 function renderPB(){
   const p=PB||{};const pOK=!!PB;const bank=p.bank||1000;
@@ -522,6 +556,8 @@ loadBot();setInterval(loadBot,30000);
 fetch(BASE+"portfolio_follow.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();}).then(p=>{P=p;renderBT();})
   .catch(()=>fetch(BASE+"portfolio.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();}).then(p=>{P=p;renderBT();}).catch(()=>{}));
 fetch(BASE+"portfolio.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();}).then(p=>{PB=p;renderPB();if(MW)renderModal();}).catch(()=>{});
+fetch(BASE+"portfolio_live_replica.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();}).then(p=>{RP=p;renderReplica();}).catch(()=>{});
+fetch(BASE+"copybot_live_real.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();}).then(p=>{RPLIVE=p;if(RP)renderReplica();}).catch(()=>{});
 fetch(BASE+"watch_sharps.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();}).then(s=>{S=s;renderSharps();}).catch(()=>{SERR=true;renderSharps();});
 renderBT();
 </script>
