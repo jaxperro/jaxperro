@@ -63,65 +63,6 @@ h1,h2{font-size:17px;margin:0;font-weight:700}
   <header><h1>Tests — paper harnesses</h1><span class="pill pamber">PAPER</span><span class="sub" style="font-size:12px">pre-registered studies, verdict-gated</span>
     <a href="/live/" style="margin-left:auto;font-size:12.5px">← real money</a><a href="/trading/" style="font-size:12.5px">← paper copy-bot</a></header>
 
-  <!-- ── Study A: surge ─────────────────────────────────────────────────── -->
-  <div class="shead"><h2>Surge — Study A</h2><span id="s_pill" class="pill pamber">PAPER</span><span id="s_upd" class="sub" style="font-size:12px">loading feed…</span>
-    <a href="https://github.com/jaxperro/winning-wallet-finder/issues/16" target="_blank" rel="noopener" style="margin-left:auto;font-size:12.5px">pre-registration #16 ↗</a>
-    <a href="https://github.com/jaxperro/winning-wallet-finder/issues/19" target="_blank" rel="noopener" style="font-size:12.5px">sprint plan #19 ↗</a></div>
-  <div class="hg">
-    <div class="hero">
-      <div style="display:flex;gap:20px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
-        <div><div class="klabel">Paper P&amp;L</div><div class="eq" id="s_equity">—</div><div id="s_pnl" style="font-size:14px;font-weight:600;margin-top:4px"></div></div>
-        <div id="s_spark"></div>
-      </div>
-      <div class="heroline" id="s_heroline"></div>
-    </div>
-    <div class="side"><div class="klabel">Signal health</div><div class="hstats" id="s_health"></div></div>
-  </div>
-  <div class="tabs">
-    <div class="tab on" id="s_tabOpen" onclick="setTab('s','open')">Open · —</div>
-    <div class="tab" id="s_tabSettled" onclick="setTab('s','settled')">Settled · —</div>
-    <div class="tab" id="s_tabSkips" onclick="setTab('s','skips')">Skips · —</div>
-  </div>
-  <div class="tbl" id="s_book"><div class="loading">loading surge feed…</div></div>
-  <div class="note"><b style="color:#c9d6e5">Paper money, measurement mode (A2).</b> This harness trades Study A's frozen surge signal
-    (net informed flow ≥ $300/60s in an in-play sports/esports market, entry 10–90¢, cooldown 900s/token) and paper-FAKs
-    <b style="color:#c9d6e5">every</b> trigger at $100 against the live CLOB book — no bank, no cash gate. The v1 cash-gated book was
-    halted 2026-07-22 after its ~2% trigger subsample proved adversely selected (−$9/fill vs +$41/fill on the full signal, same day, same sim);
-    bankroll specs are now replayed offline from the full attempts log — the <b style="color:#c9d6e5">virtual $100/5% book</b> in the panel above
-    is that nightly replay. Settles are provisional until the nightly re-grade against on-chain payout vectors (CHAIN badge).
-    Believing any number here is gated on the <a href="https://github.com/jaxperro/winning-wallet-finder/issues/16" target="_blank">#16 forward verdict</a>;
-    funding happens only through the <a href="https://github.com/jaxperro/winning-wallet-finder/issues/19" target="_blank">#19 decision matrix</a>.
-    Feed: <a href="https://wwf-surgebot.fly.dev/feed" target="_blank">wwf-surgebot.fly.dev/feed</a> · refreshes every 20s.</div>
-
-  <!-- ── Study B: oracle ────────────────────────────────────────────────── -->
-  <div class="shead"><h2>Oracle — Study B</h2><span id="o_pill" class="pill pamber">PAPER</span><span id="o_upd" class="sub" style="font-size:12px">loading feed…</span>
-    <a href="https://github.com/jaxperro/winning-wallet-finder/issues/17" target="_blank" rel="noopener" style="margin-left:auto;font-size:12.5px">pre-registration #17 ↗</a></div>
-  <div class="hg">
-    <div class="hero">
-      <div style="display:flex;gap:20px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
-        <div><div class="klabel">Paper P&amp;L</div><div class="eq" id="o_pnl">—</div><div id="o_pnlsub" style="font-size:14px;font-weight:600;margin-top:4px"></div></div>
-        <div id="o_spark"></div>
-      </div>
-      <div class="heroline" id="o_heroline"></div>
-    </div>
-    <div class="side"><div class="klabel" title="the venue's own Binance settlement feed — fair value is computed tick-by-tick on it">Feed health</div><div class="syms" id="o_syms"></div></div>
-  </div>
-  <div class="cells" id="o_cells"></div>
-  <div class="tabs">
-    <div class="tab on" id="o_tabOpen" onclick="setTab('o','open')">Open · —</div>
-    <div class="tab" id="o_tabSettled" onclick="setTab('o','settled')">Settled · —</div>
-    <div class="tab" id="o_tabSkips" onclick="setTab('o','skips')">Skips · —</div>
-  </div>
-  <div class="tbl" id="o_book"><div class="loading">loading oracle feed…</div></div>
-  <div class="note"><b style="color:#c9d6e5">Paper money, measurement mode.</b> This harness prices every crypto strike/sprint
-    market as a digital option on Polymarket's own Binance settlement feed (fair = Φ(ln(S/K)/σ√τ), σ = trailing 30-min realized vol)
-    and paper-FAKs $100 at the live CLOB book whenever a trade prints ≥ 4¢ below fair (cooldown 300s/token, τ 1min–12h, one-touch excluded).
-    No bank, no sizing — it exists to measure whether the tape sim's mispricings are <i>capturable at real latency</i>.
-    Settles are provisional (own-feed tick, then CLOB flags) until the nightly re-grade against on-chain payout vectors (CHAIN badge).
-    <b style="color:#c9d6e5">The Study B verdict binds to the forward ledger only</b> — a good harness cannot rescue a
-    <a href="https://github.com/jaxperro/winning-wallet-finder/issues/17" target="_blank">#17</a> KILL, it can only seed a pre-registered v2.
-    Feed: <a href="https://wwf-oraclebot.fly.dev/feed" target="_blank">wwf-oraclebot.fly.dev/feed</a> · refreshes every 20s.</div>
-
   <!-- ── Study C: maker inventory-lean ──────────────────────────────────── -->
   <div class="shead"><h2>Lean — Study C</h2><span id="c_pill" class="pill pblue">FORWARD</span><span id="c_upd" class="sub" style="font-size:12px">loading ledger…</span>
     <a id="c_issue" href="https://github.com/jaxperro/winning-wallet-finder/issues/22" target="_blank" rel="noopener" style="margin-left:auto;font-size:12.5px">pre-registration #22 ↗</a></div>
@@ -168,12 +109,9 @@ h1,h2{font-size:17px;margin:0;font-weight:700}
 <script>
 const N=8;
 const G="#3fd17a",R="#ff6b6b",DIM="#8b9bb0",AMB="#f5c451";
-const SYMNAMES={btcusdt:"BTC",ethusdt:"ETH",solusdt:"SOL",xrpusdt:"XRP",bnbusdt:"BNB",dogeusdt:"DOGE"};
 const RAW="https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/research/";
 const ST={
-  s:{FEED:"https://wwf-surgebot.fly.dev/feed",LEDGER:RAW+"surge_meas_ledger.jsonl",BOOKURL:RAW+"surge_book.json",BOOK:null,D:null,OFF:false,CHAIN:{},LROWS:[],TAB:"open",EXP:{}},
-  o:{FEED:"https://wwf-oraclebot.fly.dev/feed",LEDGER:RAW+"oracle_paper_ledger.jsonl",D:null,OFF:false,CHAIN:{},LROWS:[],TAB:"open",EXP:{}},
-  l:{FEED:"https://wwf-lagbot.fly.dev/feed",LEDGER:RAW+"lag_paper_ledger.jsonl",D:null,OFF:false,CHAIN:{},LROWS:[],TAB:"open",EXP:{}}};
+    l:{FEED:"https://wwf-lagbot.fly.dev/feed",LEDGER:RAW+"lag_paper_ledger.jsonl",D:null,OFF:false,CHAIN:{},LROWS:[],TAB:"open",EXP:{}}};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
 const money=n=>(n<0?"-$":"$")+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:Math.abs(n)>=100?0:2});
@@ -191,145 +129,6 @@ function tglExp(k){ST[k].EXP[ST[k].TAB]=!ST[k].EXP[ST[k].TAB];render(k);}
 function graded(k,s){const c=ST[k].CHAIN[s.asset+"|"+s.ts];return c?{pnl:c.chain_pnl,pay:c.chain_payout,badge:["CHAIN","pgreen"],flip:c.flip}:{pnl:s.pnl,pay:s.payout,badge:["PROV","pgrey"],flip:false};}
 function pillUpd(k,name){const S=ST[k];$(k+"_pill").textContent=S.OFF?"OFFLINE":"PAPER";$(k+"_pill").className="pill "+(S.OFF?"pred":"pamber");$(k+"_upd").textContent=S.OFF?"feed unreachable — retrying":"updated "+ago((S.D||{}).updated);}
 function moreRow(k,arr,exp){return arr.length>N?`<div class="more" onclick="tglExp('${k}')">${exp?"Show top "+N:"View all "+arr.length+" →"}</div>`:"";}
-
-/* ── Study A: surge (paper book at the #19 deployment spec) ─────────────── */
-function renderS(){
-  const S=ST.s,d=S.D||{};
-  const open=(d.open||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
-  const settled=(d.settled||[]).slice().sort((a,b)=>(b.settled_ts||0)-(a.settled_ts||0));
-  const skips=(d.skips||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
-  const c=d.counters||{};
-  pillUpd("s");
-  const chainTot=S.LROWS.reduce((s,r)=>s+(r.chain_pnl||0),0);
-  const provTot=settled.filter(x=>!S.CHAIN[x.asset+"|"+x.ts]).reduce((s,x)=>s+(x.pnl||0),0);
-  const tot=S.LROWS.length||settled.length?chainTot+provTot:(d.pnl_realized||0);
-  $("s_equity").innerHTML=S.D?`<span style="color:${cOf(tot)}">${sgn(tot)}</span>`:"—";
-  const pays=[...S.LROWS.map(r=>r.chain_payout),...settled.filter(x=>!S.CHAIN[x.asset+"|"+x.ts]).map(x=>x.payout)];
-  const W=pays.filter(p=>p===1).length,RF=pays.filter(p=>p===0.5).length,L=pays.length-W-RF;
-  $("s_pnl").innerHTML=S.D?`<span class="dim">${W}W / ${L}L${RF?" / "+RF+"R":""} settled · ${c.settled_total??0} lifetime</span>`:"";
-  let cum=0;const vals=settled.slice().reverse().map(x=>cum+=graded("s",x).pnl||0);
-  $("s_spark").innerHTML=spark(vals);
-  const cap=c.attempts?Math.round(100*c.fills/c.attempts):null;
-  $("s_heroline").innerHTML=S.D?`<span><b>${c.triggers??"—"}</b> triggers · <b>${c.fills??"—"}</b> fills${cap!=null?` <b style="color:${cap>=50?G:AMB}">(${cap}% capture)</b>`:""}</span><span><b>${c.craters??"—"}</b> FAK craters</span><span title="every cooldown-passed trigger is attempted at $100; no bank, no cash gate — bankroll specs are replayed offline (virtual book, nightly)">flat $100 FAKs · measurement mode</span><span title="frozen signal params">flow ≥ $${(d.frozen||{}).flow_usd||300}/${(d.frozen||{}).window_s||60}s · ${Math.round(((d.frozen||{}).band||[.1,.9])[0]*100)}–${Math.round(((d.frozen||{}).band||[.1,.9])[1]*100)}¢</span>`:"";
-  const B=S.BOOK;
-  const bEq=B?B.equity:null,bC=B?B.counters||{}:{};
-  $("s_health").innerHTML=`
-<div><div class="hv">${c.triggers??"—"}</div><div class="hs">triggers (all attempted)</div></div>
-<div><div class="hv">${c.fills??"—"}${cap!=null?` <span class="dim" style="font-size:11px;font-weight:400">(${cap}%)</span>`:""}</div><div class="hs">fills (capture)</div></div>
-<div><div class="hv">${c.craters??"—"}</div><div class="hs">FAK craters</div></div>
-<div><div class="hv">${(c.throttle_skip??0)+(c.book_fail??0)}</div><div class="hs">throttled / book-fail</div></div>
-<div style="grid-column:1/-1"><div class="hv" style="font-size:14px;color:${bEq==null?"var(--dim)":cOf(bEq-100)}">${bEq==null?"—":money(bEq)} <span class="dim" style="font-weight:400;font-size:11.5px">· ${B?`${B.settled} settled ${B.wins}W · taken ${bC.taken??"—"} (${bC.cash_skip??0} cash-skips) · ${ago((Date.parse(B.computed_at)||0)/1000)}`:"awaiting first nightly replay"}</span></div><div class="hs" title="the $100 bank · 5%-of-equity · cash-gated · 2/event spec replayed offline over the FULL attempts stream — what v1 tried to measure physically">virtual $100/5% book (nightly replay)</div></div>
-<div style="grid-column:1/-1"><div class="hv" style="font-size:14px">${d.informed?((d.informed.n||"—")+" wallets"):"—"} <span class="dim" style="font-weight:400;font-size:11.5px">· set ${d.informed?ago(d.informed.generated_at):"—"}</span></div><div class="hs">informed set (frozen method, republished nightly)</div></div>`;
-  $("s_tabOpen").innerHTML="Open · "+open.length;
-  const stot=settled.reduce((s,x)=>s+(graded("s",x).pnl||0),0);
-  $("s_tabSettled").innerHTML="Settled · "+settled.length+(settled.length?" · "+sgn(stot):"");
-  $("s_tabSkips").innerHTML="Skips · "+skips.length;
-  ["Open","Settled","Skips"].forEach(t=>$("s_tab"+t).classList.toggle("on",S.TAB===t.toLowerCase()));
-  const exp=!!S.EXP[S.TAB];
-  let html;
-  if(S.TAB==="open"){
-    const rows=exp?open:open.slice(0,N);
-    const eta=p=>{if(!p.end_ts)return["—",DIM,""];const dt=p.end_ts-Date.now()/1000;
-      const t=new Date(p.end_ts*1000).toLocaleString();
-      return dt<=0?["settling…",AMB,t]:["in "+ageStr(dt).replace(" ago",""),DIM,t];};
-    html=`<div class="sog thead"><div>When</div><div>Market</div><div class="r" title="paper fill price (live CLOB best ask at trigger)">Entry</div><div class="r">Stake</div><div class="r" title="informed net flow in the 60s window that fired the trigger">Flow</div><div class="r" title="market's scheduled end (in-play games often resolve earlier) · settling… = past its end date">Resolves</div></div>`
-      +rows.map(p=>{const[e,ec,et]=eta(p);return `<div class="sog row"><div class="sub">${ago(p.ts)}</div><div class="mkt ell" title="${esc(p.title)}">${esc((p.outcome?p.outcome+" · ":"")+p.title)}</div><div class="r">${Math.round(p.price*100)}¢${p.partial?"*":""}</div><div class="r">${money(p.cost)}</div><div class="r dim">$${p.flow}</div><div class="r" style="font-size:12px;color:${ec}" title="${et}">${e}</div></div>
-<div class="mcard"><div class="mkt ell">${esc((p.outcome?p.outcome+" · ":"")+p.title)}</div><div class="sub" style="margin-top:3px">${ago(p.ts)} · ${Math.round(p.price*100)}¢ · ${money(p.cost)} · flow $${p.flow} · <span style="color:${ec}">${e}</span></div></div>`;}).join("");
-    if(!open.length)html+=`<div class="loading">${S.D?"no open positions — waiting for a surge":"loading…"}</div>`;
-    html+=moreRow("s",open,exp);
-  }else if(S.TAB==="settled"){
-    const rows=exp?settled:settled.slice(0,N);
-    html=`<div class="seg thead"><div>When</div><div>Market</div><div class="r">Entry</div><div class="r">Stake</div><div class="r" title="CHAIN = re-graded against on-chain payout vectors · PROV = surgebot's own CLOB read, pending nightly re-grade">Grade</div><div class="r">P&amp;L</div></div>`
-      +rows.map(s=>{const g=graded("s",s);return `<div class="seg row" style="box-shadow:inset 2px 0 0 ${g.pay===1?G:R}"><div class="sub">${ago(s.settled_ts)}</div><div class="mkt ell" title="${esc(s.title)}">${esc((s.outcome?s.outcome+" · ":"")+s.title)}</div><div class="r">${Math.round(s.price*100)}¢</div><div class="r">${money(s.cost)}</div><div class="r"><span class="pill ${g.badge[1]}">${g.badge[0]}${g.flip?" ⚠":""}</span></div><div class="r" style="font-weight:600;color:${cOf(g.pnl)}">${sgn(g.pnl)}</div></div>
-<div class="mcard" style="box-shadow:inset 2px 0 0 ${g.pay===1?G:R}"><div class="mkt ell">${esc((s.outcome?s.outcome+" · ":"")+s.title)}</div><div class="sub" style="margin-top:3px">${ago(s.settled_ts)} · ${Math.round(s.price*100)}¢ · ${money(s.cost)} · <span class="pill ${g.badge[1]}" style="font-size:9px">${g.badge[0]}</span> <b style="color:${cOf(g.pnl)}">${sgn(g.pnl)}</b></div></div>`;}).join("");
-    if(!settled.length)html+=`<div class="loading">${S.D?"nothing settled yet":"loading…"}</div>`;
-    html+=moreRow("s",settled,exp);
-  }else{
-    const rows=exp?skips:skips.slice(0,N);
-    html=`<div class="skg thead"><div>When</div><div>Market</div><div class="r" title="ref = trigger price · ask = live best ask (crater = no ask inside ref×1.05)">Ref → ask</div><div class="r">Flow</div></div>`
-      +rows.map(k=>`<div class="skg row"><div class="sub">${ago(k.ts)}</div><div style="min-width:0"><div class="mkt ell" title="${esc(k.title)}">${esc(k.title)}</div><div style="font-size:11px;color:${AMB}">${esc(k.why||"crater")}</div></div><div class="r">${Math.round((k.p_ref||0)*100)}¢ → ${k.ba?Math.round(k.ba*100)+"¢":"—"}</div><div class="r dim">$${k.flow}</div></div>
-<div class="mcard"><div class="mkt ell">${esc(k.title)}</div><div class="sub" style="margin-top:3px">${ago(k.ts)} · <span style="color:${AMB}">${esc(k.why||"crater")}</span> · ${Math.round((k.p_ref||0)*100)}¢ → ${k.ba?Math.round(k.ba*100)+"¢":"—"} · flow $${k.flow}</div></div>`).join("");
-    if(!skips.length)html+=`<div class="loading">${S.D?"no craters logged yet":"loading…"}</div>`;
-    html+=moreRow("s",skips,exp);
-  }
-  $("s_book").innerHTML=html;
-}
-
-/* ── Study B: oracle (measurement mode, no bank) ────────────────────────── */
-function cellCard(E,cell){
-  const chain=ST.o.LROWS.filter(r=>(r.edge||0)>=E);
-  const useChain=chain.length>0;
-  const fills=useChain?chain.length:(cell.fills||0);
-  const wins=useChain?chain.filter(r=>r.chain_payout===1).length:(cell.wins||0);
-  const pnl=useChain?chain.reduce((s,r)=>s+(r.chain_pnl||0),0):(cell.pnl||0);
-  const ev=fills?pnl/fills:null,hit=fills?wins/fills:null;
-  const att=cell.attempts||0,crat=cell.craters||0;
-  const cratePct=att?Math.round(100*crat/att):null;
-  return `<div class="cell"><div class="klabel">edge ≥ ${Math.round(E*100)}¢ <span class="pill ${useChain?"pgreen":"pgrey"}" style="margin-left:6px">${useChain?"CHAIN":"PROV"}</span></div>
-  <div class="cv" style="color:${ev==null?"var(--dim)":cOf(ev)}">${ev==null?"—":sgn(ev)+"/fill"}</div>
-  <div class="cs">${fills} fills · hit ${hit==null?"—":(100*hit).toFixed(0)+"%"} · ${cell.events||0} events<br>
-  ${crat} craters${cratePct!=null?" ("+cratePct+"% of attempts)":""}${cell.throttle?" · "+cell.throttle+" throttled":""}</div></div>`;}
-function renderO(){
-  const S=ST.o,d=S.D||{};
-  const open=(d.open||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
-  const settled=(d.settled||[]).slice().sort((a,b)=>(b.settled_ts||0)-(a.settled_ts||0));
-  const skips=(d.skips||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
-  const c=d.counters||{},sk=c.skip||{};
-  pillUpd("o");
-  const chainTot=S.LROWS.reduce((s,r)=>s+(r.chain_pnl||0),0);
-  const provTot=settled.filter(x=>!S.CHAIN[x.asset+"|"+x.ts]).reduce((s,x)=>s+(x.pnl||0),0);
-  const tot=S.LROWS.length||settled.length?chainTot+provTot:(d.pnl_realized||0);
-  $("o_pnl").innerHTML=S.D?`<span style="color:${cOf(tot)}">${sgn(tot)}</span>`:"—";
-  const pays=[...S.LROWS.map(r=>r.chain_payout),...settled.filter(x=>!S.CHAIN[x.asset+"|"+x.ts]).map(x=>x.payout)];
-  const W=pays.filter(p=>p===1).length,RF=pays.filter(p=>p===0.5).length,L=pays.length-W-RF;
-  $("o_pnlsub").innerHTML=S.D?`<span class="dim">${W}W / ${L}L${RF?" / "+RF+"R":""} settled · ${c.settled_total??0} lifetime</span>`:"";
-  let cum=0;const vals=settled.slice().reverse().map(x=>cum+=graded("o",x).pnl||0);
-  $("o_spark").innerHTML=spark(vals);
-  const capt=c.attempts?Math.round(100*c.fills/c.attempts):null;
-  $("o_heroline").innerHTML=S.D?`<span><b>${c.events??"—"}</b> events · <b>${c.fills??"—"}</b> fills${capt!=null?` <b style="color:${capt>=50?G:AMB}">(${capt}% capture)</b>`:""}</span><span><b>${c.craters??"—"}</b> FAK craters · <span title="warmup / stale-feed / pre-window / s0-gap / no-vol / tau / book-fail"><b>${(sk.warmup??0)+(sk.stale??0)+(sk.pre_window??0)+(sk.s0_gap??0)+(sk.no_vol??0)+(sk.tau??0)+(sk.book_fail??0)}</b> guarded skips</span></span><span title="no bank, no sizing — measurement harness; the verdict binds to the forward ledger (#17)">flat $100 FAKs · measurement mode</span>`:"";
-  const syms=d.symbols||{};
-  $("o_syms").innerHTML=Object.keys(SYMNAMES).map(k=>{const s=syms[k]||{};
-    const ok=s.fresh&&s.warm,warming=s.fresh&&!s.warm;
-    const col=ok?G:warming?AMB:R;
-    const lab=ok?"live":warming?(s.warm_eta_s?`warming ${Math.ceil(s.warm_eta_s/60)}m`:"warming"):"stale";
-    const vol=s.vol_1s?(s.vol_1s*1e4).toFixed(1)+"bp/√s":"—";
-    return `<div class="symrow"><span class="dot" style="background:${col}"></span><b style="width:44px">${SYMNAMES[k]}</b><span style="flex:1">${px(s.px)}</span><span class="dim" title="trailing 30-min realized vol of 1s log-returns">${vol}</span><span class="pill ${ok?"pgreen":warming?"pamber":"pred"}">${lab}</span></div>`;}).join("");
-  const cells=d.cells||{};
-  $("o_cells").innerHTML=S.D?[0.04,0.07,0.10].map(E=>cellCard(E,cells[E===0.10?"0.1":E.toFixed(2)]||{})).join(""):"";
-  $("o_tabOpen").innerHTML="Open · "+open.length;
-  $("o_tabSettled").innerHTML="Settled · "+settled.length;
-  $("o_tabSkips").innerHTML="Skips · "+skips.length;
-  ["Open","Settled","Skips"].forEach(t=>$("o_tab"+t).classList.toggle("on",S.TAB===t.toLowerCase()));
-  const exp=!!S.EXP[S.TAB];
-  let html;
-  const edgec=e=>`<span title="fair minus print at trigger">+${Math.round((e||0)*100)}¢</span>`;
-  if(S.TAB==="open"){
-    const rows=exp?open:open.slice(0,N);
-    const eta=p=>{if(!p.t1)return["—",DIM,""];const dt=p.t1-Date.now()/1000;
-      const t=new Date(p.t1*1000).toLocaleString();
-      return dt<=0?["settling…",AMB,t]:["in "+ageStr(dt).replace(" ago",""),DIM,t];};
-    html=`<div class="oog thead"><div>When</div><div>Market</div><div class="r" title="paper FAK VWAP against the live book, capped at print×1.05 · * = partial fill">Entry</div><div class="r" title="fair − print at trigger">Edge</div><div class="r">Stake</div><div class="r" title="market expiry from the title (τ)">Resolves</div></div>`
-      +rows.map(p=>{const[e,ec,et]=eta(p);return `<div class="oog row"><div class="sub">${ago(p.ts)}</div><div class="mkt ell" title="${esc(p.title)} · fair ${Math.round(p.fair*100)}¢ vs print ${Math.round(p.p_ref*100)}¢">${esc((p.outcome?p.outcome+" · ":"")+p.title)}</div><div class="r">${Math.round(p.price*100)}¢${p.partial?"*":""}</div><div class="r" style="color:${G}">${edgec(p.edge)}</div><div class="r">${money(p.cost)}</div><div class="r" style="font-size:12px;color:${ec}" title="${et}">${e}</div></div>
-<div class="mcard"><div class="mkt ell">${esc((p.outcome?p.outcome+" · ":"")+p.title)}</div><div class="sub" style="margin-top:3px">${ago(p.ts)} · ${Math.round(p.price*100)}¢ · ${money(p.cost)} · edge +${Math.round(p.edge*100)}¢ · <span style="color:${ec}">${e}</span></div></div>`;}).join("");
-    if(!open.length)html+=`<div class="loading">${S.D?"no open lots — waiting for a ≥4¢ mispricing":"loading…"}</div>`;
-    html+=moreRow("o",open,exp);
-  }else if(S.TAB==="settled"){
-    const rows=exp?settled:settled.slice(0,N);
-    html=`<div class="oeg thead"><div>When</div><div>Market</div><div class="r">Entry</div><div class="r">Edge</div><div class="r" title="CHAIN = re-graded against on-chain payout vectors · PROV = own-feed tick or CLOB flags, pending nightly re-grade">Grade</div><div class="r">P&amp;L</div></div>`
-      +rows.map(s=>{const g=graded("o",s);return `<div class="oeg row" style="box-shadow:inset 2px 0 0 ${g.pay===1?G:g.pay===0.5?AMB:R}"><div class="sub">${ago(s.settled_ts)}</div><div class="mkt ell" title="${esc(s.title)} · settled via ${esc(s.source)}">${esc((s.outcome?s.outcome+" · ":"")+s.title)}</div><div class="r">${Math.round(s.price*100)}¢</div><div class="r">${edgec(s.edge)}</div><div class="r"><span class="pill ${g.badge[1]}">${g.badge[0]}${g.flip?" ⚠":""}</span></div><div class="r" style="font-weight:600;color:${cOf(g.pnl)}">${sgn(g.pnl)}</div></div>
-<div class="mcard" style="box-shadow:inset 2px 0 0 ${g.pay===1?G:g.pay===0.5?AMB:R}"><div class="mkt ell">${esc((s.outcome?s.outcome+" · ":"")+s.title)}</div><div class="sub" style="margin-top:3px">${ago(s.settled_ts)} · ${Math.round(s.price*100)}¢ · edge +${Math.round(s.edge*100)}¢ · <span class="pill ${g.badge[1]}" style="font-size:9px">${g.badge[0]}</span> <b style="color:${cOf(g.pnl)}">${sgn(g.pnl)}</b></div></div>`;}).join("");
-    if(!settled.length)html+=`<div class="loading">${S.D?"nothing settled yet — sprints settle within minutes of expiry":"loading…"}</div>`;
-    html+=moreRow("o",settled,exp);
-  }else{
-    const rows=exp?skips:skips.slice(0,N);
-    html=`<div class="okg thead"><div>When</div><div>Market</div><div class="r" title="ref = trigger print · ask = live best ask (crater = no ask inside ref×1.05)">Ref → ask</div><div class="r">Edge</div></div>`
-      +rows.map(k=>`<div class="okg row"><div class="sub">${ago(k.ts)}</div><div style="min-width:0"><div class="mkt ell" title="${esc(k.title)}">${esc(k.title)}</div><div style="font-size:11px;color:${AMB}">${esc(k.why||"crater")}</div></div><div class="r">${Math.round((k.p_ref||0)*100)}¢ → ${k.ba?Math.round(k.ba*100)+"¢":"—"}</div><div class="r dim">${edgec(k.edge)}</div></div>
-<div class="mcard"><div class="mkt ell">${esc(k.title)}</div><div class="sub" style="margin-top:3px">${ago(k.ts)} · <span style="color:${AMB}">${esc(k.why||"crater")}</span> · ${Math.round((k.p_ref||0)*100)}¢ → ${k.ba?Math.round(k.ba*100)+"¢":"—"} · edge +${Math.round((k.edge||0)*100)}¢</div></div>`).join("");
-    if(!skips.length)html+=`<div class="loading">${S.D?"no craters logged yet":"loading…"}</div>`;
-    html+=moreRow("o",skips,exp);
-  }
-  $("o_book").innerHTML=html;
-}
 
 /* ── Study D: sibling lead-lag (wwf-lagbot) ─────────────────────────────── */
 function renderL(){
@@ -390,9 +189,9 @@ function renderL(){
   $("l_book").innerHTML=html;
 }
 
-function render(k){k==="s"?renderS():k==="o"?renderO():renderL();}
+function render(k){renderL();}
 function load(){
-  for(const k of ["s","o","l"]){
+  for(const k of ["l"]){
     const S=ST[k];
     fetch(S.FEED,{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();})
       .then(d=>{S.D=d;S.OFF=false;render(k);}).catch(()=>{S.OFF=true;render(k);});
