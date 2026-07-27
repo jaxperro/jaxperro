@@ -181,7 +181,7 @@ function render(){
   $("heroline").innerHTML=D?`<span><b>${money(cash)}</b> free cash (${Math.round(cash/(bank||1)*100)}% of ${money(bank)} book)</span><span><b>${money(dep)}</b> deployed · ${d.open_count||open.length} open</span><span title="${esc(sizing)}${d.event_cap?" · max "+d.event_cap+" bets/event":""} · free cash gates new bets">${esc(sizing)}</span>`:"";
   const lf=d.last_fill;
   $("health").innerHTML=`
-<div><div class="hv">${L.avg_s!=null?Math.round(L.avg_s)+"s":"—"}</div><div class="hs">exec lag 24h</div></div>
+<div><div class="hv" title="${L.basis==="lifetime"?"no fills in the last 24h — showing the lifetime median":"median detection→fill over the last 24h"}">${L.avg_s!=null?Math.round(L.avg_s)+"s":"—"}</div><div class="hs">${L.basis==="lifetime"?"exec lag · lifetime ("+(L.n||0)+")":L.n24?"exec lag 24h ("+L.n24+")":"exec lag"}</div></div>
 <div><div class="hv">${L.avg_slip_pct!=null?(L.avg_slip_pct*100).toFixed(1)+"%":"—"}</div><div class="hs" title="${L.n24!=null?L.n24+" fills in 24h":(L.n||0)+" copies"}">avg slippage</div></div>
 <div><div class="hv" style="color:${Math.abs(drift)>0.01?R:G}" title="drift = cash vs what the ledger implies">${Math.abs(drift)>0.01?sgn(drift):"✓ ok"}</div><div class="hs">ledger check</div></div>
 <div><div class="hv">${money(fees)}</div><div class="hs">fees paid</div></div>
