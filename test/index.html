@@ -105,13 +105,54 @@ h1,h2{font-size:17px;margin:0;font-weight:700}
     <a href="https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/research/lag_paper_ledger.jsonl" target="_blank">chain-graded ledger</a> per
     <a href="https://github.com/jaxperro/winning-wallet-finder/issues/23" target="_blank">#23</a>.
     Feed: <a href="https://wwf-lagbot.fly.dev/feed" target="_blank">wwf-lagbot.fly.dev/feed</a> · refreshes every 20s.</div>
+
+  <!-- ── Study D v2: the band arm + concentration guards ─────────────────── -->
+  <div class="shead"><h2>Band arm — Study D v2</h2><span class="pill pblue">SCORING</span><span id="v2_upd" class="sub" style="font-size:12px">loading ledger…</span>
+    <a href="https://github.com/jaxperro/winning-wallet-finder/issues/27" target="_blank" rel="noopener" style="margin-left:auto;font-size:12.5px">pre-registration #27 ↗</a></div>
+  <div class="cells" id="v2_cells" style="grid-template-columns:repeat(4,1fr)"></div>
+  <div class="tbl" id="v2_guards" style="margin-top:12px"><div class="loading">computing guards…</div></div>
+  <div class="note"><b style="color:#c9d6e5">A scoring arm, not a bot.</b> v1 kept sampling every band on purpose — a band-gated harness would have
+    destroyed the evidence that produced this hypothesis. So #27 scores only the <b style="color:#c9d6e5">15–40¢ complements</b> filled after its
+    freeze, at a <b style="color:#c9d6e5">doubled bar (+$8/fill)</b> because the band was found by slicing v1's own data; the other bands ride along as
+    report-only controls. <b style="color:#c9d6e5">Every guard below is a hard PASS criterion</b> — a headline that dies without its best day or its
+    top five episodes is recorded CONCENTRATED and does not graduate. Bars: PASS ≥ +$8/fill @ n≥300 &amp; ≥10 days with all guards clear ·
+    KILL ≤ 0 @ n≥200 or ex-best-day ≤ 0 @ n≥200.</div>
+
+  <!-- ── Study C Stage-2: the lean harness ──────────────────────────────── -->
+  <div class="shead"><h2>Lean harness — Study C Stage-2</h2><span id="n_pill" class="pill pamber">PAPER</span><span id="n_upd" class="sub" style="font-size:12px">loading feed…</span>
+    <a href="https://github.com/jaxperro/winning-wallet-finder/issues/26" target="_blank" rel="noopener" style="margin-left:auto;font-size:12.5px">pre-registration #26 ↗</a></div>
+  <div class="hg">
+    <div class="hero">
+      <div style="display:flex;gap:20px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
+        <div><div class="klabel">Paper P&amp;L</div><div class="eq" id="n_pnl">—</div><div id="n_pnlsub" style="font-size:14px;font-weight:600;margin-top:4px"></div></div>
+        <div id="n_spark"></div>
+      </div>
+      <div class="heroline" id="n_heroline"></div>
+    </div>
+    <div class="side"><div class="klabel" title="the screened wallet set is published nightly from strictly-prior tape — the box never screens itself">Instrument health</div><div class="hstats" id="n_health"></div></div>
+  </div>
+  <div class="tabs">
+    <div class="tab on" id="n_tabOpen" onclick="setTab('n','open')">Open · —</div>
+    <div class="tab" id="n_tabSettled" onclick="setTab('n','settled')">Settled · —</div>
+    <div class="tab" id="n_tabSkips" onclick="setTab('n','skips')">Skips · —</div>
+  </div>
+  <div class="tbl" id="n_book"><div class="loading">loading lean feed…</div></div>
+  <div class="note"><b style="color:#c9d6e5">Paper money, measurement mode.</b> Study C passed its tape-scored window (+$2.17/lean, n=20,461) with every
+    entry booked at the lean-side <i>last print</i> — the same assumption that made Study B look profitable until a real book priced it at −$8.51/fill.
+    This harness answers whether the lean side is actually buyable: when a screened maker-sharp's net inventory in one token crosses
+    <b style="color:#c9d6e5">$150 at ≥60% one-sidedness</b> (follow arm, $150–500), it paper-FAKs $100 at the live ask — but only within
+    <b style="color:#c9d6e5">3¢ of the print</b>, and a net-short lean buys the <b style="color:#c9d6e5">complement</b> token. The screened set is published
+    nightly from strictly-prior tape, so the box can never select the wallets that happened to win during its own window. Median ask premium
+    ≥ +8¢ over 3 days kills the study without needing a paper sample. PASS ≥ +$2/fill &amp; hit ≥ .56 @ n≥400 &amp; ≥5 days, all guards clear.
+    Feed: <a href="https://wwf-leanbot.fly.dev/feed" target="_blank">wwf-leanbot.fly.dev/feed</a> · refreshes every 20s.</div>
 </div>
 <script>
 const N=8;
 const G="#3fd17a",R="#ff6b6b",DIM="#8b9bb0",AMB="#f5c451";
 const RAW="https://raw.githubusercontent.com/jaxperro/winning-wallet-finder/main/research/";
 const ST={
-    l:{FEED:"https://wwf-lagbot.fly.dev/feed",LEDGER:RAW+"lag_paper_ledger.jsonl",D:null,OFF:false,CHAIN:{},LROWS:[],TAB:"open",EXP:{}}};
+    l:{FEED:"https://wwf-lagbot.fly.dev/feed",LEDGER:RAW+"lag_paper_ledger.jsonl",D:null,OFF:false,CHAIN:{},LROWS:[],TAB:"open",EXP:{}},
+    n:{FEED:"https://wwf-leanbot.fly.dev/feed",LEDGER:RAW+"lean_paper_ledger.jsonl",D:null,OFF:false,CHAIN:{},LROWS:[],TAB:"open",EXP:{}}};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
 const money=n=>(n<0?"-$":"$")+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:Math.abs(n)>=100?0:2});
@@ -129,6 +170,121 @@ function tglExp(k){ST[k].EXP[ST[k].TAB]=!ST[k].EXP[ST[k].TAB];render(k);}
 function graded(k,s){const c=ST[k].CHAIN[s.asset+"|"+s.ts];return c?{pnl:c.chain_pnl,pay:c.chain_payout,badge:["CHAIN","pgreen"],flip:c.flip}:{pnl:s.pnl,pay:s.payout,badge:["PROV","pgrey"],flip:false};}
 function pillUpd(k,name){const S=ST[k];$(k+"_pill").textContent=S.OFF?"OFFLINE":"PAPER";$(k+"_pill").className="pill "+(S.OFF?"pred":"pamber");$(k+"_upd").textContent=S.OFF?"feed unreachable — retrying":"updated "+ago((S.D||{}).updated);}
 function moreRow(k,arr,exp){return arr.length>N?`<div class="more" onclick="tglExp('${k}')">${exp?"Show top "+N:"View all "+arr.length+" →"}</div>`:"";}
+
+/* ── Study D v2: band arm + concentration guards (client-side over ledger) ── */
+function cuts(rows){
+  const n=rows.length; if(!n)return null;
+  const tot=rows.reduce((s,r)=>s+(r.chain_pnl||0),0);
+  const staked=rows.reduce((s,r)=>s+(r.cost||0),0);
+  const wins=rows.filter(r=>r.chain_payout===1).length;
+  const srt=rows.slice().sort((a,b)=>Math.abs(b.chain_pnl||0)-Math.abs(a.chain_pnl||0));
+  const exN=k=>n>k?srt.slice(k).reduce((s,r)=>s+(r.chain_pnl||0),0)/(n-k):null;
+  const byDay={},byEv={};
+  rows.forEach(r=>{const d=new Date((r.ts||0)*1000).toISOString().slice(5,10);
+    (byDay[d]=byDay[d]||[0,0])[0]++;byDay[d][1]+=(r.chain_pnl||0);
+    if(r.event)byEv[r.event]=(byEv[r.event]||0)+(r.chain_pnl||0);});
+  const days=Object.keys(byDay);
+  let exBest=null;
+  if(days.length>1){const b=days.reduce((m,d)=>byDay[d][1]>byDay[m][1]?d:m,days[0]);
+    const exn=n-byDay[b][0]; if(exn>0)exBest=(tot-byDay[b][1])/exn;}
+  const evs=Object.values(byEv);
+  const topEv=evs.length&&tot?100*evs.reduce((m,v)=>Math.abs(v)>Math.abs(m)?v:m,0)/tot:null;
+  return {n,tot,staked,wins,hit:wins/n,ev:tot/n,pct:staked?100*tot/staked:null,
+    exTop5:exN(5),exBest,days:days.length,byDay,topEv,events:evs.length};
+}
+function guardCell(label,c,bar,tip){
+  if(!c)return `<div class="cell"><div class="klabel">${label}</div><div class="cv dim">—</div><div class="cs">no graded fills yet</div></div>`;
+  const ok=bar==null?null:(c.ev>=bar&&c.exBest>0&&c.exTop5>0&&Math.abs(c.topEv||0)<30);
+  return `<div class="cell"><div class="klabel" title="${tip||""}">${label}</div>
+    <div class="cv" style="color:${cOf(c.ev)}">${sgn(c.ev)}<span style="font-size:13px;font-weight:600" class="dim">/fill</span></div>
+    <div class="cs">${c.n} fills · ${c.wins}W · hit ${(100*c.hit).toFixed(0)}% · ${c.pct==null?"—":(c.pct>=0?"+":"")+c.pct.toFixed(0)+"% staked"}<br>
+    <span style="color:${c.exBest==null?DIM:c.exBest>0?G:R}">ex-best-day ${c.exBest==null?"—":sgn(c.exBest)}</span> ·
+    <span style="color:${c.exTop5==null?DIM:c.exTop5>0?G:R}">ex-top5 ${c.exTop5==null?"—":sgn(c.exTop5)}</span><br>
+    <span style="color:${c.topEv==null?DIM:Math.abs(c.topEv)<30?G:AMB}">top-event ${c.topEv==null?"—":c.topEv.toFixed(0)+"%"}</span> · ${c.days}d
+    ${bar==null?"":`<br><b style="color:${ok?G:AMB}">${ok?"ALL GUARDS CLEAR":c.ev>=bar?"CONCENTRATED":"below bar"}</b>`}</div></div>`;
+}
+const V2_FREEZE=1785200000;
+function renderV2(){
+  const rows=ST.l.LROWS||[];
+  if(!rows.length){$("v2_upd").textContent="awaiting the chain-graded ledger";return;}
+  const fwd=rows.filter(r=>(r.ts||0)>=V2_FREEZE);
+  const band=r=>fwd.filter(x=>(x.price||0)>=r[0]&&(x.price||0)<r[1]);
+  $("v2_upd").textContent=fwd.length?`${fwd.length} forward fills since freeze`:"window opens with the next fills (freeze 07-28)";
+  $("v2_cells").innerHTML=
+    guardCell("15–40¢ · THE ARM",cuts(band([0.15,0.40])),8,"the pre-registered v2 band — bar +$8/fill, doubled because the band was found by slicing v1")
+    +guardCell("&lt;15¢ control",cuts(band([0,0.15])),null,"report-only: the mirror claim that deep longshots are negative-EV")
+    +guardCell("40–70¢ control",cuts(band([0.40,0.70])),null,"report-only")
+    +guardCell("≥70¢ control",cuts(band([0.70,1.01])),null,"report-only");
+  const all=cuts(rows),bandAll=cuts(rows.filter(x=>(x.price||0)>=0.15&&(x.price||0)<0.40));
+  const row=(lab,c)=>c?`<div class="okg row" style="grid-template-columns:minmax(0,1fr) 110px 110px 110px 90px"><div class="mkt ell">${lab}</div>
+    <div class="r" style="color:${cOf(c.ev)}">${sgn(c.ev)}/fill</div>
+    <div class="r" style="color:${c.exBest>0?G:R}">${c.exBest==null?"—":sgn(c.exBest)}</div>
+    <div class="r" style="color:${c.exTop5>0?G:R}">${c.exTop5==null?"—":sgn(c.exTop5)}</div>
+    <div class="r dim">${c.n}</div></div>`:"";
+  $("v2_guards").innerHTML=`<div class="okg thead" style="grid-template-columns:minmax(0,1fr) 110px 110px 110px 90px"><div>All-time (v1 data, context only)</div><div class="r">EV</div><div class="r" title="the guard that caught both studies">ex-best-day</div><div class="r">ex-top5</div><div class="r">n</div></div>`
+    +row("v1 · every band",all)+row("v1 · 15–40¢ band",bandAll)
+    +`<div class="sub" style="padding:9px 16px;border-top:1px solid #1a2330">v1 rows are context only — #27's verdict binds to forward fills after the freeze.</div>`;
+}
+
+/* ── Study C Stage-2: maker leans at a real book (wwf-leanbot) ──────────── */
+function renderN(){
+  const S=ST.n,d=S.D||{};
+  const open=(d.open||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const settled=(d.settled||[]).slice().sort((a,b)=>(b.settled_ts||0)-(a.settled_ts||0));
+  const skips=(d.skips||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const c=d.counters||{},sk=c.skip||{};
+  pillUpd("n");
+  const chainTot=S.LROWS.reduce((s,r)=>s+(r.chain_pnl||0),0);
+  const provTot=settled.filter(x=>!S.CHAIN[x.asset+"|"+x.ts]).reduce((s,x)=>s+(x.pnl||0),0);
+  const ntot=S.LROWS.length||settled.length?chainTot+provTot:(d.pnl_realized||0);
+  $("n_pnl").innerHTML=S.D?`<span style="color:${cOf(ntot)}">${sgn(ntot)}</span>`:"—";
+  const pays=[...S.LROWS.map(r=>r.chain_payout),...settled.filter(x=>!S.CHAIN[x.asset+"|"+x.ts]).map(x=>x.payout)];
+  const W=pays.filter(p=>p===1).length,RF=pays.filter(p=>p===0.5).length,LO=pays.length-W-RF;
+  const staked=S.LROWS.reduce((s,r)=>s+(r.cost||0),0)+settled.filter(x=>!S.CHAIN[x.asset+"|"+x.ts]).reduce((s,x)=>s+(x.cost||0),0);
+  $("n_pnlsub").innerHTML=S.D?`<span class="dim">${W}W / ${LO}L${RF?" / "+RF+"R":""} settled${staked?` · ${(100*ntot/staked).toFixed(1)}% of staked`:""} · ${c.settled_total??0} lifetime</span>`:"";
+  let cum=0;const vals=settled.slice().reverse().map(x=>cum+=graded("n",x).pnl||0);
+  $("n_spark").innerHTML=spark(vals);
+  $("n_heroline").innerHTML=S.D?`<span><b>${c.crossings??"—"}</b> conviction crossings · <b>${c.attempts??"—"}</b> attempts · <b>${c.fills??"—"}</b> fills</span><span><b style="color:${AMB}">${c.premium_skips??0}</b> premium-refused · <b>${c.craters??0}</b> craters · <span title="warmup / band / no-print / event-cap / complement / throttle"><b>${(sk.warmup??0)+(sk.band_usd??0)+(sk.band_px??0)+(sk.no_print??0)+(sk.event_cap??0)+(sk.no_complement??0)+(c.throttle_skip??0)}</b> guarded skips</span></span><span title="no bank, no sizing — measurement harness; verdict binds to the chain-graded ledger (#26)">flat $100 FAKs ≤ print+3¢ · measurement mode</span>`:"";
+  const prems=[...open.map(o=>o.premium),...settled.map(s2=>s2.premium),
+    ...skips.filter(k2=>k2.why==="premium"&&k2.ba!=null&&k2.print!=null).map(k2=>k2.ba-k2.print)].filter(p=>p!=null).sort((a,b)=>a-b);
+  const med=prems.length?prems[Math.floor(prems.length/2)]:null;
+  const warm=(d.warmup_left_s||0)>0,st=d.set||{};
+  $("n_health").innerHTML=S.D?
+    `<div class="symrow"><span class="dot" style="background:${warm?AMB:G}"></span><b style="width:70px">status</b><span style="flex:1">${warm?`warming ${Math.ceil(d.warmup_left_s/60)}m`:"armed"}</span><span class="pill ${warm?"pamber":"pgreen"}">${warm?"WARMUP":"LIVE"}</span></div>
+     <div class="symrow"><b style="width:70px" title="screened on strictly-prior tape and published nightly — the box never screens itself">set</b><span style="flex:1">${st.n??"—"} maker-sharps</span><span class="dim">${st.as_of?"as-of "+new Date(st.as_of*1000).toISOString().slice(5,10):"—"}</span></div>
+     <div class="symrow"><b style="width:70px">inventory</b><span style="flex:1">${d.tracked_inventories??"—"} tracked</span><span class="dim">$150–500 · ≥60% one-sided</span></div>
+     <div class="symrow"><b style="width:70px" title="median standing-ask premium over the lean-side print; the authoritative number is the nightly grade_lean read over ALL attempts">premium</b><span style="flex:1;color:${med==null?"var(--dim)":med>=0.08?R:med>=0.03?AMB:G}">${med==null?"—":"median "+(med>=0?"+":"")+(100*med).toFixed(1)+"¢"}</span><span class="dim" title="observational kill-switch">mirage bar +8¢/3d</span></div>`:"";
+  $("n_tabOpen").innerHTML="Open · "+open.length;
+  $("n_tabSettled").innerHTML="Settled · "+settled.length;
+  $("n_tabSkips").innerHTML="Skips · "+skips.length;
+  ["Open","Settled","Skips"].forEach(t=>$("n_tab"+t).classList.toggle("on",S.TAB===t.toLowerCase()));
+  const exp=!!S.EXP[S.TAB];
+  let html;
+  const premc=p=>p==null?"—":(p>=0?"+":"")+(100*p).toFixed(1)+"¢";
+  if(S.TAB==="open"){
+    const rows=exp?open:open.slice(0,N);
+    html=`<div class="oog thead"><div>When</div><div>Market</div><div class="r" title="paper FAK VWAP, capped at print+3¢ · * = partial fill">Entry</div><div class="r" title="entry premium over the lean-side print">Prem</div><div class="r">Stake</div><div class="r" title="the sharp's net one-sided inventory at the crossing">Lean</div></div>`
+      +rows.map(p=>`<div class="oog row"><div class="sub">${ago(p.ts)}</div><div class="mkt ell" title="${esc(p.title)} · net $${(p.net||0).toFixed(0)} of $${(p.gross||0).toFixed(0)} gross">${esc(p.title)}</div><div class="r">${Math.round(p.price*100)}¢${p.partial?"*":""}</div><div class="r" style="color:${(p.premium||0)>0.015?AMB:G}">${premc(p.premium)}</div><div class="r">${money(p.cost)}</div><div class="r">${money(p.lean_usd||0)}${p.side<0?'<span class="dim" title="net-short lean → complement token"> ᶜ</span>':""}</div></div>
+<div class="mcard"><div class="mkt ell">${esc(p.title)}</div><div class="sub" style="margin-top:3px">${ago(p.ts)} · ${Math.round(p.price*100)}¢ · ${money(p.cost)} · prem ${premc(p.premium)} · lean ${money(p.lean_usd||0)}</div></div>`).join("");
+    if(!open.length)html+=`<div class="loading">${S.D?(warm?"warming up — inventory maps build for 30 min before arming":"no open leans — waiting for a conviction crossing"):"loading…"}</div>`;
+    html+=moreRow("n",open,exp);
+  }else if(S.TAB==="settled"){
+    const rows=exp?settled:settled.slice(0,N);
+    html=`<div class="oeg thead"><div>When</div><div>Market</div><div class="r">Entry</div><div class="r">Prem</div><div class="r" title="CHAIN = re-graded against on-chain payout vectors">Grade</div><div class="r">P&amp;L</div></div>`
+      +rows.map(s2=>{const g=graded("n",s2);return `<div class="oeg row" style="box-shadow:inset 2px 0 0 ${g.pay===1?G:g.pay===0.5?AMB:R}"><div class="sub">${ago(s2.settled_ts)}</div><div class="mkt ell" title="${esc(s2.title)}">${esc(s2.title)}</div><div class="r">${Math.round(s2.price*100)}¢</div><div class="r">${premc(s2.premium)}</div><div class="r"><span class="pill ${g.badge[1]}">${g.badge[0]}${g.flip?" ⚠":""}</span></div><div class="r" style="font-weight:600;color:${cOf(g.pnl)}">${sgn(g.pnl)}</div></div>
+<div class="mcard" style="box-shadow:inset 2px 0 0 ${g.pay===1?G:g.pay===0.5?AMB:R}"><div class="mkt ell">${esc(s2.title)}</div><div class="sub" style="margin-top:3px">${ago(s2.settled_ts)} · ${Math.round(s2.price*100)}¢ · <span class="pill ${g.badge[1]}" style="font-size:9px">${g.badge[0]}</span> <b style="color:${cOf(g.pnl)}">${sgn(g.pnl)}</b></div></div>`;}).join("");
+    if(!settled.length)html+=`<div class="loading">${S.D?"nothing settled yet":"loading…"}</div>`;
+    html+=moreRow("n",settled,exp);
+  }else{
+    const rows=exp?skips:skips.slice(0,N);
+    html=`<div class="okg thead" style="grid-template-columns:90px minmax(0,1fr) 170px"><div>When</div><div>Market</div><div class="r" title="print = lean-side last print · ask = live best ask">Print → ask</div></div>`
+      +rows.map(k2=>`<div class="okg row" style="grid-template-columns:90px minmax(0,1fr) 170px"><div class="sub">${ago(k2.ts)}</div><div style="min-width:0"><div class="mkt ell" title="${esc(k2.title)}">${esc(k2.title)}</div><div style="font-size:11px;color:${AMB}">${esc(k2.why||"")}</div></div><div class="r">${Math.round((k2.print||0)*100)}¢ → ${k2.ba!=null?Math.round(k2.ba*100)+"¢":"—"}</div></div>
+<div class="mcard"><div class="mkt ell">${esc(k2.title)}</div><div class="sub" style="margin-top:3px">${ago(k2.ts)} · <span style="color:${AMB}">${esc(k2.why||"")}</span> · ${Math.round((k2.print||0)*100)}¢ → ${k2.ba!=null?Math.round(k2.ba*100)+"¢":"—"}</div></div>`).join("");
+    if(!skips.length)html+=`<div class="loading">${S.D?"no refused attempts yet":"loading…"}</div>`;
+    html+=moreRow("n",skips,exp);
+  }
+  $("n_book").innerHTML=html;
+}
 
 /* ── Study D: sibling lead-lag (wwf-lagbot) ─────────────────────────────── */
 function renderL(){
@@ -189,9 +345,9 @@ function renderL(){
   $("l_book").innerHTML=html;
 }
 
-function render(k){renderL();}
+function render(k){k==="n"?renderN():renderL();if(k==="l")renderV2();}
 function load(){
-  for(const k of ["l"]){
+  for(const k of ["l","n"]){
     const S=ST[k];
     fetch(S.FEED,{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json();})
       .then(d=>{S.D=d;S.OFF=false;render(k);}).catch(()=>{S.OFF=true;render(k);});
